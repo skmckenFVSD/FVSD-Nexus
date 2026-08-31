@@ -1,5 +1,7 @@
 # FVSD Nexus documentation
 
+> [FVSD Nexus](../README.md) / Documentation
+
 This directory is the living product, architecture, and delivery record for FVSD Nexus.
 
 The documentation distinguishes four states:

@@ -1,5 +1,7 @@
 # Leadership analytics
 
+> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Leadership analytics
+
 **Status:** Current working PoC
 
 Leadership analytics is the first implemented FVSD Nexus capability. It presents governed Fabric semantic-model measures through a guided application experience rather than embedding a conventional Power BI report.

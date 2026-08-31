@@ -1,5 +1,7 @@
 # Architecture decision records
 
+> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Decision register](../decision-register.md) / Architecture decision records
+
 Architecture decision records explain why durable technical and product-architecture choices were made.
 
 | ADR | Decision | Status |

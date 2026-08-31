@@ -1,5 +1,7 @@
 # Product capabilities
 
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Capabilities
+
 FVSD Nexus is expected to grow as a set of related capabilities built on common identity, Dataverse, Fabric, design, and security foundations.
 
 | Capability | Current status | Landing page |

@@ -1,5 +1,7 @@
 # Architecture
 
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Architecture
+
 FVSD Nexus is a custom user experience over FVSD's existing Microsoft data and identity platforms.
 
 ## Architecture documents

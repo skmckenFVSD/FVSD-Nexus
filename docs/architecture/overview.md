@@ -1,5 +1,7 @@
 # Architecture overview
 
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Overview
+
 ## Context
 
 FVSD Nexus combines operational workflows and governed analytics without turning the browser into a direct, general-purpose client for Dataverse or Fabric.

@@ -1,5 +1,7 @@
 # Proposed roadmap
 
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Delivery](README.md) / Proposed roadmap
+
 **Status:** Proposed for Leadership consideration
 
 | Period | Proposed outcome |

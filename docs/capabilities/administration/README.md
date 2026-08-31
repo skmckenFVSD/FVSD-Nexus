@@ -1,5 +1,7 @@
 # Platform administration
 
+> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Platform administration
+
 **Status:** Partially present; operational expansion required
 
 Administration provides the controlled capabilities needed to operate Nexus safely without exposing technical complexity to general users.

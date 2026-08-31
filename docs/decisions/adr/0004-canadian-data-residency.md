@@ -1,5 +1,7 @@
 # ADR-0004: Keep production student information in Canada
 
+> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Decision register](../decision-register.md) / [Architecture decision records](README.md) / ADR-0004
+
 - **Status:** Accepted
 - **Date:** 2026-08-31
 

@@ -1,5 +1,7 @@
 # Full PoC definition
 
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Delivery](README.md) / Full PoC definition
+
 **Target horizon:** End of February 2027, subject to authorization
 
 The full PoC should be a complete, end-to-end testable system. It is not required to be the final production implementation, but it must prove the critical operational and analytical paths using representative data and roles.

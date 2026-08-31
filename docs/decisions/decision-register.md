@@ -1,5 +1,7 @@
 # Decision register
 
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Decision register
+
 This register summarizes confirmed premises, proposals, open decisions, and monitored platform options. Material architecture decisions should also receive a dedicated ADR.
 
 | Status | Decision or question | Related record |

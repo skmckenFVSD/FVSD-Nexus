@@ -1,5 +1,7 @@
 # Identity, licensing, and security
 
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Identity, licensing, and security
+
 ## Identity premise
 
 Users act as themselves. Interactive student-data access must use the named FVSD identity rather than a pooled system identity.

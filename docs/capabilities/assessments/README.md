@@ -1,5 +1,7 @@
 # Assessment entry and scoring
 
+> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Assessment entry and scoring
+
 **Status:** Proposed; stable Canvas App and Dataverse foundation already exists
 
 Assessment entry is expected to be primarily a UX modernization rather than a data-platform rebuild.

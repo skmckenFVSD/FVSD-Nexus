@@ -1,5 +1,7 @@
 # Residency and platform options
 
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Residency and platform options
+
 ## Confirmed boundary
 
 Identifiable student data, assessment records, IPP information, and student-identifiable AI context must remain inside the approved Canadian geography.

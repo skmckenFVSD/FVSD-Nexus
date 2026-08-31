@@ -1,5 +1,7 @@
 # Delivery
 
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Delivery
+
 Delivery documentation turns the product direction into testable outcomes without treating proposed dates as automatic authorization.
 
 - [Proposed roadmap](roadmap.md)

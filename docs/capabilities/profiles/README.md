@@ -1,5 +1,7 @@
 # School and student profiles
 
+> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / School and student profiles
+
 **Status:** Planned
 
 Profiles will provide a role-aware entry point into the evidence and operational records relevant to a school or student.

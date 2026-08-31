@@ -1,5 +1,7 @@
 # ADR-0005: Preserve existing Azure resource identifiers during the Nexus rename
 
+> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Decision register](../decision-register.md) / [Architecture decision records](README.md) / ADR-0005
+
 - **Status:** Accepted
 - **Date:** 2026-08-31
 

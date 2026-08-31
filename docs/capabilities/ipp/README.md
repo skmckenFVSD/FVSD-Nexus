@@ -1,5 +1,7 @@
 # Individual Program Plans
 
+> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Individual Program Plans
+
 **Status:** Proposed; approximately 80% of the anticipated Dataverse foundation already exists
 
 The IPP capability would replace the current third-party user experience while retaining Dataverse as the FVSD operational truth store.

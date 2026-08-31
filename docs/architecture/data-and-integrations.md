@@ -1,5 +1,7 @@
 # Data and integrations
 
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Data and integrations
+
 ## Ownership model
 
 | Information | Authoritative source | Nexus usage |

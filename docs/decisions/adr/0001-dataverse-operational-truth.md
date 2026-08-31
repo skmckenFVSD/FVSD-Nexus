@@ -1,5 +1,7 @@
 # ADR-0001: Dataverse is the operational truth store
 
+> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Decision register](../decision-register.md) / [Architecture decision records](README.md) / ADR-0001
+
 - **Status:** Accepted
 - **Date:** 2026-08-31
 
