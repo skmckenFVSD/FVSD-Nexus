@@ -1,0 +1,9 @@
+<svg width="320" height="96" viewBox="0 0 320 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">FVSD logo placeholder</title>
+  <desc id="desc">Replace this file with an uploaded FVSD logo while keeping the same filename.</desc>
+  <rect width="320" height="96" rx="18" fill="#071940"/>
+  <path d="M42 24h54v12H56v12h34v12H56v24H42V24Z" fill="#FFFFFF"/>
+  <path d="M106 24h15l18 43 18-43h15l-27 60h-12l-27-60Z" fill="#0097BC"/>
+  <path d="M182 24h33c7 0 13 2 17 6 4 3 6 8 6 14 0 8-4 14-12 18l16 22h-16l-14-20h-16v20h-14V24Zm32 28c3 0 6-1 8-2 2-2 3-4 3-6s-1-5-3-6c-2-2-5-2-8-2h-18v16h18Z" fill="#FFFFFF"/>
+  <path d="M251 24h14v48h38v12h-52V24Z" fill="#0097BC"/>
+</svg>
