@@ -1,0 +1,58 @@
+# Individual Program Plans
+
+**Status:** Proposed; approximately 80% of the anticipated Dataverse foundation already exists
+
+The IPP capability would replace the current third-party user experience while retaining Dataverse as the FVSD operational truth store.
+
+## Current premise
+
+- Existing Dataverse structures cover most required IPP information.
+- The current estimate is no more than approximately ten additional tables.
+- Required PowerSchool demographic context already synchronizes to Dataverse.
+- The principal delivery work is expected to be UX, workflow, and controlled migration rather than foundational integration.
+
+## Anticipated capability areas
+
+- Plan creation and lifecycle.
+- Goals, objectives, and baselines.
+- Progress observations and evidence.
+- Assigned staff and collaborative work.
+- Review cycles, status, and approval history.
+- Attachments and supporting documentation.
+- Printable or exportable plans and progress summaries.
+- Role-aware student and school access.
+- Historical data migration from the existing third-party system.
+
+## Experience direction
+
+- Start from the authorized student's profile or staff caseload.
+- Present the current plan, required actions, and recent progress clearly.
+- Use progressive disclosure so occasional users are not confronted with the entire data structure.
+- Reuse the same form, validation, audit, and status patterns established for assessment entry.
+- Separate current operational values from Fabric analytics that update through OneLake.
+
+## Discovery priorities
+
+1. Inventory every current vendor workflow, including less-visible administrative behaviour.
+2. Confirm the remaining Dataverse tables and relationships.
+3. Determine plan versioning and amendment rules.
+4. Confirm attachment, evidence, retention, and export requirements.
+5. Obtain and validate a complete historical-data export.
+6. Define the staff, school, student, and administrative access matrix.
+7. Establish parallel-run and migration acceptance criteria.
+
+## Primary risks
+
+- Incomplete vendor exports or undocumented workflows.
+- Historical plan and progress versioning.
+- Attachment volume and retention requirements.
+- Concurrent editing and approval behaviour.
+- Reproducing printable outputs relied upon by staff.
+- Support and product ownership after vendor retirement.
+
+## Related documentation
+
+- [Profiles](../profiles/README.md)
+- [Data and integrations](../../architecture/data-and-integrations.md)
+- [Proposed roadmap](../../delivery/roadmap.md)
+
