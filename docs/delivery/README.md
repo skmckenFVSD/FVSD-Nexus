@@ -13,4 +13,3 @@ Delivery documentation turns the product direction into testable outcomes withou
 - Compare new operational results with established Canvas and vendor behaviour.
 - Use parallel testing before retiring an incumbent system.
 - Gate production use on evidence, not only completion of development tasks.
-

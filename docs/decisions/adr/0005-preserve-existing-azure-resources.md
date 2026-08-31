@@ -20,4 +20,3 @@ Rename the active source solution and user-facing product to FVSD Nexus while re
 ## Alternatives considered
 
 - Recreate or rename all deployed resources immediately: rejected because it introduces risk without delivering user value.
-

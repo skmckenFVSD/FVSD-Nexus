@@ -41,4 +41,3 @@ Administration provides the controlled capabilities needed to operate Nexus safe
 - [Identity, licensing, and security](../../architecture/identity-licensing-security.md)
 - [Testing strategy](../../delivery/testing-strategy.md)
 - [Decision register](../../decisions/decision-register.md)
-

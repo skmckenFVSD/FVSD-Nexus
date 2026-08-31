@@ -20,4 +20,3 @@ FVSD Nexus is a custom user experience over FVSD's existing Microsoft data and i
 7. Operational confirmation comes from Dataverse; Fabric analytics update asynchronously.
 
 Material changes to these premises should be recorded in an [architecture decision record](../decisions/adr/README.md).
-

@@ -23,4 +23,3 @@ Dataverse remains the authoritative source for assessment, IPP, intervention, an
 
 - Writing operational records to Fabric or the semantic model: rejected because those are analytical layers.
 - Creating a new independent application database: rejected because it would duplicate established Dataverse truth and integration.
-

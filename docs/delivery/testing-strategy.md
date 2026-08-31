@@ -60,4 +60,3 @@ At repository migration:
 - ASP.NET publish successfully bundles the React application.
 
 These checks are a baseline, not a complete operational test suite.
-

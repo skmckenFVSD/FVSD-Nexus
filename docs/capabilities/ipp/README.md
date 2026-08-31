@@ -55,4 +55,3 @@ The IPP capability would replace the current third-party user experience while r
 - [Profiles](../profiles/README.md)
 - [Data and integrations](../../architecture/data-and-integrations.md)
 - [Proposed roadmap](../../delivery/roadmap.md)
-

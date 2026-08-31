@@ -26,4 +26,3 @@
 | WRAT-5 | Wide Range Achievement Test, Fifth Edition. The documented scoring pattern currently covers Math Computation. |
 
 Add terms when they become important to understanding product behaviour. Do not use the glossary to define rules that belong in a capability or architecture document.
-

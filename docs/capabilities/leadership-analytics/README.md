@@ -57,4 +57,3 @@ Current PoC endpoint:
 - [Architecture overview](../../architecture/overview.md)
 - [Data and integrations](../../architecture/data-and-integrations.md)
 - [Testing strategy](../../delivery/testing-strategy.md)
-

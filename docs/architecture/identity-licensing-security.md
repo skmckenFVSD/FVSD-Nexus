@@ -73,4 +73,3 @@ Application telemetry may include route, duration, result status, dependency typ
 - Final Entra group, Dataverse role, Fabric role, and Nexus experience-role mapping.
 - Licence verification permissions, refresh interval, and failure behaviour.
 - Administrative correction approval roles.
-

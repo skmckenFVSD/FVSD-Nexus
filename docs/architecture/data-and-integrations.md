@@ -75,4 +75,3 @@ Operational records must preserve sufficient scoring and context values to expla
 ## Future documentation
 
 This page should eventually link to a Dataverse table catalogue, relationship diagram, synchronization inventory, and semantic-model query catalogue. Those artifacts must not contain student records or credentials.
-

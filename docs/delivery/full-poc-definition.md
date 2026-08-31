@@ -65,4 +65,3 @@ At the end of February, Leadership should have evidence to decide:
 ## Not automatically implied
 
 Completing the PoC does not automatically authorize vendor retirement, production migration, or September deployment.
-

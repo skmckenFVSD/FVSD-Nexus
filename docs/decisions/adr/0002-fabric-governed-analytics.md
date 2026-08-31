@@ -22,4 +22,3 @@ Nexus will query the existing Fabric semantic model for governed analytical resu
 
 - Embed Power BI reports: rejected for the primary Nexus experience because it retains the interaction problems Nexus is intended to solve.
 - Reimplement measures in React or the API: rejected because it would duplicate and potentially diverge from governed calculations.
-

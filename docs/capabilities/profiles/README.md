@@ -43,4 +43,3 @@ Profile visibility must be determined by delegated identity and destination-serv
 - [Identity, licensing, and security](../../architecture/identity-licensing-security.md)
 - [Assessment entry and scoring](../assessments/README.md)
 - [Individual Program Plans](../ipp/README.md)
-

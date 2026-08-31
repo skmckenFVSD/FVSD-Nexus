@@ -52,4 +52,3 @@ The current implementation includes the Leadership Analytics vertical slice. Dat
 ## Compatibility
 
 The source solution is named `FVSDNexus`, while existing deployed Azure resources retain `fvsd-insights` identifiers. This avoids unnecessary infrastructure replacement during the product transition.
-

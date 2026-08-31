@@ -93,4 +93,3 @@ An administrative correction should retain the requester, reason, original and p
 - [Data and integrations](../../architecture/data-and-integrations.md)
 - [Identity, licensing, and security](../../architecture/identity-licensing-security.md)
 - [Full PoC definition](../../delivery/full-poc-definition.md)
-

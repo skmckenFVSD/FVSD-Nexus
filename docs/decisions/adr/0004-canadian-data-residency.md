@@ -20,4 +20,3 @@ Production student data, assessment records, IPP information, and student-identi
 ## Alternatives considered
 
 - Copy production data into a US environment for preview access: rejected.
-

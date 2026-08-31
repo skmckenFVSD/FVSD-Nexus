@@ -35,4 +35,3 @@ Each landing page should eventually contain:
 6. Acceptance criteria.
 7. Open questions and exclusions.
 8. Related decisions and implementation links.
-

@@ -22,4 +22,3 @@ Interactive Dataverse and Fabric operations use the signed-in user's delegated i
 ## Alternatives considered
 
 - Shared service account or system token for all users: rejected because it weakens authorization, licensing clarity, and audit attribution.
-

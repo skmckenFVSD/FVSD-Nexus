@@ -29,4 +29,3 @@ When a proposal is approved, rejected, or materially changed:
 2. Update the canonical capability or architecture page.
 3. Add or supersede an ADR when the decision affects system structure or long-term constraints.
 4. Link the implementing issue or pull request when available.
-

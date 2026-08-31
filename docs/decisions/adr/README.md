@@ -22,4 +22,3 @@ Each ADR should contain:
 - Related documentation.
 
 Accepted ADRs are not silently rewritten when a decision changes. Add a new ADR that supersedes the old record.
-

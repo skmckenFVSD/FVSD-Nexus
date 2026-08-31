@@ -49,4 +49,3 @@ The documentation distinguishes four states:
 - Record material architectural decisions as ADRs.
 - Do not include student-level data, credentials, access tokens, or secrets.
 - Update documentation in the same change that alters the relevant behaviour or premise.
-

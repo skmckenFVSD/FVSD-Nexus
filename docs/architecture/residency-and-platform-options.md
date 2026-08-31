@@ -44,4 +44,3 @@ A future platform change should require evidence for:
 - Migration cost from the current React and ASP.NET Core implementation.
 
 Synthetic data may be used to evaluate tools outside Canada, but the evaluation must not connect to production student data or production student-identifiable semantic-model results.
-
