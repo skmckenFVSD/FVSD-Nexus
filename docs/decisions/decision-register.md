@@ -16,12 +16,14 @@ This register summarizes confirmed premises, proposals, open decisions, and moni
 | Proposed | Expand Nexus to replace the assessment Canvas UX. | [Assessment capability](../capabilities/assessments/README.md) |
 | Proposed | Expand Nexus to replace the third-party IPP experience. | [IPP capability](../capabilities/ipp/README.md) |
 | Proposed | Evaluate and stage an FVSD-owned PASI connector as a strategic differentiator and potential enabler for retiring overlapping third-party functions. | [PASI connector](../capabilities/pasi-connector/README.md) |
+| Proposed | Bring the existing FVSD Data Product Agent, Fabric Documentation Agent, and applicable Microsoft Purview capabilities into a bounded Data Analyst workspace. | [Purview governance](../capabilities/purview-governance/README.md) |
 | Proposed | Complete a testable full PoC by the end of February 2027. | [Full PoC definition](../delivery/full-poc-definition.md) |
 | Proposed | Conduct wider testing March-June and target phased production use in September 2027. | [Roadmap](../delivery/roadmap.md) |
 | Open | Obtain formal Leadership authorization and confirm first implementation scope. | - |
 | Open | Confirm supported pay-as-you-go metering or adopt Power Apps Premium per user. | [Identity and licensing](../architecture/identity-licensing-security.md) |
 | Open | Complete vendor IPP capability and historical-data migration inventory. | [IPP capability](../capabilities/ipp/README.md) |
 | Open | Confirm FVSD PASI onboarding, registered-client certificate process, supported contract version, approved operations, environments, support ownership, and incumbent integration inventory. | [PASI connector](../capabilities/pasi-connector/README.md) |
+| Open | Confirm the Purview account type, governance domains and ownership, existing policies, supported APIs, least-privilege permissions, authoritative metadata fields, and Nexus-to-agent invocation mechanism. | [Purview governance](../capabilities/purview-governance/README.md) |
 | Open | Define the final role and permission matrix. | [Identity and licensing](../architecture/identity-licensing-security.md) |
 | Monitor | Reconsider Power Apps Vibe or Fabric Apps/Rayfin when Canadian requirements are met. | [Residency and platform options](../architecture/residency-and-platform-options.md) |
 

@@ -12,6 +12,8 @@
 | Governed measures and analytical classifications | `FVSDAnalytics` semantic model | Query through predefined DAX endpoints. |
 | Application identity and user membership | Microsoft Entra ID | Authentication, group context, and licence lookup where required. |
 | Provincial student information | Alberta Education PASI | Proposed read, update, status, and synchronization operations through a dedicated FVSD connector; exact approved domains remain open. |
+| Enterprise data catalog and governance metadata | Microsoft Purview Data Map and Unified Catalog | Proposed governed discovery, domains, data products, glossary, lineage, stewardship, and catalog publication for the Data Analyst experience. |
+| Data-product workflow and documentation orchestration | Existing FVSD Data Product Agent and Fabric Documentation Agent | Proposed integration through bounded contracts; these external assets retain their own governance and authorization boundaries. |
 
 ## Dataverse
 
@@ -84,3 +86,9 @@ This page should eventually link to a Dataverse table catalogue, relationship di
 An FVSD-owned PASI connector is documented as a strategic extension, not as part of the currently deployed PoC. The connector would commit the Nexus operation to Dataverse first, process provincial exchange asynchronously through a durable outbox/queue, and return acceptance, version, validation, alert, retry, or reconciliation status to Dataverse.
 
 The proposed design keeps the registered PASI client certificate in a server-side governed store, isolates generated provincial contracts behind an adapter, applies PASI optimistic-concurrency rules, and prevents student payloads from entering telemetry. See the [PASI capability](../capabilities/pasi-connector/README.md), [connector architecture](pasi-connector.md), and [official reference index](../reference/pasi-resources.md).
+
+## Proposed Purview and governance-agent integration
+
+The Data Analyst workspace can compose the existing FVSD Data Product Agent and Fabric Documentation Agent with Microsoft Purview. Catalog governance and in-application policy enforcement remain separate integration planes: Data Map and Unified Catalog govern metadata and discovery, while the Microsoft Graph Purview APIs can evaluate approved Nexus text or file activities for a known signed-in user.
+
+Nexus must not treat its Data Analyst experience role as permission to administer Purview, read source data, or publish catalog changes. Entra, Fabric, Dataverse, Purview, and the external agent contracts remain authoritative. See the [Purview capability](../capabilities/purview-governance/README.md), [agent architecture](purview-governance.md), and [reference index](../reference/purview-resources.md).

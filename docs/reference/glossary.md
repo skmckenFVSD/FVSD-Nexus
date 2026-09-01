@@ -23,6 +23,10 @@
 | Core Alert | A PASI business-status condition such as an error, warning, or advice that may require operational attention or acknowledgement. |
 | Period | Fall, Winter, or Spring. Summer is not an active assessment period. |
 | Power Apps Premium | Per-user Power Apps licence proposed as a fallback if pay-as-you-go metering is unsuitable. |
+| Protection scope | A Microsoft Purview policy result describing whether and how a known user's application activity should be evaluated. |
+| Purview Data Map | Microsoft Purview's metadata map for discovered data assets, classifications, relationships, and lineage. It does not grant access to the underlying data. |
+| Purview Unified Catalog | Microsoft Purview's governed catalog experience for discovery, domains, data products, glossary concepts, ownership, and related governance workflows. |
+| `processContent` | A Microsoft Graph Purview operation used by a policy-aware application to evaluate approved text or file activity for a known user and action. |
 | PR | Percentile Rank. |
 | RLS | Row-level security. |
 | SS | Standard Score. |

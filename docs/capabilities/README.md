@@ -12,6 +12,7 @@ FVSD Nexus is expected to grow as a set of related capabilities built on common 
 | Individual Program Plans | Proposed; majority of Dataverse foundation exists | [IPP](ipp/README.md) |
 | Intervention tracking | Future definition required | [Interventions](interventions/README.md) |
 | PASI provincial connector | Proposed strategic differentiator; feasibility discovery documented | [PASI connector](pasi-connector/README.md) |
+| Purview governance and Data Analyst workspace | Proposed; existing external agent and Fabric governance foundation identified | [Purview governance](purview-governance/README.md) |
 | Platform administration | Partially present; expansion required | [Administration](administration/README.md) |
 
 ## Shared experience principles
@@ -37,6 +38,7 @@ The application shell groups pages beneath collapsible capability headings:
 - **Individual Program Plans:** reserved for IPP workflows.
 - **Interventions:** reserved for future intervention workflows.
 - **PASI provincial connector:** a proposed backend integration capability rather than a general-user page; administrative status and reconciliation experiences would be added only for authorized roles.
+- **Purview governance:** a proposed Data Analyst workspace that composes governed documentation, data-product lifecycle, enterprise catalog, and policy-aware application functions; it is not a general-user or Purview-administration page.
 - **Administration:** settings and future authorized administration pages.
 
 Analytics, Assessments, and Administration are initially expanded. The other capability groups can be expanded and currently explain that their pages will be added as the PoC progresses. Grouping and page visibility remain role-aware UX concerns; backend and destination-service authorization remain authoritative.

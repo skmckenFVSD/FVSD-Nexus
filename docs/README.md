@@ -30,6 +30,7 @@ The documentation distinguishes four states:
 - [Individual Program Plans](capabilities/ipp/README.md)
 - [Intervention tracking](capabilities/interventions/README.md)
 - [PASI provincial connector](capabilities/pasi-connector/README.md)
+- [Purview governance and Data Analyst workspace](capabilities/purview-governance/README.md)
 - [Platform administration](capabilities/administration/README.md)
 
 ## Architecture
@@ -37,6 +38,7 @@ The documentation distinguishes four states:
 - [Architecture overview](architecture/overview.md)
 - [Data and integrations](architecture/data-and-integrations.md)
 - [PASI connector architecture](architecture/pasi-connector.md)
+- [Purview governance and agent architecture](architecture/purview-governance.md)
 - [Identity, licensing, and security](architecture/identity-licensing-security.md)
 - [Residency and platform options](architecture/residency-and-platform-options.md)
 
@@ -50,6 +52,7 @@ The documentation distinguishes four states:
 
 - [Glossary](reference/glossary.md)
 - [PASI official reference index](reference/pasi-resources.md)
+- [Purview and FVSD governance-agent reference index](reference/purview-resources.md)
 
 ## Documentation principles
 

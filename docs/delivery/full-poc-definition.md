@@ -74,6 +74,12 @@ The PASI connector is not required for the next TOSREC assessment-write slice an
 
 If Leadership authorizes a PASI technical spike and Alberta Education provides the required non-production onboarding, useful early evidence would be registered-certificate connectivity, one approved read/synchronization path, and one narrowly scoped write with concurrency and failure handling. That spike should be separately scoped and must not delay the immediate assessment-entry proof unless Leadership changes priorities.
 
+## Strategic Purview and Data Analyst evidence
+
+Purview integration is documented as a parallel governance opportunity, not a prerequisite for the next assessment-write slice. The proposed [Data Analyst capability](../capabilities/purview-governance/README.md) reuses the existing FVSD Data Product Agent and Fabric Documentation Agent rather than duplicating their responsibilities, and separates catalog governance from in-application policy enforcement.
+
+An authorized proof should first inventory existing assets and contracts. A later narrow demonstration could show governed Fabric discovery, a bounded data-product lifecycle action, and policy evaluation for one approved Nexus text or file activity. It must not imply that the Nexus Data Analyst role grants Purview administration or source-data access.
+
 ## Not automatically implied
 
 Completing the PoC does not automatically authorize vendor retirement, production migration, or September deployment.

@@ -23,6 +23,7 @@
 - Establish development, pilot, and production environment strategy.
 - Agree on February PoC acceptance criteria.
 - Confirm which current vendor/PowerSchool functions depend on PASI and identify Alberta Education onboarding contacts, without making the connector a dependency of the assessment-entry slice.
+- Inventory the existing FVSD Data Product Agent, Fabric Documentation Agent, Purview account and catalog structure, governance roles, policies, permissions, and integration contracts without making this a dependency of assessment entry.
 
 ## November-December 2026: assessment vertical slice
 
@@ -72,7 +73,12 @@ Production use should be phased and reversible. A date does not override unmet r
 - Final role and access model.
 - Available staff for pilot, testing, migration, training, and support.
 - Alberta Education PASI onboarding, client-certificate registration, approved non-production access, and confirmed service scope before any PASI technical spike.
+- Confirmed Purview account type, supported APIs, Entra permissions, governance ownership, and approved test content before any Purview integration spike.
 
 ## Parallel strategic PASI track
 
 The [PASI connector](../capabilities/pasi-connector/README.md) is a proposed parallel discovery track because it may materially strengthen the executive business case. It should progress through documentation and onboarding first. Connectivity, synchronization, or write spikes require separate authorization and must use an Alberta Education-approved non-production environment.
+
+## Parallel Purview and Data Analyst track
+
+The [Purview governance and Data Analyst workspace](../capabilities/purview-governance/README.md) is a proposed parallel discovery track. Initial work is documentation, existing-asset inventory, ownership mapping, and contract alignment. Catalog writes or Microsoft Graph policy proofs require separate authorization, least-privilege identities, approved non-production content, and explicit privacy review.

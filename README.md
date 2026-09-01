@@ -27,6 +27,7 @@ FVSD Nexus is the proposed unified operational and analytics platform for Fort V
 | Individual Program Plans | Proposed; majority of data foundation exists | [IPP](docs/capabilities/ipp/README.md) |
 | Intervention tracking | Future definition required | [Interventions](docs/capabilities/interventions/README.md) |
 | PASI provincial connector | Proposed strategic differentiator; public technical feasibility established | [PASI connector](docs/capabilities/pasi-connector/README.md) |
+| Purview governance and Data Analyst workspace | Proposed; existing FVSD agent and Fabric governance foundation identified | [Purview governance](docs/capabilities/purview-governance/README.md) |
 | Platform administration | Partially present | [Administration](docs/capabilities/administration/README.md) |
 
 ## Current proof of concept
@@ -100,6 +101,7 @@ The [documentation hub](docs/README.md) provides navigation across:
 - [Architecture decision records](docs/decisions/adr/README.md)
 - [Glossary](docs/reference/glossary.md)
 - [PASI official references](docs/reference/pasi-resources.md)
+- [Purview and FVSD governance-agent references](docs/reference/purview-resources.md)
 
 Documentation uses explicit status labels so current functionality, confirmed premises, proposals, and open questions do not become confused.
 
