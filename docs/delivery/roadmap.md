@@ -22,6 +22,7 @@
 - Define user roles, licensing, and security mapping.
 - Establish development, pilot, and production environment strategy.
 - Agree on February PoC acceptance criteria.
+- Confirm which current vendor/PowerSchool functions depend on PASI and identify Alberta Education onboarding contacts, without making the connector a dependency of the assessment-entry slice.
 
 ## November-December 2026: assessment vertical slice
 
@@ -70,3 +71,8 @@ Production use should be phased and reversible. A date does not override unmet r
 - Complete vendor export and workflow inventory.
 - Final role and access model.
 - Available staff for pilot, testing, migration, training, and support.
+- Alberta Education PASI onboarding, client-certificate registration, approved non-production access, and confirmed service scope before any PASI technical spike.
+
+## Parallel strategic PASI track
+
+The [PASI connector](../capabilities/pasi-connector/README.md) is a proposed parallel discovery track because it may materially strengthen the executive business case. It should progress through documentation and onboarding first. Connectivity, synchronization, or write spikes require separate authorization and must use an Alberta Education-approved non-production environment.

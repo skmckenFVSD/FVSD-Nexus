@@ -29,12 +29,14 @@ The documentation distinguishes four states:
 - [Assessment entry and scoring](capabilities/assessments/README.md)
 - [Individual Program Plans](capabilities/ipp/README.md)
 - [Intervention tracking](capabilities/interventions/README.md)
+- [PASI provincial connector](capabilities/pasi-connector/README.md)
 - [Platform administration](capabilities/administration/README.md)
 
 ## Architecture
 
 - [Architecture overview](architecture/overview.md)
 - [Data and integrations](architecture/data-and-integrations.md)
+- [PASI connector architecture](architecture/pasi-connector.md)
 - [Identity, licensing, and security](architecture/identity-licensing-security.md)
 - [Residency and platform options](architecture/residency-and-platform-options.md)
 
@@ -43,6 +45,11 @@ The documentation distinguishes four states:
 - [Proposed roadmap](delivery/roadmap.md)
 - [Full PoC definition](delivery/full-poc-definition.md)
 - [Testing strategy](delivery/testing-strategy.md)
+
+## Reference material
+
+- [Glossary](reference/glossary.md)
+- [PASI official reference index](reference/pasi-resources.md)
 
 ## Documentation principles
 

@@ -16,6 +16,11 @@
 | IPP | Individual Program Plan. |
 | Nexus experience role | A role used to adapt navigation and UX. It cannot grant destination-service permission. |
 | OneLake link | The established Dataverse-to-Fabric integration used to make operational data available analytically. |
+| PASI | Provincial Approach to Student Information, Alberta Education's provincial student-information services and contracts. |
+| PASI client certificate | A certificate registered with Alberta Education and used by a PASI client for system authentication. It is separate from a Nexus user's interactive Entra identity. |
+| `CallerInfo` | PASI request context that identifies the calling system/user context and the school, school authority, or organization represented for the service call. |
+| `PASICoreVersion` | PASI's optimistic-concurrency version used to detect stale updates and coordinate synchronization. |
+| Core Alert | A PASI business-status condition such as an error, warning, or advice that may require operational attention or acknowledgement. |
 | Period | Fall, Winter, or Spring. Summer is not an active assessment period. |
 | Power Apps Premium | Per-user Power Apps licence proposed as a fallback if pay-as-you-go metering is unsuitable. |
 | PR | Percentile Rank. |

@@ -8,6 +8,7 @@ FVSD Nexus is a custom user experience over FVSD's existing Microsoft data and i
 
 - [Overview](overview.md)
 - [Data and integrations](data-and-integrations.md)
+- [PASI connector](pasi-connector.md)
 - [Identity, licensing, and security](identity-licensing-security.md)
 - [Residency and platform options](residency-and-platform-options.md)
 

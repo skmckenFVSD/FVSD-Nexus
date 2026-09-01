@@ -11,6 +11,7 @@
 | Assessment scoring references | Dataverse reference tables | Query using derived assessment keys; do not duplicate reference data in React. |
 | Governed measures and analytical classifications | `FVSDAnalytics` semantic model | Query through predefined DAX endpoints. |
 | Application identity and user membership | Microsoft Entra ID | Authentication, group context, and licence lookup where required. |
+| Provincial student information | Alberta Education PASI | Proposed read, update, status, and synchronization operations through a dedicated FVSD connector; exact approved domains remain open. |
 
 ## Dataverse
 
@@ -77,3 +78,9 @@ Operational records must preserve sufficient scoring and context values to expla
 ## Future documentation
 
 This page should eventually link to a Dataverse table catalogue, relationship diagram, synchronization inventory, and semantic-model query catalogue. Those artifacts must not contain student records or credentials.
+
+## Proposed PASI integration
+
+An FVSD-owned PASI connector is documented as a strategic extension, not as part of the currently deployed PoC. The connector would commit the Nexus operation to Dataverse first, process provincial exchange asynchronously through a durable outbox/queue, and return acceptance, version, validation, alert, retry, or reconciliation status to Dataverse.
+
+The proposed design keeps the registered PASI client certificate in a server-side governed store, isolates generated provincial contracts behind an adapter, applies PASI optimistic-concurrency rules, and prevents student payloads from entering telemetry. See the [PASI capability](../capabilities/pasi-connector/README.md), [connector architecture](pasi-connector.md), and [official reference index](../reference/pasi-resources.md).

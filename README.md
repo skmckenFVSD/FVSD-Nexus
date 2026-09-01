@@ -26,6 +26,7 @@ FVSD Nexus is the proposed unified operational and analytics platform for Fort V
 | Assessment entry and scoring | Working Class Assignment and TOSREC history PoC | [Assessments](docs/capabilities/assessments/README.md) |
 | Individual Program Plans | Proposed; majority of data foundation exists | [IPP](docs/capabilities/ipp/README.md) |
 | Intervention tracking | Future definition required | [Interventions](docs/capabilities/interventions/README.md) |
+| PASI provincial connector | Proposed strategic differentiator; public technical feasibility established | [PASI connector](docs/capabilities/pasi-connector/README.md) |
 | Platform administration | Partially present | [Administration](docs/capabilities/administration/README.md) |
 
 ## Current proof of concept
@@ -73,6 +74,7 @@ ASP.NET Core backend-for-frontend
 
 PowerSchool -- existing synchronization --> Dataverse
 Dataverse  -- low-latency OneLake link --> Fabric --> FVSDAnalytics
+Dataverse  -- proposed durable connector --> Alberta Education PASI
 ```
 
 Core premises:
@@ -97,6 +99,7 @@ The [documentation hub](docs/README.md) provides navigation across:
 - [Decision register](docs/decisions/decision-register.md)
 - [Architecture decision records](docs/decisions/adr/README.md)
 - [Glossary](docs/reference/glossary.md)
+- [PASI official references](docs/reference/pasi-resources.md)
 
 Documentation uses explicit status labels so current functionality, confirmed premises, proposals, and open questions do not become confused.
 

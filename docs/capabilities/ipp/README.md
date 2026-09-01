@@ -52,8 +52,19 @@ The IPP capability would replace the current third-party user experience while r
 - Reproducing printable outputs relied upon by staff.
 - Support and product ownership after vendor retirement.
 
+## PASI relationship
+
+The proposed [PASI connector](../pasi-connector/README.md) could materially strengthen the case for replacing third-party IPP and related student-support tooling, but the boundaries must remain explicit:
+
+- Nexus IPP owns plan, goal, progress, review, approval, and export workflows.
+- PASI integration owns only provincially supported and FVSD-authorized exchanges.
+- Discovery must identify which current Intellimedia, Jigsaw, and PowerSchool functions depend on PASI.
+- No assumption has been made that an IPP document or every IPP field is submitted to PASI.
+- PASI connector tables and IPP tables should be designed only after the provincial operation and retention requirements are confirmed.
+
 ## Related documentation
 
 - [Profiles](../profiles/README.md)
 - [Data and integrations](../../architecture/data-and-integrations.md)
 - [Proposed roadmap](../../delivery/roadmap.md)
+- [PASI provincial connector](../pasi-connector/README.md)

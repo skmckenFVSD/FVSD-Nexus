@@ -64,6 +64,16 @@ At the end of February, Leadership should have evidence to decide:
 - Which capability gaps must be addressed before wider use.
 - Whether licensing, support, migration, and residency conditions remain acceptable.
 
+## Strategic PASI evidence
+
+The PASI connector is not required for the next TOSREC assessment-write slice and is not silently added to the committed full-PoC scope. Because it may materially affect Leadership's move-to-development decision, the repository now includes:
+
+- A documented [PASI capability and staged feasibility path](../capabilities/pasi-connector/README.md).
+- A proposed [connector architecture](../architecture/pasi-connector.md).
+- A curated [official Alberta Education reference index](../reference/pasi-resources.md).
+
+If Leadership authorizes a PASI technical spike and Alberta Education provides the required non-production onboarding, useful early evidence would be registered-certificate connectivity, one approved read/synchronization path, and one narrowly scoped write with concurrency and failure handling. That spike should be separately scoped and must not delay the immediate assessment-entry proof unless Leadership changes priorities.
+
 ## Not automatically implied
 
 Completing the PoC does not automatically authorize vendor retirement, production migration, or September deployment.
