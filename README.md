@@ -118,8 +118,6 @@ FVSD-Nexus/
 |-- infra/                      Azure Bicep infrastructure
 |-- scripts/                    Entra and environment configuration
 |-- .azure/                     Deployment plan; local azd state is ignored
-|-- FVSD Insights (Vibe Code Sample)/
-|                               Original exported prototype retained as reference
 `-- FVSDNexus.sln
 ```
 
