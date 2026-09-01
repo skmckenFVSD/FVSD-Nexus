@@ -1,6 +1,8 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using FVSDNexus.Api.Dataverse;
 using FVSDNexus.Api.DevelopmentRoles;
 using FVSDNexus.Api.SemanticModel;
+using FVSDNexus.Api.SessionContext;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
@@ -15,6 +17,11 @@ builder.Services.AddOptions<FabricSemanticModelOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services.AddOptions<DataverseOptions>()
+    .Bind(builder.Configuration.GetSection(DataverseOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddOptions<DevelopmentRoleOptions>()
     .Bind(builder.Configuration.GetSection(DevelopmentRoleOptions.SectionName))
     .ValidateDataAnnotations()
@@ -22,13 +29,41 @@ builder.Services.AddOptions<DevelopmentRoleOptions>()
     .ValidateOnStart();
 
 builder.Services.AddSingleton<IDevelopmentRoleService, DevelopmentRoleService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<SchoolYearSessionContext>();
 
 builder.Services
     .AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"))
+    // Entra authorization-code requests can target only one downstream resource.
+    // Dataverse is acquired at sign-in; already-consented Fabric access is acquired silently when needed.
     .EnableTokenAcquisitionToCallDownstreamApi(
-        [builder.Configuration["FabricSemanticModel:Scope"]!])
+        [
+            builder.Configuration["Dataverse:Scope"]!
+        ])
     .AddInMemoryTokenCaches();
+
+builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
+    .Configure<SchoolYearSessionContext>((options, schoolYears) =>
+    {
+        options.Events ??= new CookieAuthenticationEvents();
+        var existingOnSigningIn = options.Events.OnSigningIn;
+        var existingOnValidatePrincipal = options.Events.OnValidatePrincipal;
+        options.Events.OnSigningIn = async context =>
+        {
+            await existingOnSigningIn(context);
+            schoolYears.EnsureCurrentSchoolYearClaim(context.Principal);
+        };
+        options.Events.OnValidatePrincipal = async context =>
+        {
+            await existingOnValidatePrincipal(context);
+            if (context.Principal?.HasClaim(claim => claim.Type == SchoolYearSessionContext.ClaimType) == false)
+            {
+                schoolYears.EnsureCurrentSchoolYearClaim(context.Principal);
+                context.ShouldRenew = true;
+            }
+        };
+    });
 
 builder.Services.AddAuthorization(options =>
 {
@@ -42,11 +77,23 @@ builder.Services.AddHttpClient<IPowerBiSemanticModelClient, PowerBiSemanticModel
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient<IDataverseAccessContextClient, DataverseAccessContextClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+builder.Services.AddHttpClient<IDataverseAssessmentWorkspaceClient, DataverseAssessmentWorkspaceClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
 {
     builder.Services.AddOpenTelemetry()
         .UseAzureMonitor()
-        .WithTracing(tracing => tracing.AddSource(PowerBiSemanticModelClient.ActivitySourceName));
+        .WithTracing(tracing => tracing
+            .AddSource(PowerBiSemanticModelClient.ActivitySourceName)
+            .AddSource(DataverseAccessContextClient.ActivitySourceName));
 }
 
 builder.Services.AddProblemDetails();
@@ -57,6 +104,30 @@ var app = builder.Build();
 var postAuthenticationRedirect = builder.Configuration["Frontend:BaseUrl"] ?? "/";
 
 app.UseExceptionHandler();
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (MicrosoftIdentityWebChallengeUserException exception)
+        when (context.Request.Path.StartsWithSegments("/api"))
+    {
+        app.Logger.LogInformation(
+            "A fresh delegated sign-in is required for {Path}. Error code: {ErrorCode}",
+            context.Request.Path,
+            exception.MsalUiRequiredException?.ErrorCode);
+        context.Response.Clear();
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            type = "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+            title = "Your delegated Microsoft session needs to be reconnected.",
+            status = StatusCodes.Status401Unauthorized,
+            reauthorizeUrl = "/api/auth/signin"
+        });
+    }
+});
 if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
@@ -104,7 +175,10 @@ app.MapGet("/api/auth/signout", () => Results.SignOut(
     [CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme]))
     .AllowAnonymous();
 
-app.MapGet("/api/me", (HttpContext context, IDevelopmentRoleService developmentRoles) =>
+app.MapGet("/api/me", (
+    HttpContext context,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears) =>
 {
     var roleContext = developmentRoles.GetContext(context);
     return Results.Ok(new
@@ -116,8 +190,200 @@ app.MapGet("/api/me", (HttpContext context, IDevelopmentRoleService developmentR
         activeDevelopmentRole = roleContext.ActiveRole,
         availableDevelopmentRoles = roleContext.AvailableRoles,
         rlsIdentity = roleContext.RlsIdentity,
-        rlsEvaluation = roleContext.RlsEvaluation
+        rlsEvaluation = roleContext.RlsEvaluation,
+        currentSchoolYear = schoolYears.GetCurrentSchoolYear(context.User)
     });
+});
+
+app.MapGet("/api/dataverse/access-context", async (
+    HttpContext context,
+    IDataverseAccessContextClient dataverse,
+    CancellationToken cancellationToken) =>
+{
+    var email = GetUserEmail(context.User);
+    if (string.IsNullOrWhiteSpace(email))
+    {
+        return Results.Problem(
+            title: "The signed-in account does not contain an email address.",
+            statusCode: StatusCodes.Status400BadRequest);
+    }
+
+    var accessContext = await dataverse.GetAccessContextAsync(
+        email,
+        GetEntraObjectId(context.User),
+        cancellationToken);
+    return Results.Ok(accessContext);
+});
+
+app.MapGet("/api/assessments/context", async (
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null)
+    {
+        return Results.Problem(
+            title: "The signed-in account does not contain an email address.",
+            statusCode: StatusCodes.Status400BadRequest);
+    }
+
+    if (!accessContext.RoleRecordFound || !accessContext.PocEnabled || accessContext.EffectiveRole == "No Access")
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    var developmentContext = developmentRoles.GetContext(context);
+    var workspaceContext = await assessments.GetWorkspaceContextAsync(
+        accessContext,
+        developmentContext.ActiveRole,
+        developmentContext.IsDeveloper,
+        cancellationToken);
+    return Results.Ok(workspaceContext);
+});
+
+app.MapGet("/api/assessments/teacher-sections", async (
+    Guid schoolId,
+    string sectionGroup,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        var sections = await assessments.GetTeacherSectionsAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            schoolId,
+            sectionGroup,
+            cancellationToken);
+        return Results.Ok(sections);
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message });
+    }
+});
+
+app.MapGet("/api/assessments/section-groups", async (
+    Guid schoolId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        var sectionGroups = await assessments.GetSectionGroupsAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            schoolId,
+            cancellationToken);
+        return Results.Ok(sectionGroups);
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+});
+
+app.MapGet("/api/assessments/teacher-sections/{teacherSectionId:guid}/students", async (
+    Guid teacherSectionId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        var students = await assessments.GetStudentsAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            cancellationToken);
+        return Results.Ok(students);
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+});
+
+app.MapGet("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/history/tosrec", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        var history = await assessments.GetTosrecAssessmentsAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        return Results.Ok(history);
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
 });
 
 app.MapPost("/api/development/role", (
@@ -291,6 +557,33 @@ static string GetDisplayName(ClaimsPrincipal user)
     return !string.IsNullOrWhiteSpace(combinedName)
         ? combinedName
         : displayName ?? user.Identity?.Name ?? "FVSD user";
+}
+
+static string? GetUserEmail(ClaimsPrincipal user) =>
+    user.FindFirst("preferred_username")?.Value
+    ?? user.FindFirst("email")?.Value
+    ?? user.FindFirst(ClaimTypes.Email)?.Value;
+
+static Guid? GetEntraObjectId(ClaimsPrincipal user) =>
+    Guid.TryParse(user.FindFirst("oid")?.Value, out var objectId)
+        ? objectId
+        : null;
+
+static async Task<DataverseAccessContext?> GetDataverseAccessContextAsync(
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    CancellationToken cancellationToken)
+{
+    var email = GetUserEmail(context.User);
+    if (string.IsNullOrWhiteSpace(email))
+    {
+        return null;
+    }
+
+    return await accessContextClient.GetAccessContextAsync(
+        email,
+        GetEntraObjectId(context.User),
+        cancellationToken);
 }
 
 public partial class Program;

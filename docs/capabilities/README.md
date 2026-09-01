@@ -8,7 +8,7 @@ FVSD Nexus is expected to grow as a set of related capabilities built on common 
 |---|---|---|
 | Leadership analytics | Working PoC | [Leadership analytics](leadership-analytics/README.md) |
 | School and student profiles | Planned | [Profiles](profiles/README.md) |
-| Assessment entry and scoring | Proposed; existing Canvas and Dataverse foundation | [Assessments](assessments/README.md) |
+| Assessment entry and scoring | Locked and deployed Class Assignment/TOSREC history PoC | [Assessments](assessments/README.md) |
 | Individual Program Plans | Proposed; majority of Dataverse foundation exists | [IPP](ipp/README.md) |
 | Intervention tracking | Future definition required | [Interventions](interventions/README.md) |
 | Platform administration | Partially present; expansion required | [Administration](administration/README.md) |
@@ -24,6 +24,20 @@ Every capability should:
 - Apply authorization in the backend and destination service, not only in the interface.
 - Remain usable for staff who are only occasional Power BI or Power Apps users.
 - Meet accessibility and responsive-design expectations.
+
+## Navigation structure
+
+**Status:** Current shell pattern as of September 1, 2026
+
+The application shell groups pages beneath collapsible capability headings:
+
+- **Analytics:** all existing analytical destinations, including the Executive overview.
+- **Assessments:** contains the locked role-scoped Class Assignment workspace, student roster, and read-only TOSREC history; assessment forms and writes follow later.
+- **Individual Program Plans:** reserved for IPP workflows.
+- **Interventions:** reserved for future intervention workflows.
+- **Administration:** settings and future authorized administration pages.
+
+Analytics, Assessments, and Administration are initially expanded. The other capability groups can be expanded and currently explain that their pages will be added as the PoC progresses. Grouping and page visibility remain role-aware UX concerns; backend and destination-service authorization remain authoritative.
 
 ## Capability lifecycle
 

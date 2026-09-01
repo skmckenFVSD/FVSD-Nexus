@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Deployed — Locked Leadership PoC
+> **Status:** Deployed - Locked Class Assignment and TOSREC History PoC
 
 Generated: 2026-08-25
 
@@ -786,6 +786,40 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Exact frontend release | Production HTML asset inspection and HTTP request | Passed; production serves `assets/index-CPlMhe-R.js`, exactly matching the validated local bundle, with HTTP 200 |
 | Release fingerprints | Local SHA-256 | JavaScript `6717FD05177D0E13BED5ADEE9145C85A3BEAC18821438E1768EE4C2E346E91CD`; CSS `D44D0D8C20D1237C37E99915F465A7D548760F7948B41A1076F14C540434CE97` |
 | Entra sign-in challenge | `GET /api/auth/signin` without following redirects | HTTP 302 to the FVSD tenant using client `b9a8631e-8e03-4204-8d7e-a487bfe33b2f`, the production callback, and delegated `Dataset.Read.All` scope |
+| Key Vault reference | App Service configuration-reference API | `AzureAd__ClientSecret` reports `Resolved` through the system-assigned identity |
+| Live RBAC | App Service identity and vault-scoped role query | `Key Vault Secrets User` remains assigned to the App Service system identity at the application vault only |
+
+### Class Assignment and TOSREC History PoC Revalidation - 2026-09-01T11:10:08-06:00
+
+> **Release boundary:** This release locks the role-scoped Class Assignment, student-roster, authenticated school-year, and read-only TOSREC history slice. Assessment forms, scoring previews, Dataverse writes, and additional assessment-history adapters remain outside this deployment.
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Azure context | `azd version`, `azd auth login --check-status`, `azd env list`, `az account show` | Passed; interactive FVSD identity, existing `fvsd-insights-dev` environment, Pay-As-You-Go subscription `64b2bfe8-fb82-4105-991c-95a36ad469c5`, Canada Central |
+| Existing target | Resource-group state and `azd-service-name=web` inventory | Passed; resource group is Succeeded and exactly one App Service target exists |
+| Specialized/runtime checks | Aspire marker and Dockerfile scan | Passed; not Aspire and no Docker build context |
+| React build and dependency audit | `npm ci`, `npm audit --audit-level=high`, and `npm run build` | Passed; production bundle generated and zero vulnerabilities reported |
+| ASP.NET Core tests and dependency audit | `dotnet test FVSDNexus.sln --configuration Release` and `dotnet list ... --vulnerable --include-transitive` | Passed; 45 tests, zero failures, and no vulnerable packages reported |
+| Bicep compile/lint | `az bicep build --file infra/main.bicep --stdout` and `az bicep lint --file infra/main.bicep` | Passed without errors or warnings |
+| Static RBAC review | `infra/resources.bicep` role-assignment inspection | Passed; App Service system identity retains only Key Vault Secrets User on the application vault with `ServicePrincipal` principal type |
+| Azure policy review | `az policy assignment list` at subscription scope | Passed; only the existing Microsoft Defender for Cloud default assignment is present |
+| Provisioning preview | `azd provision --preview --no-prompt` | Passed; no resource creation or deletion; preview contains only FVSD Nexus tag reconciliation and existing App Service/monitoring property normalization |
+| Package validation | `azd package --no-prompt` | Passed; the Class Assignment workspace, authenticated school-year context, role-scoped Dataverse queries, student roster, and TOSREC history compiled into the Azure package |
+| Release fingerprints | Local SHA-256 | JavaScript `F4F26779B18121D1AB33A760329ECC13AFEE4A223831FA59005F6E23D23F6094`; CSS `7BFBD3D579FBE078DD5EFC23083E263471F062759568BB5309DB7F2A39229136` |
+
+### Class Assignment and TOSREC History PoC Deployment - 2026-09-01
+
+> **Release designation:** This deployed state is the locked PoC baseline for the Class Assignment and read-only TOSREC history experience. Further changes to this capability require a new explicitly approved release cycle.
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Infrastructure reconciliation | `azd provision --no-prompt` | Passed; the six existing Canada Central resources were reconciled successfully with no resource creation or deletion |
+| Application deployment | `azd deploy --no-prompt` | Passed; validated package deployed successfully to the existing App Service |
+| Endpoint inventory | `azd show` | Passed; `web` resolves to `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/` |
+| Production health | `GET /health` | HTTP 200 with `{"status":"healthy","service":"FVSD Nexus"}` |
+| Exact frontend release | Production HTML asset inspection and HTTP request | Passed; production serves `assets/index-BZSSeVlR.js`, exactly matching the validated local bundle |
+| Release fingerprint | Production SHA-256 | JavaScript `F4F26779B18121D1AB33A760329ECC13AFEE4A223831FA59005F6E23D23F6094` |
+| Entra sign-in challenge | `GET /api/auth/signin` without following redirects | HTTP 302 to `login.microsoftonline.com` |
 | Key Vault reference | App Service configuration-reference API | `AzureAd__ClientSecret` reports `Resolved` through the system-assigned identity |
 | Live RBAC | App Service identity and vault-scoped role query | `Key Vault Secrets User` remains assigned to the App Service system identity at the application vault only |
 

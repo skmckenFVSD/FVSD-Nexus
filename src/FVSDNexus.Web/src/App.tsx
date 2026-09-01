@@ -4,6 +4,7 @@ import {
   BookOpenText,
   Bot,
   CalendarDays,
+  ChevronDown,
   CircleAlert,
   CircleCheck,
   Database,
@@ -15,7 +16,9 @@ import {
   Settings,
   ShieldCheck,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { ExecutiveDashboard } from './ExecutiveDashboard'
+import { AssessmentWorkspace } from './AssessmentWorkspace'
 import fvsdAnalyticsAgentLogo from './assets/fvsd-analytics-agent.svg'
 
 type User = {
@@ -26,6 +29,7 @@ type User = {
   availableDevelopmentRoles: string[]
   rlsIdentity: string
   rlsEvaluation: string
+  currentSchoolYear: string
 }
 
 type RoleChangeResponse = {
@@ -73,15 +77,66 @@ const initialFilters: FilterState = {
   period: [],
 }
 
-const navItems = [
-  { label: 'Executive overview', icon: Home },
-  { label: 'School profile', icon: School },
-  { label: 'Student success', icon: GraduationCap },
-  { label: 'Attendance', icon: CalendarDays },
-  { label: 'Literacy', icon: BookOpenText },
-  { label: 'Intervention tracking', icon: LifeBuoy },
-  { label: 'Analytics assistant', icon: Bot },
-  { label: 'Settings', icon: Settings },
+type SidebarNavItem = {
+  id: 'executive' | 'assessments' | 'coming-soon'
+  label: string
+  icon: LucideIcon
+  isComingSoon?: boolean
+}
+
+type SidebarNavGroup = {
+  id: string
+  label: string
+  icon: LucideIcon
+  items: SidebarNavItem[]
+  emptyMessage?: string
+}
+
+const navGroups: SidebarNavGroup[] = [
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    icon: Activity,
+    items: [
+      { id: 'executive', label: 'Executive overview', icon: Home },
+      { id: 'coming-soon', label: 'School profile', icon: School, isComingSoon: true },
+      { id: 'coming-soon', label: 'Student success', icon: GraduationCap, isComingSoon: true },
+      { id: 'coming-soon', label: 'Attendance', icon: CalendarDays, isComingSoon: true },
+      { id: 'coming-soon', label: 'Literacy', icon: BookOpenText, isComingSoon: true },
+      { id: 'coming-soon', label: 'Intervention tracking', icon: LifeBuoy, isComingSoon: true },
+      { id: 'coming-soon', label: 'Analytics assistant', icon: Bot, isComingSoon: true },
+    ],
+  },
+  {
+    id: 'assessments',
+    label: 'Assessments',
+    icon: BookOpenText,
+    items: [
+      { id: 'assessments', label: 'Class Assignment', icon: BookOpenText },
+    ],
+  },
+  {
+    id: 'individual-program-plans',
+    label: 'Individual Program Plans',
+    icon: GraduationCap,
+    items: [],
+    emptyMessage: 'Capability pages will be added here.',
+  },
+  {
+    id: 'interventions',
+    label: 'Interventions',
+    icon: LifeBuoy,
+    items: [],
+    emptyMessage: 'Capability pages will be added here.',
+  },
+  {
+    id: 'administration',
+    label: 'Administration',
+    icon: Settings,
+    items: [
+      { id: 'coming-soon', label: 'Settings', icon: Settings, isComingSoon: true },
+    ],
+  },
 ]
 
 async function getJson<T>(url: string): Promise<T> {
@@ -91,6 +146,7 @@ async function getJson<T>(url: string): Promise<T> {
 }
 
 export function App() {
+  const [activePage, setActivePage] = useState<'executive' | 'assessments'>('executive')
   const [user, setUser] = useState<User | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [filterOptions, setFilterOptions] = useState<FilterOptions>(emptyFilterOptions)
@@ -99,6 +155,13 @@ export function App() {
   const [filtersReady, setFiltersReady] = useState(false)
   const [roleChanging, setRoleChanging] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>({
+    analytics: true,
+    assessments: true,
+    'individual-program-plans': false,
+    interventions: false,
+    administration: true,
+  })
 
   useEffect(() => {
     getJson<User>('/api/me')
@@ -195,12 +258,54 @@ export function App() {
         </div>
 
         <nav aria-label="Main navigation">
-          {navItems.map(({ label, icon: Icon }, index) => (
-            <button className={index === 0 ? 'nav-item active' : 'nav-item'} key={label} type="button">
-              <Icon size={17} /><span>{label}</span>
-              {index > 0 && <span className="soon">Soon</span>}
-            </button>
-          ))}
+          {navGroups.map(({ id, label, icon: GroupIcon, items, emptyMessage }) => {
+            const isExpanded = expandedNavGroups[id] ?? false
+            const panelId = `navigation-group-${id}`
+
+            return (
+              <div className="nav-group" key={id}>
+                <button
+                  className="nav-group-toggle"
+                  type="button"
+                  aria-expanded={isExpanded}
+                  aria-controls={panelId}
+                  onClick={() => setExpandedNavGroups((current) => ({ ...current, [id]: !isExpanded }))}
+                >
+                  <GroupIcon className="nav-group-icon" size={16} aria-hidden="true" />
+                  <span className="nav-group-label">{label}</span>
+                  <ChevronDown
+                    className={isExpanded ? 'nav-group-chevron expanded' : 'nav-group-chevron'}
+                    size={15}
+                    aria-hidden="true"
+                  />
+                </button>
+                {isExpanded ? (
+                  <div className="nav-group-items" id={panelId}>
+                    {items.map(({ id: itemId, label: itemLabel, icon: Icon, isComingSoon }) => {
+                      const isActive = itemId === activePage
+                      return (
+                      <button
+                        className={isActive ? 'nav-item active' : 'nav-item'}
+                        key={itemLabel}
+                        type="button"
+                        aria-current={isActive ? 'page' : undefined}
+                        disabled={itemId === 'coming-soon'}
+                        onClick={() => {
+                          if (itemId === 'executive' || itemId === 'assessments') setActivePage(itemId)
+                        }}
+                      >
+                        <Icon size={17} aria-hidden="true" />
+                        <span>{itemLabel}</span>
+                        {isComingSoon ? <span className="soon">Soon</span> : null}
+                      </button>
+                      )
+                    })}
+                    {items.length === 0 && emptyMessage ? <span className="nav-group-empty">{emptyMessage}</span> : null}
+                  </div>
+                ) : null}
+              </div>
+            )
+          })}
         </nav>
 
         {user ? (
@@ -226,12 +331,16 @@ export function App() {
         </div>
       </aside>
 
-      <main>
+      <main className={activePage === 'assessments' ? 'assessment-page' : undefined}>
         <header className="page-header">
           <div>
-            <span className="eyebrow">{user?.activeDevelopmentRole ? `${user.activeDevelopmentRole} development view` : 'FVSD leadership'}</span>
-            <h1>Executive Dashboard</h1>
-            <p>Move from district-level achievement signals to the schools and periods that need attention.</p>
+            <span className="eyebrow">{activePage === 'executive'
+              ? (user?.activeDevelopmentRole ? `${user.activeDevelopmentRole} development view` : 'FVSD leadership')
+              : 'Assessment data entry · proof of concept'}</span>
+            <h1>{activePage === 'executive' ? 'Executive Dashboard' : 'Class Assignment'}</h1>
+            <p>{activePage === 'executive'
+              ? 'Move from district-level achievement signals to the schools and periods that need attention.'
+              : 'Find a teacher section, load its assigned students, and prepare for governed assessment entry.'}</p>
           </div>
           {user ? (
             <div className="header-actions">
@@ -255,7 +364,7 @@ export function App() {
             <a className="primary-button" href="/api/auth/signin"><LogIn size={18} /> Sign in with Microsoft</a>
           </section>
         ) : (
-          <>
+          activePage === 'executive' ? <>
             <section className="filter-panel">
               <div className="filter-panel-heading">
                 <div className="filter-title"><Activity size={17} /><strong>Analysis context</strong></div>
@@ -302,7 +411,12 @@ export function App() {
             {filtersReady
               ? <ExecutiveDashboard filters={filters} />
               : <div className="loading-panel">Loading governed filters…</div>}
-          </>
+          </> : (
+            <AssessmentWorkspace
+              currentSchoolYear={user.currentSchoolYear}
+              key={user.activeDevelopmentRole ?? 'assessment-workspace'}
+            />
+          )
         )}
       </main>
     </div>

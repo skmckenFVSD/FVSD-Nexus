@@ -2,7 +2,7 @@
 
 FVSD Nexus is the proposed unified operational and analytics platform for Fort Vermilion School Division. It is intended to help staff move from governed evidence to action through a purpose-built, role-aware experience.
 
-> **Status - August 31, 2026:** The Leadership Analytics proof of concept is complete and deployed for Leadership discussion. Assessment entry, IPP, and the broader operational platform remain proposed until formally authorized.
+> **Status - September 1, 2026:** Leadership Analytics and the initial Class Assignment/TOSREC history vertical slice are locked PoC releases. Assessment data-entry forms and Dataverse writes, IPP, and the broader operational platform remain future phases until formally authorized.
 
 ## At a glance
 
@@ -23,14 +23,14 @@ FVSD Nexus is the proposed unified operational and analytics platform for Fort V
 |---|---|---|
 | Leadership analytics | Working PoC | [Leadership analytics](docs/capabilities/leadership-analytics/README.md) |
 | School and student profiles | Planned | [Profiles](docs/capabilities/profiles/README.md) |
-| Assessment entry and scoring | Proposed; stable existing foundation | [Assessments](docs/capabilities/assessments/README.md) |
+| Assessment entry and scoring | Working Class Assignment and TOSREC history PoC | [Assessments](docs/capabilities/assessments/README.md) |
 | Individual Program Plans | Proposed; majority of data foundation exists | [IPP](docs/capabilities/ipp/README.md) |
 | Intervention tracking | Future definition required | [Interventions](docs/capabilities/interventions/README.md) |
 | Platform administration | Partially present | [Administration](docs/capabilities/administration/README.md) |
 
 ## Current proof of concept
 
-The first Nexus vertical slice was developed as **FVSD Insights**. It proves that the application can:
+The Nexus PoC now contains two connected vertical slices. The first was developed as **FVSD Insights** and proves that the application can:
 
 - Authenticate an FVSD user with Microsoft Entra ID.
 - Query Fabric using the signed-in user's delegated identity.
@@ -39,6 +39,18 @@ The first Nexus vertical slice was developed as **FVSD Insights**. It proves tha
 - Present governed measures without embedding a Power BI report.
 - Provide responsive, task-oriented filters, signals, matrices, and charts.
 - Adapt the experience by role while retaining the real service identity.
+
+The second slice begins the operational assessment experience and proves that the application can:
+
+- Establish the signed-in user's Dataverse role, permitted schools, default school, and teacher boundary.
+- Cascade School, Section Group, Course, Teacher, and Student selections without loading class assignments prematurely.
+- Return authorized teacher sections and assigned student rosters from the existing Dataverse structures.
+- Establish a stable Edmonton-time school-year context for the authenticated session.
+- Load a selected student's TOSREC history with Current Year and Previous Years views.
+- Present the governed descriptive term and its existing Dataverse colours alongside school year, period, and standard score.
+- Enforce section/student scope on the server and request a fresh delegated Microsoft session when token acquisition requires user interaction.
+
+This locked slice is read-only. Assessment forms, scoring previews, record creation, record updates, and historical correction workflows are intentionally deferred.
 
 Current PoC endpoint:
 
@@ -141,7 +153,7 @@ npm run build --prefix .\src\FVSDNexus.Web
 dotnet publish .\src\FVSDNexus.Api\FVSDNexus.Api.csproj --configuration Release
 ```
 
-At repository migration, all 23 backend tests pass, the React production build succeeds, npm reports no vulnerabilities in the active web project, and ASP.NET publish bundles the web application successfully.
+For the September 1 Class Assignment/TOSREC history release, all 45 backend tests pass, the React production build succeeds, dependency audits report no known high-severity vulnerabilities, and ASP.NET publish bundles the web application successfully.
 
 ## Deployment
 
