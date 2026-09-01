@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en-CA" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>FVSD Nexus: From Evidence to Action</title>
+<meta name="description" content="How one rural Alberta school division built governed, role-aware software on Microsoft Fabric, Dataverse and Power Platform, and what it taught us about trust.">
+<meta name="author" content="Scott Mckenzie">
+
+<!-- Social preview. Replace YOUR-PAGES-URL with your GitHub Pages address, e.g.
+     https://scottmckenzie.github.io/fvsd-nexus  (no trailing slash) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Fort Vermilion School Division">
+<meta property="og:title" content="FVSD Nexus: From Evidence to Action">
+<meta property="og:description" content="How one rural Alberta school division built governed, role-aware software on Microsoft Fabric, Dataverse and Power Platform, and what it taught us about trust.">
+<meta property="og:url" content="YOUR-PAGES-URL/">
+<meta property="og:image" content="YOUR-PAGES-URL/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="FVSD Nexus: From Evidence to Action. Scott Mckenzie, Chief Technology Officer.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FVSD Nexus: From Evidence to Action">
+<meta name="twitter:description" content="Governed, role-aware software on Microsoft Fabric, Dataverse and Power Platform, and what it taught us about trust.">
+<meta name="twitter:image" content="YOUR-PAGES-URL/social-card.png">
+<style>
+:root{
+  --navy:#071940;
+  --navy-deep:#04102b;
+  --teal:#1F4E79;
+  --cyan:#4A90E2;
+  --cyan-bright:#6FB1F5;
+  --mint:#B8E986;
+  --amber:#F5A623;
+  --red:#D0021B;
+  --ink:#F4F7FC;
+  --ink-soft:#B9C6DC;
+  --ink-faint:#7B92AA;
+  --rule:rgba(122,150,190,.22);
+  --panel:rgba(255,255,255,.045);
+  --panel-2:rgba(255,255,255,.075);
+  --sidebar-w:288px;
+  --font:"Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0;padding:0}
+body{
+  background:var(--navy-deep);
+  color:var(--ink);
+  font-family:var(--font);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------------------------------------------------------------- sidebar */
+#sidebar{
+  position:fixed;inset-block:0;inset-inline-start:0;
+  inline-size:var(--sidebar-w);
+  background:linear-gradient(180deg,#061634 0%,#04102b 100%);
+  border-inline-end:1px solid var(--rule);
+  display:flex;flex-direction:column;
+  z-index:60;
+  transition:transform .42s var(--ease);
+}
+body.nav-hidden #sidebar{transform:translateX(calc(-1 * var(--sidebar-w)))}
+.sb-head{
+  padding:26px 22px 18px;
+  border-block-end:1px solid var(--rule);
+}
+.sb-mark{display:flex;align-items:center;gap:11px}
+.sb-dot{
+  inline-size:34px;block-size:34px;border-radius:9px;flex:none;
+  background:linear-gradient(135deg,var(--cyan) 0%,var(--teal) 60%,var(--navy) 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.14),0 6px 18px rgba(74,144,226,.3);
+  position:relative;
+}
+.sb-dot::after{
+  content:"";position:absolute;inset:9px 9px auto auto;
+  inline-size:8px;block-size:8px;border-radius:50%;background:var(--mint);
+}
+.sb-name{font-size:16px;font-weight:700;letter-spacing:.2px}
+.sb-sub{font-size:10.5px;color:var(--ink-faint);letter-spacing:1.3px;text-transform:uppercase;margin-block-start:2px}
+.sb-scroll{flex:1;overflow-y:auto;padding:12px 0 18px;scrollbar-width:thin}
+.sb-scroll::-webkit-scrollbar{inline-size:6px}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+.sb-group{
+  padding:16px 22px 7px;font-size:9.5px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--ink-faint);font-weight:700;
+}
+.sb-item{
+  display:flex;align-items:center;gap:11px;
+  padding:8px 22px;inline-size:100%;
+  background:none;border:0;cursor:pointer;
+  color:var(--ink-soft);font-family:inherit;font-size:13px;text-align:start;
+  border-inline-start:2px solid transparent;
+  transition:color .18s,background .18s,border-color .18s;
+}
+.sb-item:hover{color:var(--ink);background:var(--panel)}
+.sb-item:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+.sb-item[aria-current="true"]{
+  color:#fff;background:linear-gradient(90deg,rgba(74,144,226,.19),transparent);
+  border-inline-start-color:var(--cyan);font-weight:600;
+}
+.sb-num{
+  font-size:10px;color:var(--ink-faint);min-inline-size:17px;
+  font-variant-numeric:tabular-nums;flex:none;
+}
+.sb-item[aria-current="true"] .sb-num{color:var(--cyan-bright)}
+.sb-foot{
+  padding:13px 22px;border-block-start:1px solid var(--rule);
+  font-size:10.5px;color:var(--ink-faint);line-height:1.65;
+}
+.sb-foot kbd{
+  background:var(--panel-2);border:1px solid var(--rule);border-radius:4px;
+  padding:1px 5px;font-family:inherit;font-size:9.5px;color:var(--ink-soft);
+}
+
+/* ------------------------------------------------------------------ stage */
+#stage{
+  position:fixed;inset-block:0;
+  inset-inline-start:var(--sidebar-w);inset-inline-end:0;
+  transition:inset-inline-start .42s var(--ease);
+}
+body.nav-hidden #stage{inset-inline-start:0}
+
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;
+  justify-content:safe center;
+  padding:clamp(38px,5.2vw,86px) clamp(38px,6vw,104px);
+  opacity:0;visibility:hidden;
+  transform:translateX(60px);
+  transition:opacity .5s var(--ease),transform .5s var(--ease),visibility 0s .5s;
+  overflow:auto;
+}
+.slide.is-current{
+  opacity:1;visibility:visible;transform:none;
+  transition:opacity .5s var(--ease),transform .5s var(--ease),visibility 0s 0s;
+}
+.slide.is-past{transform:translateX(-60px)}
+
+/* stagger children of the live slide */
+.slide.is-current > *{animation:rise .52s var(--ease) both}
+.slide.is-current > *:nth-child(1){animation-delay:.05s}
+.slide.is-current > *:nth-child(2){animation-delay:.11s}
+.slide.is-current > *:nth-child(3){animation-delay:.17s}
+.slide.is-current > *:nth-child(4){animation-delay:.23s}
+.slide.is-current > *:nth-child(5){animation-delay:.29s}
+.slide.is-current > *:nth-child(6){animation-delay:.35s}
+@keyframes rise{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:none}}
+
+/* ---------------------------------------------------------------- typography */
+.eyebrow{
+  font-size:11px;letter-spacing:2.6px;text-transform:uppercase;
+  color:var(--cyan-bright);font-weight:700;margin:0 0 18px;
+  display:flex;align-items:center;gap:11px;
+}
+.eyebrow::after{content:"";block-size:1px;flex:1;background:linear-gradient(90deg,var(--rule),transparent);max-inline-size:200px}
+h1{font-size:clamp(38px,5.4vw,74px);line-height:1.03;margin:0 0 22px;font-weight:800;letter-spacing:-1.4px}
+h2{font-size:clamp(28px,3.5vw,47px);line-height:1.12;margin:0 0 22px;font-weight:750;letter-spacing:-.9px}
+h3{font-size:clamp(17px,1.75vw,22px);margin:0 0 9px;font-weight:700;letter-spacing:-.2px}
+p{font-size:clamp(15px,1.42vw,19.5px);line-height:1.62;color:var(--ink-soft);margin:0 0 15px;max-inline-size:60ch}
+.lead{font-size:clamp(17px,1.75vw,24px);color:var(--ink);line-height:1.5;max-inline-size:52ch}
+strong{color:#fff;font-weight:650}
+.accent{color:var(--cyan-bright)}
+.mint{color:var(--mint)}
+.amber{color:var(--amber)}
+
+/* ------------------------------------------------------------------ title */
+.slide.title{align-items:flex-start;background:radial-gradient(1100px 620px at 78% 12%,rgba(31,78,121,.42),transparent 62%)}
+.title h1{max-inline-size:16ch}
+.title .rule{inline-size:82px;block-size:4px;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--mint));margin:0 0 26px}
+.byline{margin-block-start:34px;padding-block-start:22px;border-block-start:1px solid var(--rule);font-size:14.5px;color:var(--ink-soft)}
+.byline b{color:#fff;display:block;font-size:16.5px;margin-block-end:3px;font-weight:650}
+
+/* ------------------------------------------------------------------ layout */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:clamp(14px,1.5vw,24px);margin-block-start:8px}
+.cols.two{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.card{
+  background:var(--panel);border:1px solid var(--rule);border-radius:14px;
+  padding:clamp(17px,1.7vw,25px);
+  transition:transform .28s var(--ease),border-color .28s,background .28s;
+}
+.card:hover{transform:translateY(-3px);border-color:rgba(74,144,226,.5);background:var(--panel-2)}
+.card p{font-size:14.5px;margin:0;line-height:1.58}
+.card .k{
+  font-size:10px;letter-spacing:1.7px;text-transform:uppercase;
+  color:var(--cyan-bright);font-weight:700;margin-block-end:9px;
+}
+.card.mint-edge{border-block-start:3px solid var(--mint)}
+.card.cyan-edge{border-block-start:3px solid var(--cyan)}
+.card.amber-edge{border-block-start:3px solid var(--amber)}
+
+/* truth cards */
+.truth{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:18px;margin-block-start:10px}
+.truth .card{position:relative;padding-block-start:26px}
+.truth .q{font-size:13px;color:var(--ink-faint);margin-block-end:11px;line-height:1.45;min-block-size:2.9em}
+.truth .a{font-size:clamp(18px,1.9vw,25px);font-weight:750;color:#fff;line-height:1.2;margin-block-end:11px;letter-spacing:-.4px}
+.truth .d{font-size:13px;color:var(--ink-soft);line-height:1.55;margin:0}
+.badge{
+  position:absolute;inset-block-start:-11px;inset-inline-start:22px;
+  font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;font-weight:750;
+  padding:4px 11px;border-radius:99px;color:#04102b;
+}
+.b-record{background:var(--cyan)}
+.b-calc{background:var(--mint)}
+.b-id{background:var(--amber)}
+
+/* catalogue strip: deliberately NOT a fourth truth card */
+.catalog{
+  margin-block-start:20px;
+  display:flex;align-items:flex-start;gap:16px;
+  padding:17px 22px;border-radius:13px;
+  background:linear-gradient(90deg,rgba(122,150,190,.12),rgba(122,150,190,.03));
+  border:1px dashed rgba(122,150,190,.4);
+}
+.catalog .ctag{
+  flex:none;font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;
+  font-weight:750;color:var(--ink-faint);border:1px solid var(--rule);
+  padding:5px 11px;border-radius:99px;margin-block-start:2px;white-space:nowrap;
+}
+.catalog p{margin:0;font-size:14.5px;line-height:1.55;max-inline-size:none}
+.catalog b{color:#fff;font-weight:650}
+
+/* lists */
+ul.clean{list-style:none;padding:0;margin:6px 0 0}
+ul.clean li{
+  position:relative;padding-inline-start:29px;margin-block-end:15px;
+  font-size:clamp(14.5px,1.35vw,18px);line-height:1.58;color:var(--ink-soft);
+  max-inline-size:62ch;
+}
+ul.clean li::before{
+  content:"";position:absolute;inset-inline-start:2px;inset-block-start:.62em;
+  inline-size:8px;block-size:8px;border-radius:2px;
+  background:linear-gradient(135deg,var(--cyan),var(--teal));
+}
+ul.clean.mint li::before{background:linear-gradient(135deg,var(--mint),#7cc94a)}
+
+/* stat row */
+.stats{display:flex;flex-wrap:wrap;gap:clamp(20px,3.4vw,58px);margin-block-start:16px}
+.stat .v{font-size:clamp(34px,4.4vw,60px);font-weight:800;line-height:1;letter-spacing:-1.8px;
+  background:linear-gradient(135deg,#fff,var(--cyan-bright));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat .l{font-size:12.5px;color:var(--ink-faint);margin-block-start:9px;max-inline-size:19ch;line-height:1.45}
+
+/* quote */
+.pull{
+  border-inline-start:4px solid var(--cyan);padding:6px 0 6px 26px;margin:6px 0 0;
+  font-size:clamp(20px,2.5vw,33px);line-height:1.34;color:#fff;font-weight:600;
+  letter-spacing:-.5px;max-inline-size:22ch;
+}
+.slide.statement{background:radial-gradient(880px 520px at 50% 50%,rgba(31,78,121,.34),transparent 66%);align-items:center;text-align:center}
+.slide.statement .pull{border:0;padding:0;text-align:center;max-inline-size:20ch;font-size:clamp(26px,4vw,54px);font-weight:750;line-height:1.18}
+.slide.statement .attrib{margin-block-start:26px;font-size:13px;letter-spacing:2.2px;text-transform:uppercase;color:var(--ink-faint)}
+
+/* flow */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:11px;margin-block-start:14px}
+.flow .step{
+  flex:1 1 158px;background:var(--panel);border:1px solid var(--rule);
+  border-radius:12px;padding:16px 17px;position:relative;
+}
+.flow .step .n{font-size:10px;color:var(--cyan-bright);font-weight:750;letter-spacing:1.4px;margin-block-end:7px}
+.flow .step h3{font-size:15px;margin-block-end:5px}
+.flow .step p{font-size:12.5px;margin:0;line-height:1.5}
+
+/* timeline */
+.tl{margin-block-start:12px;border-inline-start:2px solid var(--rule);padding-inline-start:26px}
+.tl .ev{position:relative;padding-block-end:20px}
+.tl .ev:last-child{padding-block-end:0}
+.tl .ev::before{
+  content:"";position:absolute;inset-inline-start:-33px;inset-block-start:5px;
+  inline-size:11px;block-size:11px;border-radius:50%;
+  background:var(--navy-deep);border:2px solid var(--cyan);
+}
+.tl .ev.done::before{background:var(--mint);border-color:var(--mint)}
+.tl .when{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan-bright);font-weight:700}
+.tl .what{font-size:15.5px;color:var(--ink);margin-block-start:4px;line-height:1.5;max-inline-size:58ch}
+
+/* status pills */
+.pill{
+  display:inline-block;font-size:10px;letter-spacing:1.3px;text-transform:uppercase;
+  font-weight:750;padding:3px 10px;border-radius:99px;margin-inline-end:7px;
+}
+.p-live{background:rgba(184,233,134,.17);color:var(--mint);border:1px solid rgba(184,233,134,.42)}
+.p-next{background:rgba(74,144,226,.17);color:var(--cyan-bright);border:1px solid rgba(74,144,226,.42)}
+.p-prop{background:rgba(245,166,35,.15);color:var(--amber);border:1px solid rgba(245,166,35,.4)}
+
+/* capability table */
+.captable{margin-block-start:10px;inline-size:100%;border-collapse:collapse;font-size:14px}
+.captable th{
+  text-align:start;padding:9px 14px;font-size:10px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--ink-faint);border-block-end:1px solid var(--rule);font-weight:700;
+}
+.captable td{padding:11px 14px;border-block-end:1px solid rgba(122,150,190,.11);color:var(--ink-soft);line-height:1.45}
+.captable td:first-child{color:#fff;font-weight:600}
+.captable tr:last-child td{border-block-end:0}
+
+/* ------------------------------------------------------------------ chrome */
+#bar{
+  position:fixed;inset-block-end:0;inset-inline:0;block-size:3px;
+  background:rgba(255,255,255,.07);z-index:70;
+}
+#bar span{
+  display:block;block-size:100%;inline-size:0;
+  background:linear-gradient(90deg,var(--teal),var(--cyan),var(--mint));
+  transition:inline-size .45s var(--ease);
+}
+#hud{
+  position:fixed;inset-block-end:20px;inset-inline-end:26px;
+  display:flex;align-items:center;gap:8px;z-index:70;
+}
+.btn{
+  inline-size:36px;block-size:36px;border-radius:9px;
+  background:var(--panel);border:1px solid var(--rule);color:var(--ink-soft);
+  cursor:pointer;font-size:15px;line-height:1;display:grid;place-items:center;
+  transition:background .2s,color .2s,border-color .2s,transform .2s;
+  font-family:inherit;padding:0;
+}
+.btn:hover{background:var(--panel-2);color:#fff;border-color:rgba(74,144,226,.55);transform:translateY(-2px)}
+.btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.btn:disabled{opacity:.3;cursor:default;transform:none}
+#count{
+  font-size:12px;color:var(--ink-faint);font-variant-numeric:tabular-nums;
+  padding-inline:11px;min-inline-size:62px;text-align:center;letter-spacing:.5px;
+}
+#count b{color:#fff;font-weight:650}
+
+/* ---------------------------------------------------------------- overview */
+#grid{
+  position:fixed;inset:0;z-index:90;background:rgba(4,16,43,.975);
+  padding:38px;overflow-y:auto;display:none;
+}
+body.grid-on #grid{display:block}
+#grid h2{font-size:20px;margin:0 0 20px;color:var(--ink-soft);font-weight:600;letter-spacing:0}
+.gwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(216px,1fr));gap:15px}
+.gcard{
+  background:var(--panel);border:1px solid var(--rule);border-radius:11px;
+  padding:15px;cursor:pointer;text-align:start;color:var(--ink-soft);
+  font-family:inherit;transition:transform .22s var(--ease),border-color .22s,background .22s;
+  min-block-size:96px;display:flex;flex-direction:column;gap:7px;
+}
+.gcard:hover{transform:translateY(-3px);border-color:var(--cyan);background:var(--panel-2)}
+.gcard:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.gcard .gn{font-size:10px;color:var(--cyan-bright);font-weight:750;letter-spacing:1.3px}
+.gcard .gt{font-size:13.5px;color:#fff;line-height:1.38;font-weight:600}
+.gcard[aria-current="true"]{border-color:var(--mint);background:rgba(184,233,134,.09)}
+
+/* ------------------------------------------------------------------- print */
+@page{size:letter landscape;margin:12mm}
+@media print{
+  body{overflow:visible;background:#fff;color:#111}
+  #sidebar,#hud,#bar,#grid{display:none!important}
+  #stage{position:static;inset:auto}
+  .slide{
+    position:relative;inset:auto;opacity:1!important;visibility:visible!important;
+    transform:none!important;page-break-after:always;break-after:page;
+    break-inside:avoid;min-block-size:auto;block-size:auto;padding:0 0 22px;
+  }
+  .slide:last-child{page-break-after:auto;break-after:auto}
+  .slide.is-current > *{animation:none!important}
+  h1,h2,h3,.truth .a,strong,b{color:#071940!important}
+  p,li,.card p,.truth .d,.catalog p{color:#333!important}
+  .lead{color:#111!important}
+  /* gradient-clipped text has no background in print: restore a solid colour */
+  .stat .v{
+    background:none!important;color:#071940!important;
+    -webkit-text-fill-color:#071940!important;
+  }
+  /* light-on-dark accents are illegible on paper: darken them */
+  .eyebrow,.card .k,.tl .when,.flow .step .n,.accent,.sb-num{color:#00607a!important}
+  .mint,.amber{color:#0B5D3B!important}
+  .truth .q,.stat .l,.attrib{color:#555!important}
+  .eyebrow::after{background:#ccc!important}
+  .card,.gcard,.flow .step,.catalog{
+    border-color:#bbb!important;background:none!important;
+  }
+  .card.mint-edge{border-block-start:3px solid #0B5D3B!important}
+  .card.cyan-edge{border-block-start:3px solid #0097BC!important}
+  .card.amber-edge{border-block-start:3px solid #B26A00!important}
+  .pull{border-inline-start-color:#0097BC!important;color:#071940!important}
+  .title .rule{background:#0097BC!important}
+  .tl{border-inline-start-color:#bbb!important}
+  .tl .ev::before{background:#fff!important;border-color:#0097BC!important}
+  .captable th{color:#555!important;border-block-end-color:#bbb!important}
+  .captable td{border-block-end-color:#e0e0e0!important}
+  /* keep colour-coded chips meaningful on paper */
+  .badge,.pill{
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+    border:1px solid #999!important;
+  }
+  .badge{color:#071940!important;background:none!important}
+  .p-live{color:#0B5D3B!important;background:none!important}
+  .p-next{color:#00607a!important;background:none!important}
+  .p-prop{color:#8a4b00!important;background:none!important}
+  .slide.title,.slide.statement{background:none!important}
+}
+@media (prefers-reduced-motion:reduce){
+  .slide,.slide.is-current > *,#bar span,#sidebar,#stage{transition-duration:.01ms!important;animation:none!important}
+}
+@media (max-width:900px){
+  :root{--sidebar-w:0px}
+  #sidebar{transform:translateX(-288px);inline-size:288px}
+  body.nav-open #sidebar{transform:none}
+  #stage{inset-inline-start:0}
+}
+</style>
+</head>
+<body>
+
+<nav id="sidebar" aria-label="Presentation contents">
+  <div class="sb-head">
+    <div class="sb-mark">
+      <div class="sb-dot" aria-hidden="true"></div>
+      <div>
+        <div class="sb-name">FVSD Nexus</div>
+        <div class="sb-sub">Evidence to Action</div>
+      </div>
+    </div>
+  </div>
+  <div class="sb-scroll" id="sbList"></div>
+  <div class="sb-foot">
+    <kbd>←</kbd> <kbd>→</kbd> navigate &nbsp;·&nbsp; <kbd>Esc</kbd> overview<br>
+    <kbd>F</kbd> fullscreen &nbsp;·&nbsp; <kbd>N</kbd> hide menu
+  </div>
+</nav>
+
+<main id="stage">
+
+  <section class="slide title" data-title="Title" data-group="Opening">
+    <div class="rule"></div>
+    <h1>From Evidence to Action</h1>
+    <p class="lead">How one rural Alberta division is building governed, role-aware software on Fabric, Dataverse and Power Platform, and what it taught us about trust.</p>
+    <div class="byline">
+      <b>Scott Mckenzie</b>
+      Chief Technology Officer · Fort Vermilion School Division<br>
+      <span class="accent">CDAO Canada</span> &nbsp;·&nbsp; <span class="accent">Microsoft Power Platform &amp; Fabric Community Events</span>
+    </div>
+  </section>
+
+  <section class="slide statement" data-title="Who owns this number?" data-group="Opening">
+    <p class="pull">Every organisation believes its measures are aligned. Usually that alignment is an illusion created by repetition.</p>
+    <div class="attrib">The problem we set out to solve</div>
+  </section>
+
+  <section class="slide" data-title="The measure illusion" data-group="The Problem">
+    <p class="eyebrow">Where trust breaks</p>
+    <h2>Familiarity replaces understanding.<br>Recognition replaces trust.</h2>
+    <div class="cols">
+      <div class="card cyan-edge"><div class="k">The gap</div><p>Definition lives in one place. Logic lives in another. Interpretation lives somewhere in between.</p></div>
+      <div class="card cyan-edge"><div class="k">The consequence</div><p>The number gets used long before anyone takes responsibility for it. Ownership is implied, so accountability becomes optional.</p></div>
+      <div class="card cyan-edge"><div class="k">The real question</div><p>Not <em>“is the dataset governed?”</em> but <strong>“is the measure understood?”</strong></p></div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="A teacher's Tuesday" data-group="The Problem">
+    <p class="eyebrow">The daily reality</p>
+    <h2>The connective tissue between our systems is a person</h2>
+    <p class="lead">A learning support teacher preparing for one meeting needs screening scores from one system, enrolment context from another, the current plan from a vendor product, and progress notes from wherever they were last written down.</p>
+    <ul class="clean">
+      <li><strong>Time.</strong> The same information re-entered and re-checked in more than one place.</li>
+      <li><strong>Confidence.</strong> When two systems disagree, staff hesitate, and hesitation delays a response to a student.</li>
+      <li><strong>Dependency.</strong> When a workflow lives only inside a vendor product, improvement moves at the vendor's pace and price.</li>
+    </ul>
+  </section>
+
+  <section class="slide" data-title="Three sources of truth" data-group="The Architecture">
+    <p class="eyebrow">The rule everything else hangs from</p>
+    <h2>Three questions. Three permanent answers.</h2>
+    <div class="truth">
+      <div class="card">
+        <span class="badge b-record">Record</span>
+        <div class="q">Where is the record created and managed?</div>
+        <div class="a">Dataverse</div>
+        <p class="d">Assessments, program plans, reference data, workflow state and the audit history of who changed what, and when.</p>
+      </div>
+      <div class="card">
+        <span class="badge b-calc">Calculation</span>
+        <div class="q">How is a number calculated?</div>
+        <div class="a">The semantic model</div>
+        <p class="d">Every measure, trend and classification is defined once. No application recalculates it independently.</p>
+      </div>
+      <div class="card">
+        <span class="badge b-id">Identity</span>
+        <div class="q">Who is this person, and what may they use?</div>
+        <div class="a">Entra</div>
+        <p class="d">Identity, licence entitlement, department and location: the organisational facts about staff.</p>
+      </div>
+    </div>
+    <div class="catalog">
+      <span class="ctag">Purview · the catalogue</span>
+      <p><b>Not a fourth source of truth, and that distinction is the point.</b> Purview holds none of the record, the calculation or the identity. It publishes what they <em>mean</em>, who owns them and how sensitive they are, so the answer can be found and trusted rather than merely returned.</p>
+    </div>
+  </section>
+
+  <section class="slide statement" data-title="Not a fourth source" data-group="The Architecture">
+    <p class="pull">The app is where the work happens.<br>It is never where the truth lives.</p>
+    <div class="attrib">The test every future decision has to pass</div>
+  </section>
+
+  <section class="slide" data-title="What we built" data-group="The Architecture">
+    <p class="eyebrow">Deployed and running</p>
+    <h2>Two narrow slices, built end to end</h2>
+    <p>We deliberately built complete journeys rather than broad prototypes, so leadership could judge the idea on working evidence rather than a demo video.</p>
+    <div class="cols two">
+      <div class="card mint-edge">
+        <span class="pill p-live">Live</span>
+        <h3>Leadership analytics</h3>
+        <p>Governed semantic-model measures presented through a guided experience, not an embedded report a leader has to know how to drive. Multi-select year, period, school and grade; comparison matrix; focused charts.</p>
+      </div>
+      <div class="card mint-edge">
+        <span class="pill p-live">Live</span>
+        <h3>Class assignment &amp; screening history</h3>
+        <p>Role-scoped cascade from school to section group to course to teacher to student, then read-only screening history with governed descriptive terms and colours drawn straight from Dataverse.</p>
+      </div>
+    </div>
+    <p style="margin-block-start:16px"><strong>Deliberately read-only.</strong> We proved identity, role scope and trustworthy reading <em>before</em> asking anyone to type a student result into a new system.</p>
+  </section>
+
+  <section class="slide" data-title="Measure discipline" data-group="The Architecture">
+    <p class="eyebrow">The non-negotiable</p>
+    <h2>The app asks. It never answers.</h2>
+    <p class="lead">Our applications send only predefined, reviewed queries. The browser is never handed the ability to ask the model anything it likes.</p>
+    <div class="cols">
+      <div class="card"><div class="k">Measures</div><p>Stay defined in the semantic model. It remains the calculation authority.</p></div>
+      <div class="card"><div class="k">Security</div><p>Row-level security and permissions follow the individual, never a pooled service account.</p></div>
+      <div class="card"><div class="k">Surface</div><p>No general-purpose query endpoint is exposed. Ever.</p></div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Governed agents" data-group="Governance">
+    <p class="eyebrow">The parallel build</p>
+    <h2>Who owns this number, and can it be trusted?</h2>
+    <p>Our Data Product Agent governs the lifecycle of every measure across Fabric, Dataverse, Power BI and Purview. Four patterns carried the weight.</p>
+    <ul class="clean mint">
+      <li><strong>Extract documentation, don't write it.</strong> Meaning is drawn from the model (logic, dependencies, lineage), not retyped into a document that starts drifting the moment it is saved.</li>
+      <li><strong>Ownership is a gate.</strong> A measure moves forward only when a business owner, technical owner and data steward are named. Missing ownership stops registration.</li>
+      <li><strong>Nothing both decides and writes.</strong> Each step hands a validated, typed contract to the next. No free-form instructions cross a boundary.</li>
+      <li><strong>Exceptions route to a human.</strong> When something can't complete correctly, work stops and a named governance role reviews it. The system never guesses.</li>
+      <li><strong>It publishes to Purview.</strong> Governed products land in the enterprise catalogue, so discovery arrives with ownership and sensitivity already attached.</li>
+    </ul>
+  </section>
+
+  <section class="slide" data-title="Privacy by construction" data-group="Governance">
+    <p class="eyebrow">FOIP, enforced not promised</p>
+    <h2>Privacy as a property of the system</h2>
+    <div class="cols">
+      <div class="card amber-edge"><div class="k">Aggregate only</div><p>No individual student rows are surfaced. Every value returned comes from a pre-defined aggregate measure.</p></div>
+      <div class="card amber-edge"><div class="k">Small groups suppressed</div><p>Where five or fewer students sit behind a figure it is suppressed. Where subtraction could still reveal it, both sides are suppressed.</p></div>
+      <div class="card amber-edge"><div class="k">Security never bypassed</div><p>The model enforces access. Users are told their scope limits a result; the system never infers what they cannot see.</p></div>
+    </div>
+    <p style="margin-block-start:18px">Sensitivity classification travels <em>with</em> the record (aggregate, school, division or restricted) and governs who may receive it.</p>
+  </section>
+
+  <section class="slide" data-title="Residency" data-group="Governance">
+    <p class="eyebrow">The boundary we don't trade</p>
+    <h2>Canadian residency is a boundary,<br>not a preference</h2>
+    <p class="lead">Identifiable student information, including anything student-identifiable used with AI, stays inside the approved Canadian geography.</p>
+    <p>We will not stand up a copy of student data outside Canada to gain early access to a preview tool. That has already cost us an attractive option, and it was still the right call. Evaluation happens on synthetic data or it doesn't happen.</p>
+  </section>
+
+  <section class="slide" data-title="Intelligence on top" data-group="Governance">
+    <p class="eyebrow">The payoff</p>
+    <h2>AI is only as trustworthy as<br>what it stands on</h2>
+    <p class="lead">Every discipline in this deck exists so that when someone asks a question in plain language, the answer can be trusted, and so that governance survives the asking.</p>
+    <div class="cols">
+      <div class="card mint-edge">
+        <div class="k">Ask where the work happens</div>
+        <p>Copilot, Teams and the tools staff already have, grounded in the same governed measures and catalogued meaning, not a separate copy of the data.</p>
+      </div>
+      <div class="card mint-edge">
+        <div class="k">Permission-aware by construction</div>
+        <p>Work IQ runs every request <strong>user-scoped</strong>. It accesses only what that person is already allowed to see. The named-user principle we built on, enforced at the intelligence layer.</p>
+      </div>
+      <div class="card mint-edge">
+        <div class="k">Already speaking the protocol</div>
+        <p>Our documentation agent is an A2A connected tool today. The governed catalogue becomes something agents can reason over, not just something people read.</p>
+      </div>
+    </div>
+    <p style="margin-block-start:16px"><span class="pill p-prop">Eyes open</span> Every invocation is logged and evaluable, which is good for audit. It is consumption-billed, and residency still has to be answered before student-identifiable context goes anywhere near it.</p>
+  </section>
+
+  <section class="slide" data-title="Proof: the loop closes" data-group="Governance">
+    <p class="eyebrow">Working today, not a mock-up</p>
+    <h2>A governed measure became a plan<br>that goes home in a backpack</h2>
+    <p class="lead">Our Foundations program plan is <strong>generated, not assembled</strong>: a Microsoft 365 Copilot skill reads the FVSD Analytics semantic model directly.</p>
+    <div class="cols">
+      <div class="card mint-edge">
+        <div class="k">Nothing is re-keyed</div>
+        <p>Screener scores, descriptive terms and cohort placement populate straight from the governed dataset. The teacher adds professional judgement; the evidence is already there and already correct.</p>
+      </div>
+      <div class="card mint-edge">
+        <div class="k">Built to be read by a parent</div>
+        <p>Letter portrait, proper margins, prints clean. Not a dashboard export, but a document a family reads at a kitchen table, with signatures at the end.</p>
+      </div>
+      <div class="card mint-edge">
+        <div class="k">It scaffolds the writing</div>
+        <p>Parent-friendly comment stems help staff describe strengths and next steps in language families actually use, raising the floor on every plan that goes out.</p>
+      </div>
+    </div>
+    <p style="margin-block-start:16px">This is the entire argument in a single artifact: <strong>a governed measure became a document a parent can act on, and nobody copied a number to get there.</strong></p>
+  </section>
+
+  <section class="slide" data-title="The consumption question" data-group="The Opportunity">
+    <p class="eyebrow">Everyone asks about consumption cost</p>
+    <h2>Break-even is about an hour a month</h2>
+    <p class="lead">The honest way to price this isn't against a software budget. It's against the cost of the person waiting on the answer.</p>
+    <div class="stats">
+      <div class="stat"><div class="v">$70</div><div class="l">one teacher hour</div></div>
+      <div class="stat"><div class="v">$90</div><div class="l">one principal hour</div></div>
+      <div class="stat"><div class="v">$120</div><div class="l">one executive hour</div></div>
+    </div>
+    <p style="margin-block-start:20px">Copilot lands under a single teacher hour per person per month. Fabric adds roughly <strong>$5</strong>, about a fourteenth of that same hour. <strong>Save one hour a month and the stack has paid for itself; that hour is worth $840 a year per teacher.</strong> Everything after that is return.</p>
+    <p><span class="pill p-live">Conservative</span> These are base rates before benefits and overhead, so the real hourly cost is higher and the real payback is faster.</p>
+  </section>
+
+  <section class="slide" data-title="Replacing the vendor" data-group="The Opportunity">
+    <p class="eyebrow">The business case</p>
+    <h2>Bringing program plans in-house</h2>
+    <div class="stats">
+      <div class="stat"><div class="v">~80%</div><div class="l">of the data foundation already exists in Dataverse</div></div>
+      <div class="stat"><div class="v">~10</div><div class="l">additional tables estimated, to be confirmed in discovery</div></div>
+      <div class="stat"><div class="v">1</div><div class="l">set of form, validation and audit patterns, built once and used twice</div></div>
+    </div>
+    <p style="margin-block-start:22px">This is a <strong>workflow project, not a platform project</strong>, which is precisely why it is credible. Plans would open from the student profile or a staff caseload, with screening evidence already beside the goals.</p>
+  </section>
+
+  <section class="slide" data-title="Provincial connection" data-group="The Opportunity">
+    <p class="eyebrow">The strategic differentiator</p>
+    <h2>A division-owned provincial connection</h2>
+    <p>Today the provincial exchange reaches us through third-party interfaces. Owning it directly would give us control of timing, visible submission status for our own staff, and one governed workflow end to end.</p>
+    <div class="flow">
+      <div class="step"><div class="n">STAGE 0</div><h3>Discovery</h3><p>Confirm supported operations, environments and registration.</p></div>
+      <div class="step"><div class="n">STAGE 1</div><h3>Connectivity</h3><p>One documented call from an isolated connector.</p></div>
+      <div class="step"><div class="n">STAGE 2</div><h3>Read &amp; sync</h3><p>One approved area, resumable after interruption.</p></div>
+      <div class="step"><div class="n">STAGE 3</div><h3>Narrow write</h3><p>One low-volume operation, with concurrency tested.</p></div>
+      <div class="step"><div class="n">STAGE 4</div><h3>Harden</h3><p>Monitoring, retries, certificate lifecycle, runbooks.</p></div>
+    </div>
+    <p style="margin-block-start:18px"><span class="pill p-prop">Candour</span> Avoided vendor dependency is valuable, but it is not free integration. If you aren't prepared to fund lifetime ownership, don't start.</p>
+  </section>
+
+  <section class="slide" data-title="Capability map" data-group="The Opportunity">
+    <p class="eyebrow">Honest status labels</p>
+    <h2>Where each capability actually stands</h2>
+    <table class="captable">
+      <thead><tr><th>Capability</th><th>Status</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Leadership analytics</td><td><span class="pill p-live">Live</span></td><td>District signal down to the grade and period needing attention</td></tr>
+        <tr><td>Assessment entry</td><td><span class="pill p-live">Partial</span></td><td>Modern validated entry; scoring stays governed as data</td></tr>
+        <tr><td>School &amp; student profiles</td><td><span class="pill p-next">Planned</span></td><td>One role-aware starting point per school or student</td></tr>
+        <tr><td>Individual program plans</td><td><span class="pill p-prop">Proposed</span></td><td>Vendor replacement joined to screening evidence</td></tr>
+        <tr><td>Intervention tracking</td><td><span class="pill p-prop">To define</span></td><td>Identified need connected to a planned response</td></tr>
+        <tr><td>Provincial connector</td><td><span class="pill p-prop">Proposed</span></td><td>Division-owned exchange with the province</td></tr>
+        <tr><td>Purview catalogue</td><td><span class="pill p-next">Extending</span></td><td>Meaning, ownership and sensitivity travelling with every measure</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="slide" data-title="Platform today" data-group="Where Next">
+    <p class="eyebrow">Where it runs</p>
+    <h2>Azure today, deliberately</h2>
+    <p class="lead">React and ASP.NET Core in Canada Central. Complete control over the experience, the security boundary, the region and the timing of every release.</p>
+    <p>It was the right home for a proof of concept and it remains a perfectly viable home for production. We built immediately rather than waiting for a platform to arrive.</p>
+  </section>
+
+  <section class="slide" data-title="Fabric Apps &amp; Rayfin" data-group="Where Next">
+    <p class="eyebrow">Where it's heading</p>
+    <h2>Rayfin is the engine room, not a reporting feature</h2>
+    <p>A managed backend on Fabric (database, authentication, hosting), arriving already assembled, inside the platform that already holds our analytics. For a small team, that is a <strong>staffing</strong> story before it is a technology story.</p>
+    <div class="cols">
+      <div class="card"><div class="k">Less to own</div><p>Patching, scaling and monitoring stop being ours to carry.</p></div>
+      <div class="card"><div class="k">One estate</div><p>Operational data, analytics and AI in a single experience, inheriting governance already established in Fabric.</p></div>
+      <div class="card"><div class="k">Same identity</div><p>Entra single sign-on exclusively: the named-user principle we already enforce.</p></div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="The platform caught up" data-group="Where Next">
+    <p class="eyebrow">Validation</p>
+    <h2>We adopted the discipline early.<br>The platform is now built for it.</h2>
+    <ul class="clean mint">
+      <li>The semantic-model connection is <strong>handled by the platform</strong>. Microsoft describes that handshake as difficult to build correctly from scratch each time. That is exactly the plumbing our team writes and maintains today.</li>
+      <li><strong>Access stays with the individual.</strong> Users need the same Build and Read permissions they'd need to query the model directly, so security keeps following the person.</li>
+      <li><strong>Query discipline is a first-class concern</strong>, with avoiding unnecessary runtime queries cited as a reason the patterns ship in the template.</li>
+    </ul>
+    <p style="margin-block-start:16px"><span class="pill p-prop">Caveat</span> AI-assisted query generation is looser than our predefined-and-reviewed rule. We'd carry our standard forward rather than inherit the platform's.</p>
+  </section>
+
+  <section class="slide" data-title="The gate" data-group="Where Next">
+    <p class="eyebrow">Conditions we will not waive</p>
+    <h2>Any platform move clears the same gate</h2>
+    <ul class="clean">
+      <li><strong>The three sources of truth survive unchanged.</strong> First test, not last.</li>
+      <li><strong>Canadian storage and processing</strong> of identifiable student information.</li>
+      <li><strong>Named-user access.</strong> People continue to act as themselves.</li>
+      <li><strong>Ownership and portability</strong> of what we build. We must be able to take it with us.</li>
+      <li><strong>Security, auditing, accessibility and monitoring</strong> at least equal to what we have now.</li>
+    </ul>
+    <p style="margin-block-start:14px">Preview availability is not a strategy. We build so adoption is a cheap choice later, never a dependency now.</p>
+  </section>
+
+  <section class="slide" data-title="Roadmap" data-group="Where Next">
+    <p class="eyebrow">Staged and reversible</p>
+    <h2>Every step buys evidence</h2>
+    <div class="tl">
+      <div class="ev done"><div class="when">Now · Deployed</div><div class="what">Leadership analytics and the class assignment / screening history slice, running on real identity and real permissions.</div></div>
+      <div class="ev"><div class="when">Definition</div><div class="what">Confirm scope, inventory the vendor workflows, agree acceptance criteria.</div></div>
+      <div class="ev"><div class="when">Build</div><div class="what">Assessment entry replacement and the reusable form, validation and audit components.</div></div>
+      <div class="ev"><div class="when">Full proof of concept</div><div class="what">Core program plan workflows and a representative historical migration, end to end and testable.</div></div>
+      <div class="ev"><div class="when">Parallel pilot</div><div class="what">Selected schools, incumbent systems still running, records reconciled before anything is retired.</div></div>
+      <div class="ev"><div class="when">Phased production</div><div class="what">Reversible, gated. A date never overrides an unmet readiness gate.</div></div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="Portable patterns" data-group="Takeaways">
+    <p class="eyebrow">If you take one thing</p>
+    <h2>Patterns that travel beyond education</h2>
+    <div class="cols two">
+      <div class="card cyan-edge"><div class="k">01</div><h3>Name your sources of truth, then defend them</h3><p>Record, calculation, identity. Write them down. Every architecture decision becomes a test against three lines.</p></div>
+      <div class="card cyan-edge"><div class="k">02</div><h3>Build vertical slices, not prototypes</h3><p>One narrow journey built completely earns more trust than a broad demo that works only on stage.</p></div>
+      <div class="card cyan-edge"><div class="k">03</div><h3>Extract documentation from the model</h3><p>Anything written separately is already drifting. The model already holds the truth. Reveal it.</p></div>
+      <div class="card cyan-edge"><div class="k">04</div><h3>Separate deciding from writing</h3><p>No component should both make a judgement and commit it. Contracts between steps, not free-form instructions.</p></div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="The real return: trust" data-group="Takeaways">
+    <p class="eyebrow">What the discipline actually buys</p>
+    <h2>The return isn't efficiency.<br>It's trust.</h2>
+    <p class="lead">Hours saved are how you justify the invoice. Trust is why the work matters, and in public education it is the currency you cannot buy back once it is spent.</p>
+    <div class="cols">
+      <div class="card mint-edge">
+        <div class="k">Our Board</div>
+        <p>Numbers that hold up under questioning. Every figure has a definition, an owner and a lineage; a hard question gets an answer, not a research project.</p>
+      </div>
+      <div class="card mint-edge">
+        <div class="k">Our parents</div>
+        <p>A plan for their child that is consistent, current and defensible, because it is written from evidence rather than reassembled from four systems the night before.</p>
+      </div>
+      <div class="card mint-edge">
+        <div class="k">Our province</div>
+        <p>Reporting we can stand behind, with privacy enforced by construction and an audit trail that already exists, because it was never bolted on afterwards.</p>
+      </div>
+    </div>
+    <p style="margin-block-start:16px">Governance is what makes an answer <strong>defensible</strong>. Everything else in this deck is the machinery that produces one.</p>
+  </section>
+
+  <section class="slide statement" data-title="Closing thought" data-group="Takeaways">
+    <p class="pull">Governance isn't a constraint on self-service.<br>It's the condition that makes it possible.</p>
+    <div class="attrib">Without it, the loop never closes; it just repeats the same assumptions faster</div>
+  </section>
+
+  <section class="slide title" data-title="Thank you" data-group="Takeaways">
+    <div class="rule"></div>
+    <h1>Thank you</h1>
+    <p class="lead">Happy to talk about governed agents, semantic-model discipline, or what it takes to build this in a division with a very small team.</p>
+    <div class="byline">
+      <b>Scott Mckenzie</b>
+      Chief Technology Officer · Fort Vermilion School Division
+    </div>
+  </section>
+
+</main>
+
+<div id="hud">
+  <button class="btn" id="btnMenu" type="button" title="Contents (N)" aria-label="Toggle contents menu">☰</button>
+  <button class="btn" id="btnGrid" type="button" title="Overview (Esc)" aria-label="Toggle slide overview">▦</button>
+  <button class="btn" id="btnPrev" type="button" title="Previous (←)" aria-label="Previous slide">‹</button>
+  <span id="count" aria-live="polite"><b>1</b> / 26</span>
+  <button class="btn" id="btnNext" type="button" title="Next (→)" aria-label="Next slide">›</button>
+  <button class="btn" id="btnFull" type="button" title="Fullscreen (F)" aria-label="Toggle fullscreen">⛶</button>
+</div>
+
+<div id="bar" role="presentation"><span id="barFill"></span></div>
+
+<div id="grid" aria-label="Slide overview" role="dialog" aria-modal="true">
+  <h2>All slides: click to jump</h2>
+  <div class="gwrap" id="gridWrap"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var sbList = document.getElementById("sbList");
+  var gridWrap = document.getElementById("gridWrap");
+  var barFill = document.getElementById("barFill");
+  var count = document.getElementById("count");
+  var body = document.body;
+  var idx = 0, total = slides.length;
+
+  /* ---- build sidebar (grouped) + overview grid ---- */
+  var lastGroup = null;
+  slides.forEach(function(s, i){
+    var title = s.getAttribute("data-title") || ("Slide " + (i+1));
+    var group = s.getAttribute("data-group") || "";
+    s.setAttribute("aria-hidden","true");
+    s.id = "slide-" + (i+1);
+
+    if (group && group !== lastGroup){
+      var g = document.createElement("div");
+      g.className = "sb-group";
+      g.textContent = group;
+      sbList.appendChild(g);
+      lastGroup = group;
+    }
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "sb-item";
+    b.setAttribute("data-i", String(i));
+    var n = document.createElement("span");
+    n.className = "sb-num";
+    n.textContent = (i+1 < 10 ? "0" : "") + (i+1);
+    var t = document.createElement("span");
+    t.textContent = title;
+    b.appendChild(n); b.appendChild(t);
+    sbList.appendChild(b);
+
+    var g2 = document.createElement("button");
+    g2.type = "button";
+    g2.className = "gcard";
+    g2.setAttribute("data-i", String(i));
+    var gn = document.createElement("div");
+    gn.className = "gn";
+    gn.textContent = "SLIDE " + (i+1);
+    var gt = document.createElement("div");
+    gt.className = "gt";
+    gt.textContent = title;
+    g2.appendChild(gn); g2.appendChild(gt);
+    gridWrap.appendChild(g2);
+  });
+
+  var navBtns = Array.prototype.slice.call(sbList.querySelectorAll(".sb-item"));
+  var gridBtns = Array.prototype.slice.call(gridWrap.querySelectorAll(".gcard"));
+
+  function render(){
+    slides.forEach(function(s,i){
+      s.classList.toggle("is-current", i === idx);
+      s.classList.toggle("is-past", i < idx);
+      s.setAttribute("aria-hidden", i === idx ? "false" : "true");
+    });
+    navBtns.forEach(function(b,i){ b.setAttribute("aria-current", i === idx ? "true" : "false"); });
+    gridBtns.forEach(function(b,i){ b.setAttribute("aria-current", i === idx ? "true" : "false"); });
+    barFill.style.inlineSize = (total < 2 ? 100 : (idx/(total-1))*100) + "%";
+    count.innerHTML = "<b>" + (idx+1) + "</b> / " + total;
+    document.getElementById("btnPrev").disabled = (idx === 0);
+    document.getElementById("btnNext").disabled = (idx === total-1);
+    var active = navBtns[idx];
+    if (active && active.scrollIntoView) active.scrollIntoView({block:"nearest"});
+    if (location.hash !== "#" + (idx+1)) {
+      try { history.replaceState(null,"","#"+(idx+1)); } catch(e){}
+    }
+  }
+
+  function go(n, reverse){
+    n = Math.max(0, Math.min(total-1, n));
+    if (n === idx) return;
+    idx = n;
+    render();
+  }
+  function next(){ if (idx < total-1) go(idx+1, false); }
+  function prev(){ if (idx > 0) go(idx-1, true); }
+
+  /* ---- events ---- */
+  navBtns.forEach(function(b){
+    b.addEventListener("click", function(){
+      go(parseInt(b.getAttribute("data-i"),10));
+      if (window.innerWidth <= 900) body.classList.remove("nav-open");
+    });
+  });
+  gridBtns.forEach(function(b){
+    b.addEventListener("click", function(){
+      go(parseInt(b.getAttribute("data-i"),10));
+      body.classList.remove("grid-on");
+    });
+  });
+  function toggleNav(){
+    if (window.innerWidth <= 900) body.classList.toggle("nav-open");
+    else body.classList.toggle("nav-hidden");
+  }
+  document.getElementById("btnMenu").addEventListener("click", toggleNav);
+  document.getElementById("btnNext").addEventListener("click", next);
+  document.getElementById("btnPrev").addEventListener("click", prev);
+  document.getElementById("btnGrid").addEventListener("click", function(){
+    body.classList.toggle("grid-on");
+  });
+  document.getElementById("btnFull").addEventListener("click", function(){
+    if (!document.fullscreenElement){
+      if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  });
+
+  document.addEventListener("keydown", function(e){
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (k === "ArrowRight" || k === "PageDown" || k === " " || k === "Spacebar"){ e.preventDefault(); next(); }
+    else if (k === "ArrowLeft" || k === "PageUp"){ e.preventDefault(); prev(); }
+    else if (k === "ArrowDown"){ e.preventDefault(); next(); }
+    else if (k === "ArrowUp"){ e.preventDefault(); prev(); }
+    else if (k === "Home"){ e.preventDefault(); go(0, true); }
+    else if (k === "End"){ e.preventDefault(); go(total-1, false); }
+    else if (k === "Escape"){ e.preventDefault(); body.classList.toggle("grid-on"); }
+    else if (k === "f" || k === "F"){ document.getElementById("btnFull").click(); }
+    else if (k === "n" || k === "N"){ toggleNav(); }
+  });
+
+  /* ---- touch ---- */
+  var x0 = null, y0 = null;
+  document.addEventListener("touchstart", function(e){
+    if (e.touches.length !== 1) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, {passive:true});
+  document.addEventListener("touchend", function(e){
+    if (x0 === null) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - x0, dy = t.clientY - y0;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)*1.6){ dx < 0 ? next() : prev(); }
+    x0 = null; y0 = null;
+  }, {passive:true});
+
+  /* ---- deep link ---- */
+  var h = parseInt((location.hash || "").replace("#",""), 10);
+  if (!isNaN(h) && h >= 1 && h <= total) idx = h - 1;
+
+  render();
+})();
+</script>
+</body>
+</html>
