@@ -37,4 +37,45 @@ public interface IDataverseAssessmentWorkspaceClient
         Guid teacherSectionId,
         Guid studentId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<TosrecReferenceOption>> GetTosrecReferenceOptionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        int period,
+        CancellationToken cancellationToken = default);
+
+    Task CreateTosrecAssessmentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        string currentSchoolYear,
+        TosrecAssessmentCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task UpdateTosrecAssessmentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid assessmentId,
+        string currentSchoolYear,
+        int? currentPeriod,
+        TosrecAssessmentCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteTosrecAssessmentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid assessmentId,
+        string? eTag,
+        CancellationToken cancellationToken = default);
 }

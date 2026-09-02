@@ -13,6 +13,7 @@ public sealed record AssessmentWorkspaceContext(
 
 public sealed record AssessmentTeacherSection(
     Guid Id,
+    string SectionNumber,
     Guid SchoolId,
     string SchoolName,
     string SectionGroup,
@@ -26,6 +27,7 @@ public sealed record AssessmentTeacherSection(
 
 public sealed record AssessmentStudent(
     Guid StudentSectionId,
+    string? SectionNumber,
     Guid Id,
     string Name,
     string? ObfuscatedName,
@@ -44,17 +46,48 @@ public sealed record AssessmentStudent(
 public sealed record AssessmentHistoryRecord(
     Guid Id,
     string AssessmentType,
+    string RecordName,
     string SchoolYear,
     string Period,
     int PeriodSortOrder,
     DateTimeOffset? AssessmentDate,
     string? GradeAtAssessment,
+    string? ChronologicalAge,
+    string? Curriculum,
+    string? SchoolAtAssessment,
+    string? CourseNumber,
+    string? CourseName,
+    string? TeacherAtAssessment,
+    string? SectionNumber,
+    int? TotalCorrect,
+    int? TotalError,
     int? RawScore,
     int? StandardScore,
+    string? PercentileRank,
     string DescriptiveTerm,
     string? DescriptiveTermFill,
     string? DescriptiveTermFont,
-    bool Exempt);
+    bool Exempt,
+    string? ExemptReason,
+    string? ETag);
+
+public sealed record TosrecReferenceOption(
+    int RawScore,
+    int StandardScore,
+    string PercentileRank,
+    Guid DescriptiveTermId,
+    string DescriptiveTerm,
+    string? DescriptiveTermFill,
+    string? DescriptiveTermFont);
+
+public sealed record TosrecAssessmentCommand(
+    DateOnly AssessmentDate,
+    int Period,
+    bool Exempt,
+    string? ExemptReason,
+    int? TotalCorrect,
+    int? TotalError,
+    string? ETag);
 
 internal sealed record AssessmentAccessPolicy(
     string Role,
@@ -94,6 +127,10 @@ internal sealed record AssessmentAccessPolicy(
 
     public bool AllowsSchool(Guid schoolId, IReadOnlyList<AssessmentSchoolOption> availableSchools) =>
         availableSchools.Any(school => school.Id == schoolId);
+
+    public bool CanManageHistoricalAssessments => Role is "Administrator" or "Data Analyst";
+
+    public bool CanDeleteAssessments => Role is "Administrator" or "Data Analyst";
 
     private static string NormalizeRole(string role) => role switch
     {

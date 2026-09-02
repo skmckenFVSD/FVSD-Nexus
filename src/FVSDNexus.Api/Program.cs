@@ -386,6 +386,191 @@ app.MapGet("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/{
     }
 });
 
+app.MapGet("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/entry/tosrec/references", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    int period,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        var options = await assessments.GetTosrecReferenceOptionsAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            period,
+            cancellationToken);
+        return Results.Ok(options);
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status400BadRequest);
+    }
+});
+
+app.MapPost("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/entry/tosrec", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    TosrecAssessmentCommand command,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        await assessments.CreateTosrecAssessmentAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            schoolYears.GetCurrentSchoolYear(context.User),
+            command,
+            cancellationToken);
+        return Results.NoContent();
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status400BadRequest);
+    }
+});
+
+app.MapPatch("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/entry/tosrec/{assessmentId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid assessmentId,
+    TosrecAssessmentCommand command,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    TimeProvider timeProvider,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        await assessments.UpdateTosrecAssessmentAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            assessmentId,
+            schoolYears.GetCurrentSchoolYear(context.User),
+            GetCurrentAssessmentPeriod(timeProvider),
+            command,
+            cancellationToken);
+        return Results.NoContent();
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status400BadRequest);
+    }
+});
+
+app.MapDelete("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/entry/tosrec/{assessmentId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid assessmentId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        await assessments.DeleteTosrecAssessmentAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            assessmentId,
+            context.Request.Headers["If-Match"].FirstOrDefault(),
+            cancellationToken);
+        return Results.NoContent();
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status400BadRequest);
+    }
+});
+
 app.MapPost("/api/development/role", (
     DevelopmentRoleChange change,
     HttpContext context,
@@ -537,6 +722,22 @@ static ExecutiveDashboardFilters GetExecutiveDashboardFilters(HttpRequest reques
     GetQueryValues(request, "schoolYear"),
     GetQueryValues(request, "grade"),
     GetQueryValues(request, "period"));
+
+static int? GetCurrentAssessmentPeriod(TimeProvider timeProvider)
+{
+    TimeZoneInfo mountainTime;
+    try
+    {
+        mountainTime = TimeZoneInfo.FindSystemTimeZoneById("America/Edmonton");
+    }
+    catch (TimeZoneNotFoundException)
+    {
+        mountainTime = TimeZoneInfo.FindSystemTimeZoneById("Mountain Standard Time");
+    }
+
+    var localDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), mountainTime).DateTime);
+    return DataverseAssessmentWorkspaceClient.GetAssessmentPeriod(localDate);
+}
 
 static string GetDisplayName(ClaimsPrincipal user)
 {

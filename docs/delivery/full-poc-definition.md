@@ -19,13 +19,13 @@ The full PoC should be a complete, end-to-end testable system. It is not require
 
 ### Assessment entry
 
-- Student and assessment selection.
-- Applicable form rendering and visibility rules.
-- Reference-table scoring for representative assessments.
-- Current-period create and update.
-- Historical read-only behaviour.
+- Student and assessment selection. **Proven with TOSREC.**
+- Applicable form rendering and visibility rules. **Proven with the shared detail and TOSREC scoring stages.**
+- Reference-table scoring for representative assessments. **Proven with TOSREC; additional patterns remain.**
+- Current-period create and update. **Proven with TOSREC.**
+- Historical read-only behaviour. **Proven with TOSREC.**
 - Administrative correction request and controlled amendment.
-- Audit attribution and error handling.
+- Audit attribution and error handling. **Delegated Dataverse attribution and concurrency/error handling proven with TOSREC.**
 
 ### IPP
 

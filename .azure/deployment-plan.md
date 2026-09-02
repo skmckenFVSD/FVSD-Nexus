@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Deployed - IPP Preview, Nexus Branding, and Student Identifier Display PoC
+> **Status:** Validated - End-to-End Governed TOSREC Lifecycle Release
 
 Generated: 2026-08-25
 
@@ -216,6 +216,19 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
   - [x] Run `azd provision --preview --no-prompt`
   - [x] Run `azd package --no-prompt`
   - [x] Record proof and set status to `Validated`
+- [x] Revalidate the end-to-end governed TOSREC assessment lifecycle release
+  - [x] 1. AZD Installation
+  - [x] 2. Schema Validation
+  - [x] 3. Environment Setup
+  - [x] 4. Authentication Check
+  - [x] 5. Subscription/Location Check
+  - [x] 6. Aspire Pre-Provisioning Checks - not applicable; the solution is not .NET Aspire
+  - [x] 7. Provision Preview
+  - [x] 8. Build Verification
+  - [x] 9. Docker Build Context Validation - not applicable; the service has no Dockerfile
+  - [x] 10. Package Validation
+  - [x] 11. Azure Policy Validation
+  - [x] 12. Aspire Post-Provisioning Checks - not applicable; the solution is not .NET Aspire
 - [x] Record validation proof and set status to `Validated`
 - [x] Revalidate the Foundations 1 IPP preview and FVSD Nexus branding release
   - [x] Verify AZD installation, schema/package handling, selected environment, authentication, subscription, and location
@@ -814,6 +827,23 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Entra sign-in challenge | `GET /api/auth/signin` without following redirects | HTTP 302 to the FVSD tenant using client `b9a8631e-8e03-4204-8d7e-a487bfe33b2f`, the production callback, and delegated `Dataset.Read.All` scope |
 | Key Vault reference | App Service configuration-reference API | `AzureAd__ClientSecret` reports `Resolved` through the system-assigned identity |
 | Live RBAC | App Service identity and vault-scoped role query | `Key Vault Secrets User` remains assigned to the App Service system identity at the application vault only |
+
+### End-to-End Governed TOSREC Lifecycle Revalidation - 2026-09-02T14:01:16-06:00
+
+> **Release boundary:** This release completes the TOSREC operational proof with delegated Dataverse create, complete record view, current-period edit, role-restricted delete, exempt-record handling, and immediate history refresh. Other assessment-specific adapters and the historical correction-request workflow remain outside this release.
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Azure context | `azd version`, `azd auth login --check-status`, `azd env list`, and filtered environment/account checks | Passed; signed-in FVSD identity, existing `fvsd-insights-dev` environment, Pay-As-You-Go subscription, and Canada Central |
+| Project schema and specialization | `azure.yaml` inspection plus Aspire and Dockerfile scan | Passed; the existing App Service service definition remains valid, and the solution is neither Aspire nor container based |
+| React build and dependency audit | `npm audit --audit-level=high` and `npm run build` | Passed; production bundle generated and zero vulnerabilities reported |
+| ASP.NET Core tests and dependency audit | `dotnet test FVSDNexus.sln --configuration Release --no-restore` and `dotnet list ... --vulnerable --include-transitive` | Passed; 65 tests, zero failures, and no vulnerable packages reported |
+| Bicep compile/lint | `az bicep build --file infra/main.bicep --stdout` and `az bicep lint --file infra/main.bicep` | Passed without errors or warnings |
+| Static RBAC review | `infra/resources.bicep` role-assignment inspection | Passed; the App Service system identity retains only Key Vault Secrets User on the application vault with `ServicePrincipal` principal type |
+| Azure policy review | `az policy assignment list` at subscription scope | Passed; only the existing Microsoft Defender for Cloud default assignment is present |
+| Provisioning preview | `azd provision --preview --no-prompt` | Passed; no resource creation or deletion; preview contains only existing App Service and monitoring property reconciliation |
+| Package validation | `azd package --no-prompt` | Passed after closing the local Vite preview that held a Windows native-module file lock |
+| Release fingerprints | Local SHA-256 | JavaScript `A7843193942719867A7B35A99ED7A50CCEC0F542C4FC39E7511F4D246682D727`; CSS `6A2E88D70F51FECB3C76C9C7BE61E3A7F21824C092DE1494B86BEE073760649D` |
 
 ### Foundations 1 IPP Preview and FVSD Nexus Branding Revalidation - 2026-09-02T08:17:34-06:00
 

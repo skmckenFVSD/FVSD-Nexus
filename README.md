@@ -2,7 +2,7 @@
 
 FVSD Nexus is the proposed unified operational and analytics platform for Fort Vermilion School Division. It is intended to help staff move from governed evidence to action through a purpose-built, role-aware experience.
 
-> **Status - September 1, 2026:** Leadership Analytics and the initial Class Assignment/TOSREC history vertical slice are locked PoC releases. Assessment data-entry forms and Dataverse writes, IPP, and the broader operational platform remain future phases until formally authorized.
+> **Status - September 2, 2026:** Leadership Analytics and the end-to-end Class Assignment/TOSREC vertical slice are locked PoC releases. TOSREC now proves governed assessment creation, scoring, viewing, current-period editing, privileged deletion, exemption handling, and immediate history refresh against Dataverse. Additional assessment patterns, live IPP, and the broader operational platform remain future phases until formally authorized.
 
 ## At a glance
 
@@ -23,7 +23,7 @@ FVSD Nexus is the proposed unified operational and analytics platform for Fort V
 |---|---|---|
 | Leadership analytics | Working PoC | [Leadership analytics](docs/capabilities/leadership-analytics/README.md) |
 | School and student profiles | Planned | [Profiles](docs/capabilities/profiles/README.md) |
-| Assessment entry and scoring | Working Class Assignment and TOSREC history PoC | [Assessments](docs/capabilities/assessments/README.md) |
+| Assessment entry and scoring | Working end-to-end Class Assignment and TOSREC PoC | [Assessments](docs/capabilities/assessments/README.md) |
 | Individual Program Plans | Static Foundations 1 design preview; operational capability proposed | [IPP](docs/capabilities/ipp/README.md) |
 | Intervention tracking | Future definition required | [Interventions](docs/capabilities/interventions/README.md) |
 | PASI provincial connector | Proposed strategic differentiator; public technical feasibility established | [PASI connector](docs/capabilities/pasi-connector/README.md) |
@@ -50,10 +50,16 @@ The second slice begins the operational assessment experience and proves that th
 - Establish a stable Edmonton-time school-year context for the authenticated session.
 - Load a selected student's TOSREC history with Current Year and Previous Years views.
 - Present the governed descriptive term and its existing Dataverse colours alongside school year, period, and standard score.
+- Create a TOSREC assessment through a two-stage master-detail and assessment-specific scoring experience.
+- Query the existing TOSREC reference and descriptive-term tables, calculate the governed result, and save the complete assessment context to Dataverse.
+- Save exempt TOSREC records using only the applicable master detail and required exemption reason, without requiring scoring inputs.
+- Open any history record in a complete read-only view, then permit edits only when the record belongs to the current operational period.
+- Restrict permanent deletion to School Administration and Data Analyst roles, with server-side authorization and explicit confirmation.
+- Refresh the selected student's assessment history immediately after create, edit, or delete.
 - Enforce section/student scope on the server and request a fresh delegated Microsoft session when token acquisition requires user interaction.
 - Let the developer switch student names and ASNs between real and synchronized obfuscated values for safe demonstrations and documentation captures, without changing the governed record identity or issuing another Dataverse request.
 
-This locked slice is read-only. Assessment forms, scoring previews, record creation, record updates, and historical correction workflows are intentionally deferred.
+This locked slice proves the reusable assessment lifecycle with TOSREC. The remaining assessment types require only their documented field, reference, calculation, and visibility adapters; historical administrative correction requests remain deferred.
 
 Current PoC endpoint:
 
@@ -158,7 +164,7 @@ npm run build --prefix .\src\FVSDNexus.Web
 dotnet publish .\src\FVSDNexus.Api\FVSDNexus.Api.csproj --configuration Release
 ```
 
-For the September 1 Class Assignment/TOSREC history release, all 45 backend tests pass, the React production build succeeds, dependency audits report no known high-severity vulnerabilities, and ASP.NET publish bundles the web application successfully.
+For the September 2 end-to-end TOSREC release, all 65 backend tests pass, the React production build succeeds, dependency audits report no known high-severity vulnerabilities, and the ASP.NET application packages successfully for Azure.
 
 ## Deployment
 

@@ -153,6 +153,7 @@ public sealed class DataverseAssessmentWorkspaceClientTests
                 },
                 {
                   "fvsd_studentsectionid": "40000000-0000-0000-0000-000000000002",
+                  "fvsd_sectionno": "ELA4-02",
                   "fvsd_student": {
                     "fvsd_studentdetailid": "50000000-0000-0000-0000-000000000002",
                     "fvsd_name": "Alpha Student",
@@ -173,6 +174,7 @@ public sealed class DataverseAssessmentWorkspaceClientTests
         Assert.Equal("Demo Learner 01", rows[0].ObfuscatedName);
         Assert.Equal("123456789", rows[0].Asn);
         Assert.Equal("900000001", rows[0].ObfuscatedAsn);
+        Assert.Equal("ELA4-02", rows[0].SectionNumber);
         Assert.Equal("Grade 5", rows[0].Grade);
         Assert.Equal(6, rows[0].GradeValue);
     }
@@ -254,6 +256,115 @@ public sealed class DataverseAssessmentWorkspaceClientTests
     }
 
     [Fact]
+    public void Tosrec_reference_query_is_filtered_by_grade_and_period_and_sorted_numerically()
+    {
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildTosrecReferencesQuery(4, 2));
+
+        Assert.Contains("fvsd_tosrecreferences", decoded, StringComparison.Ordinal);
+        Assert.Contains("fvsd_grade eq 4", decoded, StringComparison.Ordinal);
+        Assert.Contains("fvsd_period eq 2", decoded, StringComparison.Ordinal);
+        Assert.Contains("$orderby=fvsd_rawscore asc", decoded, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Tosrec_reference_options_include_zero_and_governed_term_colours()
+    {
+        using var references = JsonDocument.Parse("""
+            {
+              "value": [
+                {
+                  "fvsd_rawscore": 1,
+                  "fvsd_standardscore": 75,
+                  "fvsd_percentilerank": "5"
+                },
+                {
+                  "fvsd_rawscore": 0,
+                  "fvsd_standardscore": 65,
+                  "fvsd_percentilerank": "1"
+                }
+              ]
+            }
+            """);
+        using var terms = JsonDocument.Parse("""
+            {
+              "value": [
+                {
+                  "fvsd_descriptivetermid": "a0000000-0000-0000-0000-000000000001",
+                  "fvsd_name": "Very Poor",
+                  "fvsd_rangelowvalue": 0,
+                  "fvsd_rangehighvalue": 69,
+                  "fvsd_fillhexcode": "ff0000",
+                  "fvsd_fonthexcode": "ffffff"
+                },
+                {
+                  "fvsd_descriptivetermid": "a0000000-0000-0000-0000-000000000002",
+                  "fvsd_name": "Poor",
+                  "fvsd_rangelowvalue": 70,
+                  "fvsd_rangehighvalue": 79,
+                  "fvsd_fillhexcode": "F47B20",
+                  "fvsd_fonthexcode": "071940"
+                }
+              ]
+            }
+            """);
+
+        var options = DataverseAssessmentWorkspaceClient.ParseTosrecReferenceOptions(
+            references.RootElement,
+            terms.RootElement);
+
+        Assert.Equal([0, 1], options.Select(option => option.RawScore).ToArray());
+        Assert.Equal("Very Poor", options[0].DescriptiveTerm);
+        Assert.Equal("#FF0000", options[0].DescriptiveTermFill);
+        Assert.Equal("#FFFFFF", options[0].DescriptiveTermFont);
+        Assert.Equal("Poor", options[1].DescriptiveTerm);
+    }
+
+    [Theory]
+    [InlineData("2018-07-20", "2026-07-19", "7-11")]
+    [InlineData("2018-07-20", "2026-07-20", "8-0")]
+    [InlineData("2018-07-20", "2027-02-10", "8-6")]
+    public void Chronological_age_matches_the_existing_power_fx(
+        string dateOfBirth,
+        string assessmentDate,
+        string expected)
+    {
+        Assert.Equal(
+            expected,
+            DataverseAssessmentWorkspaceClient.CalculateChronologicalAge(
+                DateOnly.Parse(dateOfBirth),
+                DateOnly.Parse(assessmentDate)));
+    }
+
+    [Theory]
+    [InlineData("2026-09-01", 1)]
+    [InlineData("2026-12-31", 1)]
+    [InlineData("2027-01-01", 2)]
+    [InlineData("2027-03-30", 2)]
+    [InlineData("2027-04-01", 3)]
+    [InlineData("2027-06-30", 3)]
+    [InlineData("2027-03-31", null)]
+    [InlineData("2027-07-01", null)]
+    [InlineData("2027-08-31", null)]
+    public void Assessment_period_is_derived_from_the_selected_date(string date, int? expected)
+    {
+        Assert.Equal(
+            expected,
+            DataverseAssessmentWorkspaceClient.GetAssessmentPeriod(DateOnly.Parse(date)));
+    }
+
+    [Fact]
+    public void Tosrec_duplicate_query_escapes_the_record_key()
+    {
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildTosrecDuplicateQuery(
+                "2026|123'456|TOSREC|Fall",
+                null));
+
+        Assert.Contains("fvsd_name eq '2026|123''456|TOSREC|Fall'", decoded, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Administrator_school_selection_requires_two_assignments()
     {
         var oneSchool = CreateAccessContext("Administrator", includeAlternativeSchool: false);
@@ -301,6 +412,24 @@ public sealed class DataverseAssessmentWorkspaceClientTests
         Assert.True(policy.CanViewAllSelectableSchools);
         Assert.True(policy.SchoolSelectionEnabled);
         Assert.False(policy.TeacherLockedToSignedInUser);
+        Assert.True(policy.CanManageHistoricalAssessments);
+        Assert.True(policy.CanDeleteAssessments);
+    }
+
+    [Theory]
+    [InlineData("School Administration", true)]
+    [InlineData("Data Analyst", true)]
+    [InlineData("Executive", false)]
+    [InlineData("Teacher", false)]
+    [InlineData("Class Room Support", false)]
+    public void Assessment_deletion_is_limited_to_governed_roles(string role, bool expected)
+    {
+        var policy = AssessmentAccessPolicy.Create(
+            CreateAccessContext(role, includeAlternativeSchool: false),
+            null,
+            isDeveloper: false);
+
+        Assert.Equal(expected, policy.CanDeleteAssessments);
     }
 
     private static DataverseAccessContext CreateAccessContext(string role, bool includeAlternativeSchool) => new(

@@ -1,15 +1,22 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   BookOpenCheck,
+  CheckCircle2,
   ChevronRight,
   CircleAlert,
+  Eye,
   GraduationCap,
   ListRestart,
+  LoaderCircle,
+  Pencil,
+  Plus,
   RotateCcw,
   School,
   Search,
+  Trash2,
   UserRound,
   UsersRound,
+  X,
 } from 'lucide-react'
 
 type SchoolOption = { id: string; name: string }
@@ -25,6 +32,7 @@ type WorkspaceContext = {
 
 type TeacherSection = {
   id: string
+  sectionNumber: string
   schoolId: string
   schoolName: string
   sectionGroup: string
@@ -39,6 +47,7 @@ type TeacherSection = {
 
 type Student = {
   studentSectionId: string
+  sectionNumber?: string
   id: string
   name: string
   obfuscatedName?: string
@@ -60,17 +69,45 @@ type StudentDisplayMode = 'real' | 'obfuscated'
 type AssessmentHistoryRecord = {
   id: string
   assessmentType: string
+  recordName: string
   schoolYear: string
   period: string
   periodSortOrder: number
   assessmentDate?: string
   gradeAtAssessment?: string
+  chronologicalAge?: string
+  curriculum?: string
+  schoolAtAssessment?: string
+  courseNumber?: string
+  courseName?: string
+  teacherAtAssessment?: string
+  sectionNumber?: string
+  totalCorrect?: number
+  totalError?: number
   rawScore?: number
   standardScore?: number
+  percentileRank?: string
   descriptiveTerm: string
   descriptiveTermFill?: string
   descriptiveTermFont?: string
   exempt: boolean
+  exemptReason?: string
+  eTag?: string
+}
+
+type TosrecReferenceOption = {
+  rawScore: number
+  standardScore: number
+  percentileRank: string
+  descriptiveTermId: string
+  descriptiveTerm: string
+  descriptiveTermFill?: string
+  descriptiveTermFont?: string
+}
+
+type AssessmentTypeOption = {
+  value: string
+  enabled: boolean
 }
 
 type Selection = {
@@ -90,12 +127,37 @@ const emptySelection: Selection = {
 }
 
 async function getJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { credentials: 'include' })
+  const response = await fetch(url, { credentials: 'include', cache: 'no-store' })
   if (!response.ok) {
     const problem = await response.json().catch(() => null) as { title?: string } | null
     throw new ApiRequestError(problem?.title ?? `Request failed (${response.status})`, response.status)
   }
   return response.json() as Promise<T>
+}
+
+async function sendJson(url: string, method: 'POST' | 'PATCH', body: unknown): Promise<void> {
+  const response = await fetch(url, {
+    method,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    const problem = await response.json().catch(() => null) as { title?: string; error?: string } | null
+    throw new ApiRequestError(problem?.title ?? problem?.error ?? `Request failed (${response.status})`, response.status)
+  }
+}
+
+async function deleteRecord(url: string, eTag?: string): Promise<void> {
+  const response = await fetch(url, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: eTag ? { 'If-Match': eTag } : undefined,
+  })
+  if (!response.ok) {
+    const problem = await response.json().catch(() => null) as { title?: string; error?: string } | null
+    throw new ApiRequestError(problem?.title ?? problem?.error ?? `Request failed (${response.status})`, response.status)
+  }
 }
 
 class ApiRequestError extends Error {
@@ -500,6 +562,8 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
           currentSchoolYear={currentSchoolYear}
           focusArea={selection.sectionGroup}
           teacherSectionId={selectedSectionId}
+          teacherSection={selectedSection}
+          role={context?.role ?? ''}
           onClear={() => selectStudent('')}
         />
       ) : null}
@@ -567,12 +631,14 @@ function StudentCard({ student, studentDisplayMode, selected, onSelect }: {
   )
 }
 
-function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear, focusArea, teacherSectionId, onClear }: {
+function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear, focusArea, teacherSectionId, teacherSection, role, onClear }: {
   student: Student
   studentDisplayMode: StudentDisplayMode
   currentSchoolYear?: string
   focusArea: string
   teacherSectionId: string
+  teacherSection?: TeacherSection
+  role: string
   onClear: () => void
 }) {
   const [yearView, setYearView] = useState<'current' | 'previous'>('current')
@@ -580,7 +646,12 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [historyError, setHistoryError] = useState<string | null>(null)
   const [historyNeedsReconnect, setHistoryNeedsReconnect] = useState(false)
+  const [assessmentModalOpen, setAssessmentModalOpen] = useState(false)
+  const [editingRecord, setEditingRecord] = useState<AssessmentHistoryRecord | null>(null)
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
+  const [saveNotice, setSaveNotice] = useState<string | null>(null)
   const tosrecVisible = focusArea === 'Literacy' || focusArea === 'Foundations'
+  const canDeleteAssessments = role === 'Administrator' || role === 'Data Analyst'
 
   useEffect(() => {
     setYearView('current')
@@ -611,7 +682,7 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
       })
 
     return () => { cancelled = true }
-  }, [student.id, teacherSectionId, tosrecVisible])
+  }, [student.id, teacherSectionId, tosrecVisible, historyRefreshKey])
 
   const visibleTosrecHistory = tosrecHistory.filter((record) => yearView === 'current'
     ? record.schoolYear === currentSchoolYear
@@ -626,6 +697,17 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
           <p>Assessment history will be grouped by assessment type and focus area.</p>
         </div>
         <div className="student-assessment-actions">
+          <button
+            type="button"
+            className="assessment-add-button"
+            onClick={() => {
+              setEditingRecord(null)
+              setAssessmentModalOpen(true)
+              setSaveNotice(null)
+            }}
+          >
+            <Plus size={14} /> Add assessment
+          </button>
           <button type="button" onClick={onClear}>
             <ListRestart size={14} /> Back to class list
           </button>
@@ -655,6 +737,8 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
         </div>
         <span className="assessment-focus-context">{focusArea || 'Other'} assessments</span>
       </div>
+
+      {saveNotice ? <div className="assessment-save-notice"><CheckCircle2 size={17} />{saveNotice}</div> : null}
 
       {!tosrecVisible ? (
         <AssessmentHistoryEmpty text={`No Literacy or Numeracy assessment groups are mapped to ${focusArea || 'this section group'} yet.`} />
@@ -696,6 +780,18 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
                       {record.descriptiveTerm}
                     </strong>
                   </div>
+                  <button
+                    type="button"
+                    className="assessment-edit-button"
+                    aria-label={`View ${record.assessmentType} ${record.period} assessment`}
+                    onClick={() => {
+                      setEditingRecord(record)
+                      setAssessmentModalOpen(true)
+                      setSaveNotice(null)
+                    }}
+                  >
+                    <Eye size={13} /> View
+                  </button>
                 </article>
               ))}
             </div>
@@ -704,7 +800,550 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
           )}
         </section>
       )}
+
+      {assessmentModalOpen && teacherSection ? (
+        <AssessmentEntryModal
+          student={student}
+          studentDisplayMode={studentDisplayMode}
+          teacherSection={teacherSection}
+          focusArea={focusArea}
+          currentSchoolYear={currentSchoolYear ?? ''}
+          existingRecord={editingRecord}
+          canDeleteAssessment={canDeleteAssessments}
+          onClose={() => {
+            setAssessmentModalOpen(false)
+            setEditingRecord(null)
+          }}
+          onSaved={() => {
+            const wasEditing = Boolean(editingRecord)
+            setLoadingHistory(true)
+            setHistoryError(null)
+            setHistoryNeedsReconnect(false)
+            setAssessmentModalOpen(false)
+            setEditingRecord(null)
+            if (!wasEditing) setYearView('current')
+            setSaveNotice(wasEditing ? 'TOSREC assessment updated.' : 'TOSREC assessment added.')
+            setHistoryRefreshKey((value) => value + 1)
+          }}
+          onDeleted={() => {
+            setLoadingHistory(true)
+            setHistoryError(null)
+            setHistoryNeedsReconnect(false)
+            setAssessmentModalOpen(false)
+            setEditingRecord(null)
+            setSaveNotice('TOSREC assessment deleted.')
+            setHistoryRefreshKey((value) => value + 1)
+          }}
+        />
+      ) : null}
     </section>
+  )
+}
+
+function AssessmentEntryModal({
+  student,
+  studentDisplayMode,
+  teacherSection,
+  focusArea,
+  currentSchoolYear,
+  existingRecord,
+  canDeleteAssessment,
+  onClose,
+  onSaved,
+  onDeleted,
+}: {
+  student: Student
+  studentDisplayMode: StudentDisplayMode
+  teacherSection: TeacherSection
+  focusArea: string
+  currentSchoolYear: string
+  existingRecord: AssessmentHistoryRecord | null
+  canDeleteAssessment: boolean
+  onClose: () => void
+  onSaved: () => void
+  onDeleted: () => void
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const keepEditingRef = useRef<HTMLButtonElement>(null)
+  const discardChangesRef = useRef<HTMLButtonElement>(null)
+  const cancelDeleteRef = useRef<HTMLButtonElement>(null)
+  const confirmDeleteRef = useRef<HTMLButtonElement>(null)
+  const assessmentTypes = useMemo(
+    () => getAssessmentTypeOptions(student.grade, focusArea),
+    [student.grade, focusArea],
+  )
+  const initialValues = useMemo(() => ({
+    assessmentType: existingRecord?.assessmentType ?? '',
+    assessmentDate: toDateInputValue(existingRecord?.assessmentDate),
+    period: getPeriodValue(existingRecord?.period)?.toString() ?? '',
+    exempt: existingRecord ? (existingRecord.exempt ? 'yes' : 'no') : '',
+    exemptReason: existingRecord?.exemptReason ?? '',
+    totalCorrect: existingRecord?.totalCorrect?.toString() ?? '',
+    totalError: existingRecord?.totalError?.toString() ?? '',
+  }), [existingRecord])
+  const [assessmentType, setAssessmentType] = useState(initialValues.assessmentType)
+  const [assessmentDate, setAssessmentDate] = useState(initialValues.assessmentDate)
+  const [period, setPeriod] = useState(initialValues.period)
+  const [exempt, setExempt] = useState(initialValues.exempt)
+  const [exemptReason, setExemptReason] = useState(initialValues.exemptReason)
+  const [totalCorrect, setTotalCorrect] = useState(initialValues.totalCorrect)
+  const [totalError, setTotalError] = useState(initialValues.totalError)
+  const [references, setReferences] = useState<TosrecReferenceOption[]>([])
+  const [loadingReferences, setLoadingReferences] = useState(false)
+  const [referenceError, setReferenceError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [formMode, setFormMode] = useState<'new' | 'view' | 'edit'>(existingRecord ? 'view' : 'new')
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const isReadOnly = formMode === 'view'
+  const existingRecordEditable = Boolean(
+    existingRecord
+    && existingRecord.schoolYear === currentSchoolYear
+    && existingRecord.period === getCurrentPeriod()?.label,
+  )
+  const assessmentDatePeriod = getAssessmentPeriodForDate(assessmentDate)
+  const availablePeriodOptions = assessmentDatePeriod
+    ? assessmentPeriodOptions.filter((option) => option.value === assessmentDatePeriod)
+    : []
+  const isExempt = exempt === 'yes'
+  const schoolYear = existingRecord?.schoolYear || currentSchoolYear
+  const chronologicalAge = calculateChronologicalAge(student.dateOfBirth, assessmentDate)
+  const curriculum = assessmentType ? getAssessmentCurriculum(assessmentType) : ''
+  const schoolAtAssessment = existingRecord?.schoolAtAssessment || teacherSection.schoolName
+  const gradeAtAssessment = existingRecord?.gradeAtAssessment || student.grade || ''
+  const courseNumber = existingRecord?.courseNumber || teacherSection.courseNumber
+  const courseName = existingRecord?.courseName || teacherSection.courseName
+  const teacherAtAssessment = existingRecord?.teacherAtAssessment || teacherSection.teacherName
+  const assessmentDetailsComplete = Boolean(
+    assessmentType
+    && assessmentDate
+    && period
+    && Number(period) === assessmentDatePeriod
+    && exempt
+    && (!isExempt || exemptReason.trim()),
+  )
+  const assessmentSnapshotComplete = Boolean(
+    assessmentDetailsComplete
+    && chronologicalAge
+    && curriculum
+    && schoolAtAssessment
+    && gradeAtAssessment
+    && schoolYear
+    && courseNumber
+    && courseName
+    && teacherAtAssessment,
+  )
+  const scoringComplete = isExempt || (totalCorrect !== '' && totalError !== '')
+  const rawScore = scoringComplete && !isExempt
+    ? Math.max(0, Number(totalCorrect) - Number(totalError))
+    : null
+  const score = rawScore === null
+    ? null
+    : references.find((option) => option.rawScore === rawScore) ?? null
+  const formSnapshot = JSON.stringify({ assessmentType, assessmentDate, period, exempt, exemptReason, totalCorrect, totalError })
+  const initialSnapshot = JSON.stringify(initialValues)
+  const isDirty = formSnapshot !== initialSnapshot
+  const canSave = assessmentType === 'TOSREC'
+    && !isReadOnly
+    && assessmentSnapshotComplete
+    && scoringComplete
+    && (isExempt || Boolean(score))
+    && !loadingReferences
+    && !saving
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (dialog && !dialog.open) dialog.showModal()
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+      if (dialog?.open) dialog.close()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (discardConfirmOpen) keepEditingRef.current?.focus()
+  }, [discardConfirmOpen])
+
+  useEffect(() => {
+    if (deleteConfirmOpen) cancelDeleteRef.current?.focus()
+  }, [deleteConfirmOpen])
+
+  useEffect(() => {
+    let cancelled = false
+    setReferences([])
+    setReferenceError(null)
+    if (assessmentType !== 'TOSREC' || !assessmentDetailsComplete || isExempt || !period) return
+
+    setLoadingReferences(true)
+    getJson<TosrecReferenceOption[]>(
+      `/api/assessments/teacher-sections/${teacherSection.id}/students/${student.id}/entry/tosrec/references?period=${period}`,
+    )
+      .then((options) => {
+        if (!cancelled) setReferences(options)
+      })
+      .catch((requestError: Error) => {
+        if (!cancelled) setReferenceError(requestError.message)
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingReferences(false)
+      })
+    return () => { cancelled = true }
+  }, [assessmentType, isExempt, assessmentDetailsComplete, period, student.id, teacherSection.id])
+
+  const closeImmediately = () => {
+    dialogRef.current?.close()
+    onClose()
+  }
+
+  const requestClose = () => {
+    if (!isReadOnly && isDirty) {
+      setDiscardConfirmOpen(true)
+      return
+    }
+    closeImmediately()
+  }
+
+  const saveAssessment = async () => {
+    if (!canSave) return
+    setSaving(true)
+    setSaveError(null)
+    const body = {
+      assessmentDate,
+      period: Number(period),
+      exempt: isExempt,
+      exemptReason: isExempt ? exemptReason.trim() : null,
+      totalCorrect: isExempt ? null : Number(totalCorrect),
+      totalError: isExempt ? null : Number(totalError),
+      eTag: existingRecord?.eTag ?? null,
+    }
+    const baseUrl = `/api/assessments/teacher-sections/${teacherSection.id}/students/${student.id}/entry/tosrec`
+    try {
+      await sendJson(
+        existingRecord ? `${baseUrl}/${existingRecord.id}` : baseUrl,
+        existingRecord ? 'PATCH' : 'POST',
+        body,
+      )
+      onSaved()
+    } catch (requestError) {
+      setSaveError(requestError instanceof Error ? requestError.message : 'The assessment could not be saved.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const deleteAssessment = async () => {
+    if (!existingRecord || !canDeleteAssessment || deleting) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteRecord(
+        `/api/assessments/teacher-sections/${teacherSection.id}/students/${student.id}/entry/tosrec/${existingRecord.id}`,
+        existingRecord.eTag,
+      )
+      onDeleted()
+    } catch (requestError) {
+      setDeleteError(requestError instanceof Error ? requestError.message : 'The assessment could not be deleted.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="assessment-entry-dialog"
+      aria-labelledby="assessment-entry-title"
+      onCancel={(event) => {
+        event.preventDefault()
+        if (deleteConfirmOpen && !deleting) setDeleteConfirmOpen(false)
+        else if (discardConfirmOpen) setDiscardConfirmOpen(false)
+        else requestClose()
+      }}
+    >
+      <div className="assessment-entry-shell">
+        <header className="assessment-entry-header">
+          <div>
+            <span className="eyebrow">Assessment data entry</span>
+            <h2 id="assessment-entry-title">
+              {formMode === 'new' ? 'Add Student Assessment' : formMode === 'edit' ? 'Edit Student Assessment' : 'View Student Assessment'}
+            </h2>
+            <p>{getStudentDisplayName(student, studentDisplayMode)} · {student.grade ?? 'Grade not recorded'}</p>
+          </div>
+          <button type="button" className="assessment-dialog-close" aria-label="Close assessment" onClick={requestClose}>
+            <X size={18} />
+          </button>
+        </header>
+
+        <div className="assessment-entry-content">
+          <label className="assessment-type-selector">
+            <span>Assessment Type</span>
+            <select
+              value={assessmentType}
+              disabled={Boolean(existingRecord) || isReadOnly}
+              autoFocus={!existingRecord}
+              onChange={(event) => {
+                setAssessmentType(event.target.value)
+                setTotalCorrect('')
+                setTotalError('')
+                setReferences([])
+              }}
+            >
+              <option value="">Select Assessment Type</option>
+              {assessmentTypes.map((option) => (
+                <option value={option.value} disabled={!option.enabled} key={option.value}>
+                  {option.value}{option.enabled ? '' : ' — scoring form not yet connected'}
+                </option>
+              ))}
+            </select>
+            <small>Filtered by Student Curriculum and Grade</small>
+          </label>
+
+          {assessmentType ? <section className="assessment-form-section" aria-labelledby="assessment-master-heading">
+            <div className="assessment-form-section-heading">
+              <div>
+                <h3 id="assessment-master-heading">Assessment Detail</h3>
+              </div>
+            </div>
+
+            <div className="assessment-master-grid">
+              <label className="assessment-form-field">
+                <span>Assessment Date <em>Required</em></span>
+                <input
+                  type="date"
+                  value={assessmentDate}
+                  disabled={isReadOnly}
+                  onChange={(event) => {
+                    setAssessmentDate(event.target.value)
+                    setPeriod('')
+                    setTotalCorrect('')
+                    setTotalError('')
+                  }}
+                />
+              </label>
+              <label className="assessment-form-field">
+                <span>Period <em>Required</em></span>
+                <select
+                  value={period}
+                  disabled={isReadOnly || !assessmentDate}
+                  onChange={(event) => {
+                    setPeriod(event.target.value)
+                    setTotalCorrect('')
+                    setTotalError('')
+                  }}
+                >
+                  <option value="">Select period</option>
+                  {availablePeriodOptions.map((option) => (
+                    <option value={option.value} key={option.value}>{option.label}</option>
+                  ))}
+                </select>
+                {assessmentDate && !assessmentDatePeriod ? <small>No assessment period is available for this date.</small> : null}
+              </label>
+              <label className="assessment-form-field">
+                <span>Exempt <em>Required</em></span>
+                <select disabled={isReadOnly} value={exempt} onChange={(event) => setExempt(event.target.value)}>
+                  <option value="">Select exempt status</option>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </label>
+              {isExempt ? <label className="assessment-form-field assessment-reason-field">
+                <span>Exempt Reason <em>Required</em></span>
+                <textarea
+                  rows={3}
+                  value={exemptReason}
+                  disabled={isReadOnly}
+                  placeholder="Enter the reason for exemption"
+                  onChange={(event) => setExemptReason(event.target.value)}
+                />
+              </label> : null}
+            </div>
+          </section> : <div className="assessment-inline-empty">Assessment Type must be selected before continuing</div>}
+
+          {assessmentDetailsComplete && assessmentType === 'TOSREC' && !isExempt ? (
+            <section className="assessment-form-section assessment-score-section" aria-labelledby="tosrec-score-heading">
+              <div className="assessment-form-section-heading">
+                <div>
+                  <span className="eyebrow">TOSREC</span>
+                  <h3 id="tosrec-score-heading">Assessment Scoring</h3>
+                </div>
+                {loadingReferences ? <span className="assessment-section-state"><LoaderCircle className="spin" size={14} />Loading reference</span> : null}
+              </div>
+
+              {referenceError ? <div className="error-banner"><CircleAlert size={18} />{referenceError}</div> : null}
+              {!referenceError && !loadingReferences && references.length === 0 ? (
+                <div className="assessment-inline-empty">No TOSREC reference values match this Grade and Period.</div>
+              ) : null}
+              {references.length > 0 ? (
+                <>
+                  <div className="assessment-score-inputs">
+                    <label className="assessment-form-field">
+                      <span>Total Correct <em>Required</em></span>
+                      <select disabled={isReadOnly} value={totalCorrect} onChange={(event) => setTotalCorrect(event.target.value)}>
+                        <option value="">Select total correct</option>
+                        {references.map((option) => <option value={option.rawScore} key={option.rawScore}>{option.rawScore}</option>)}
+                      </select>
+                    </label>
+                    <label className="assessment-form-field">
+                      <span>Total Error <em>Required</em></span>
+                      <select disabled={isReadOnly} value={totalError} onChange={(event) => setTotalError(event.target.value)}>
+                        <option value="">Select total error</option>
+                        {references.map((option) => <option value={option.rawScore} key={option.rawScore}>{option.rawScore}</option>)}
+                      </select>
+                    </label>
+                  </div>
+
+                  {scoringComplete ? (
+                    <div className="assessment-calculated-results" aria-live="polite">
+                      <ReadOnlyAssessmentField label="Raw Score" value={rawScore?.toString() ?? '—'} />
+                      <ReadOnlyAssessmentField label="Standard Score" value={score?.standardScore.toString() ?? 'No matching reference'} />
+                      <ReadOnlyAssessmentField label="Percentile Rank" value={score?.percentileRank ?? 'No matching reference'} />
+                      <div className="assessment-result-field">
+                        <span>Descriptive Term</span>
+                        <strong style={{
+                          backgroundColor: score?.descriptiveTermFill || '#eef2f5',
+                          color: score?.descriptiveTermFont || '#29465d',
+                        }}>
+                          {score?.descriptiveTerm ?? 'No matching reference'}
+                        </strong>
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </section>
+          ) : assessmentDetailsComplete && assessmentType === 'TOSREC' && isExempt ? (
+            <div className="assessment-exempt-note"><CheckCircle2 size={18} />TOSREC scoring is not required for an exempt assessment.</div>
+          ) : assessmentType && assessmentType !== 'TOSREC' ? (
+            <div className="assessment-inline-empty">The {assessmentType} scoring form will be connected in a later PoC slice.</div>
+          ) : assessmentType ? (
+            <div className="assessment-inline-empty">Please complete the Assessment Details before continuing to Assessment Specific Scoring</div>
+          ) : null}
+
+          {saveError ? <div className="error-banner"><CircleAlert size={18} />{saveError}</div> : null}
+        </div>
+
+        <footer className="assessment-entry-footer">
+          <span>{isReadOnly ? 'Viewing the saved assessment record.' : 'Assessment record is not created or updated until Save is selected.'}</span>
+          <div>
+            <button type="button" className="assessment-cancel-button" onClick={requestClose}>{isReadOnly ? 'Close' : 'Cancel'}</button>
+            {isReadOnly && existingRecord && canDeleteAssessment ? (
+              <button type="button" className="assessment-delete-button" onClick={() => {
+                setDeleteError(null)
+                setDeleteConfirmOpen(true)
+              }}>
+                <Trash2 size={15} /> Delete Assessment
+              </button>
+            ) : null}
+            {isReadOnly && existingRecordEditable ? (
+              <button type="button" className="assessment-save-button" onClick={() => {
+                setFormMode('edit')
+                setSaveError(null)
+              }}>
+                <Pencil size={15} /> Edit
+              </button>
+            ) : !isReadOnly ? (
+              <button type="button" className="assessment-save-button" disabled={!canSave} onClick={saveAssessment}>
+                {saving ? <LoaderCircle className="spin" size={15} /> : <CheckCircle2 size={15} />}
+                {saving ? 'Saving…' : 'Save Assessment'}
+              </button>
+            ) : null}
+          </div>
+        </footer>
+
+        {discardConfirmOpen ? (
+          <div className="assessment-discard-backdrop">
+            <section
+              className="assessment-discard-dialog"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="assessment-discard-title"
+              aria-describedby="assessment-discard-description"
+              onKeyDown={(event) => {
+                if (event.key !== 'Tab') return
+                if (event.shiftKey && document.activeElement === keepEditingRef.current) {
+                  event.preventDefault()
+                  discardChangesRef.current?.focus()
+                } else if (!event.shiftKey && document.activeElement === discardChangesRef.current) {
+                  event.preventDefault()
+                  keepEditingRef.current?.focus()
+                }
+              }}
+            >
+              <div className="assessment-discard-heading">
+                <span><CircleAlert size={20} /></span>
+                <div>
+                  <h3 id="assessment-discard-title">Discard unsaved changes?</h3>
+                  <p id="assessment-discard-description">Any changes made since opening this assessment will be lost.</p>
+                </div>
+              </div>
+              <div className="assessment-discard-actions">
+                <button ref={keepEditingRef} type="button" className="assessment-cancel-button" onClick={() => setDiscardConfirmOpen(false)}>
+                  Keep editing
+                </button>
+                <button ref={discardChangesRef} type="button" className="assessment-discard-button" onClick={closeImmediately}>
+                  <Trash2 size={15} /> Discard changes
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {deleteConfirmOpen ? (
+          <div className="assessment-discard-backdrop">
+            <section
+              className="assessment-discard-dialog"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="assessment-delete-title"
+              aria-describedby="assessment-delete-description"
+              onKeyDown={(event) => {
+                if (event.key !== 'Tab') return
+                if (event.shiftKey && document.activeElement === cancelDeleteRef.current) {
+                  event.preventDefault()
+                  confirmDeleteRef.current?.focus()
+                } else if (!event.shiftKey && document.activeElement === confirmDeleteRef.current) {
+                  event.preventDefault()
+                  cancelDeleteRef.current?.focus()
+                }
+              }}
+            >
+              <div className="assessment-discard-heading">
+                <span><Trash2 size={20} /></span>
+                <div>
+                  <h3 id="assessment-delete-title">Confirm Deletion of Record</h3>
+                  <p id="assessment-delete-description">This will permanently delete the TOSREC assessment from Dataverse. This action cannot be undone.</p>
+                </div>
+              </div>
+              {deleteError ? <div className="assessment-delete-error"><CircleAlert size={16} />{deleteError}</div> : null}
+              <div className="assessment-discard-actions">
+                <button ref={cancelDeleteRef} type="button" className="assessment-cancel-button" disabled={deleting} onClick={() => setDeleteConfirmOpen(false)}>
+                  Cancel
+                </button>
+                <button ref={confirmDeleteRef} type="button" className="assessment-discard-button" disabled={deleting} onClick={deleteAssessment}>
+                  {deleting ? <LoaderCircle className="spin" size={15} /> : <Trash2 size={15} />}
+                  {deleting ? 'Deleting…' : 'Delete Assessment'}
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+      </div>
+    </dialog>
+  )
+}
+
+function ReadOnlyAssessmentField({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
+  return (
+    <div className={`assessment-readonly-field${wide ? ' wide' : ''}`}>
+      <span>{label}</span>
+      <strong>{value || 'Not recorded'}</strong>
+    </div>
   )
 }
 
@@ -740,6 +1379,86 @@ function getStudentDisplayName(student: Student, mode: StudentDisplayMode) {
 function getStudentDisplayAsn(student: Student, mode: StudentDisplayMode) {
   if (mode === 'obfuscated') return student.obfuscatedAsn?.trim() || 'Obfuscated ASN unavailable'
   return student.asn?.trim() || 'Not recorded'
+}
+
+const assessmentPeriodOptions = [
+  { value: 1, label: 'Fall' },
+  { value: 2, label: 'Winter' },
+  { value: 3, label: 'Spring' },
+]
+
+function getAssessmentTypeOptions(grade: string | undefined, focusArea: string): AssessmentTypeOption[] {
+  let choices: string[] = []
+  if (grade === 'Kindergarten') {
+    if (focusArea === 'Literacy') choices = ['CTOPP', 'LeNS', 'ADLOF']
+    if (focusArea === 'Numeracy') choices = ['PNSA']
+  } else if (grade === 'Grade 1') {
+    choices = focusArea === 'Literacy'
+      ? ['CTOPP', 'LeNS', 'TOSREC', 'TOWRE']
+      : ['PNSA', 'WRAT-5']
+  } else if (grade === 'Grade 2') {
+    if (focusArea === 'Literacy') choices = ['LeNS', 'TOSREC', 'TOWRE']
+    if (focusArea === 'Numeracy') choices = ['PNSA', 'WRAT-5']
+    if (focusArea === 'Foundations') choices = ['LeNS', 'TOSREC', 'TOWRE', 'PNSA', 'WRAT-5']
+  } else if (grade === 'Grade 3') {
+    if (focusArea === 'Literacy') choices = ['LeNS', 'TOSREC', 'TOSWRF', 'TOWRE']
+    if (focusArea === 'Numeracy') choices = ['PNSA', 'WRAT-5']
+    if (focusArea === 'Foundations') choices = ['LeNS', 'TOSREC', 'TOSWRF', 'TOWRE', 'PNSA', 'WRAT-5']
+  } else {
+    if (focusArea === 'Literacy') choices = ['TOSREC', 'TOWRE']
+    if (focusArea === 'Numeracy') choices = ['PNSA', 'WRAT-5']
+    if (focusArea === 'Foundations') choices = ['LeNS', 'TOSREC', 'TOSWRF', 'TOWRE', 'PNSA', 'WRAT-5']
+  }
+
+  return choices.map((value) => ({ value, enabled: value === 'TOSREC' }))
+}
+
+function getAssessmentCurriculum(assessmentType: string) {
+  return assessmentType === 'WRAT-5' || assessmentType === 'PNSA'
+    ? 'Mathematics'
+    : 'English Language Arts and Literature'
+}
+
+function getCurrentPeriod() {
+  const month = new Date().getMonth() + 1
+  if (month >= 9) return { value: 1, label: 'Fall' }
+  if (month <= 3) return { value: 2, label: 'Winter' }
+  if (month <= 6) return { value: 3, label: 'Spring' }
+  return null
+}
+
+function getPeriodValue(label: string | undefined) {
+  return assessmentPeriodOptions.find((option) => option.label === label)?.value
+}
+
+function getAssessmentPeriodForDate(value: string) {
+  const [, month, day] = value.split('-').map(Number)
+  if (!month || !day) return null
+  if (month >= 9 && month <= 12) return 1
+  if (month === 1 || month === 2 || (month === 3 && day <= 30)) return 2
+  if (month >= 4 && month <= 6) return 3
+  return null
+}
+
+function toDateInputValue(value: string | undefined) {
+  return value?.slice(0, 10) ?? ''
+}
+
+function calculateChronologicalAge(dateOfBirth: string | undefined, assessmentDate: string) {
+  if (!dateOfBirth || !assessmentDate) return ''
+  const [birthYear, birthMonth, birthDay] = dateOfBirth.slice(0, 10).split('-').map(Number)
+  const [assessmentYear, assessmentMonth, assessmentDay] = assessmentDate.split('-').map(Number)
+  if (!birthYear || !birthMonth || !birthDay || !assessmentYear || !assessmentMonth || !assessmentDay) return ''
+  const birthValue = birthYear * 10_000 + birthMonth * 100 + birthDay
+  const assessmentValue = assessmentYear * 10_000 + assessmentMonth * 100 + assessmentDay
+  if (assessmentValue < birthValue) return ''
+
+  const birthdayHasPassed = birthMonth < assessmentMonth
+    || (birthMonth === assessmentMonth && birthDay <= assessmentDay)
+  const years = assessmentYear - birthYear - (birthdayHasPassed ? 0 : 1)
+  const monthDifference = assessmentMonth - birthMonth - (birthDay > assessmentDay ? 1 : 0)
+  const months = ((monthDifference % 12) + 12) % 12
+  return `${years}-${months}`
 }
 
 function unique(values: string[]) {

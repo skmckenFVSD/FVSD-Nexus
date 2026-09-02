@@ -2,7 +2,7 @@
 
 > [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Assessment entry and scoring
 
-**Status:** Class Assignment and read-only TOSREC history PoC locked and deployed; stable Canvas App and Dataverse foundation already exists
+**Status:** End-to-end Class Assignment and TOSREC lifecycle PoC complete; stable Canvas App and Dataverse foundation already exists
 
 Assessment entry is expected to be primarily a UX modernization rather than a data-platform rebuild.
 
@@ -40,21 +40,37 @@ Signed-in User Role
 - The developer-only Current Role card includes an in-session `R` / `O` display switch. `R` uses the real student name and ASN; `O` uses `fvsd_obfuscatedname` and `fvsd_obfuscatedasn` in the Student filter, live-selection path, roster cards, and selected-student assessment heading.
 - Display mode changes only the rendered identifiers. Student and section GUIDs, authorization checks, Dataverse queries, assessment-history requests, and saved data remain unchanged. Missing obfuscated values never fall back to real identifiers.
 
-This slice intentionally stops before assessment forms and Dataverse writes. It proves identity, role scope, cascading discovery, roster loading, and governed read-only history first.
+This foundation now continues into a governed TOSREC create, view, edit, and delete lifecycle while preserving the same identity, role, section, and student scope.
 
-## Read-only TOSREC history
+## TOSREC history and record lifecycle
 
 The locked slice adds TOSREC as the first assessment-history adapter:
 
 - A selected student's records are read from `fvsd_studenttosrecassessment` through a controlled backend endpoint.
 - Results are authorized against the selected teacher section and student assignment before the assessment table is queried.
 - Current Year is always the initial view; Previous Years contains every record outside the authenticated session's current school year.
-- Each row presents School Year, Period, Standard Score, and Descriptive Term. Assessment date, grade at assessment, raw score, and exemption state remain available in the typed API model for later UX refinement.
+- Each row presents School Year, Period, Standard Score, and Descriptive Term, and opens the complete record in a read-only modal for fields that do not belong in the compact history row.
 - Descriptive Term name, fill colour, and font colour are expanded from `fvsd_descriptiveterm`, preserving the governed Dataverse presentation.
 - Literacy and Foundations contexts expose TOSREC; other focus contexts remain empty until their assessment adapters are implemented.
 - If the browser cookie remains valid but delegated Dataverse token acquisition requires interaction, the API returns a controlled 401 and the panel offers a Microsoft-services reconnect action instead of a generic server error.
 
 The same typed adapter pattern will be extended to TOSWRF, TOWRE, CTOPP, LeNS, ADLOF, NLM, CELF-P, WRAT-5, and PNSA after their field variants are documented.
+
+## End-to-end TOSREC proof
+
+The modal uses a shared assessment-detail stage followed by an assessment-specific scoring stage:
+
+- Assessment Type is filtered by the selected student's curriculum context and grade; TOSREC is the implemented adapter.
+- The user enters Assessment Date, Period, Exempt status, and an Exempt Reason only when required. Derived identity, student, school, grade, school year, age, curriculum, course, teacher, and section values remain hidden from the user but are validated and saved.
+- Period choices are constrained by Assessment Date: Fall is September 1-December 31, Winter is January 1-March 30, and Spring is April 1-June 30. March 31, July, and August do not map to an assessment period.
+- For non-exempt records, Total Correct and Total Error are required reference selections. Raw Score, Standard Score, Percentile Rank, and Descriptive Term are derived from the existing `fvsd_tosrecreference` and `fvsd_descriptiveterm` records and validated again by the backend.
+- Exempt records require the applicable master detail and Exempt Reason but bypass the scoring section entirely.
+- Save creates or updates `fvsd_studenttosrecassessment` through the signed-in user's delegated Dataverse token, closes the modal, and reloads the selected student's history without using a cached response.
+- History actions open in View mode. Edit replaces the Save action only for a record in the current operational school year and current date-derived period.
+- Delete Assessment is available in View mode only to School Administration and Data Analyst roles. The API repeats authorization and scope checks, uses Dataverse concurrency information, deletes the record, and refreshes history.
+- New and edited record keys use `start year|ASN|assessment type|period`, for example `2026|314899790|TOSREC|Fall`.
+
+The API treats section number as business-recommended rather than required, matching the valid Dataverse cases where a student-section record has no section number.
 
 ## Authenticated school-year context
 
@@ -144,7 +160,7 @@ An administrative correction should retain the requester, reason, original and p
 - Historical records remain read-only outside the administrative correction workflow.
 - Every write is attributable to the signed-in user.
 
-## Locked PoC boundary - September 1, 2026
+## Locked PoC boundary - September 2, 2026
 
 Included in this release:
 
@@ -153,16 +169,19 @@ Included in this release:
 - Authorized teacher-section discovery and student rosters.
 - Authenticated Edmonton-time current school year.
 - Student focus/reset behaviour.
-- Read-only TOSREC history with Current Year and Previous Years views.
+- TOSREC history with Current Year and Previous Years views and complete record inspection.
 - Governed descriptive-term labels and colours.
 - Delegated-session reconnect handling.
+- TOSREC reference lookup, scoring preview, and server-side calculation validation.
+- Scored and exempt TOSREC record creation.
+- Current-period TOSREC editing and historical read-only enforcement.
+- Role-restricted TOSREC deletion with confirmation and concurrency protection.
+- Immediate assessment-history refresh after every successful mutation.
 
 Explicitly excluded from this release:
 
-- Assessment data-entry forms.
-- Reference-table scoring previews.
-- Dataverse creates or updates.
-- Current-period edit enforcement and historical correction requests.
+- Additional assessment-specific adapters beyond TOSREC.
+- Historical correction requests and approval workflow.
 - Additional assessment-history adapters.
 
 ## Related documentation
