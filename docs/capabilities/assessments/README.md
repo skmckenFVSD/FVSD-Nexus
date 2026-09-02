@@ -37,6 +37,8 @@ Signed-in User Role
 - School selection alone does not load class assignments. Section Group must be selected before Course and matching teacher sections are requested, reducing unnecessary Dataverse calls.
 - Selecting a teacher section loads a three-column, internally scrolling student roster; selecting a student replaces the class roster with a focused student record and assessment panel.
 - Back to class list clears the selected student, restores the full roster, hides assessment history, and resets the history view to Current Year.
+- The developer-only Current Role card includes an in-session `R` / `O` display switch. `R` uses the real student name and ASN; `O` uses `fvsd_obfuscatedname` and `fvsd_obfuscatedasn` in the Student filter, live-selection path, roster cards, and selected-student assessment heading.
+- Display mode changes only the rendered identifiers. Student and section GUIDs, authorization checks, Dataverse queries, assessment-history requests, and saved data remain unchanged. Missing obfuscated values never fall back to real identifiers.
 
 This slice intentionally stops before assessment forms and Dataverse writes. It proves identity, role scope, cascading discovery, roster loading, and governed read-only history first.
 

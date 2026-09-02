@@ -156,6 +156,9 @@ public sealed class DataverseAssessmentWorkspaceClientTests
                   "fvsd_student": {
                     "fvsd_studentdetailid": "50000000-0000-0000-0000-000000000002",
                     "fvsd_name": "Alpha Student",
+                    "fvsd_obfuscatedname": "Demo Learner 01",
+                    "fvsd_asn": "123456789",
+                    "fvsd_obfuscatedasn": "900000001",
                     "fvsd_grade": 6,
                     "fvsd_grade@OData.Community.Display.V1.FormattedValue": "Grade 5"
                   }
@@ -167,6 +170,9 @@ public sealed class DataverseAssessmentWorkspaceClientTests
         var rows = DataverseAssessmentWorkspaceClient.ParseStudents(document.RootElement);
 
         Assert.Equal("Alpha Student", rows[0].Name);
+        Assert.Equal("Demo Learner 01", rows[0].ObfuscatedName);
+        Assert.Equal("123456789", rows[0].Asn);
+        Assert.Equal("900000001", rows[0].ObfuscatedAsn);
         Assert.Equal("Grade 5", rows[0].Grade);
         Assert.Equal(6, rows[0].GradeValue);
     }

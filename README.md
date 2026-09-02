@@ -51,6 +51,7 @@ The second slice begins the operational assessment experience and proves that th
 - Load a selected student's TOSREC history with Current Year and Previous Years views.
 - Present the governed descriptive term and its existing Dataverse colours alongside school year, period, and standard score.
 - Enforce section/student scope on the server and request a fresh delegated Microsoft session when token acquisition requires user interaction.
+- Let the developer switch student names and ASNs between real and synchronized obfuscated values for safe demonstrations and documentation captures, without changing the governed record identity or issuing another Dataverse request.
 
 This locked slice is read-only. Assessment forms, scoring previews, record creation, record updates, and historical correction workflows are intentionally deferred.
 

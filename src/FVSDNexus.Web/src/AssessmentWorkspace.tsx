@@ -55,6 +55,8 @@ type Student = {
   spokenLanguage?: string
 }
 
+type StudentDisplayMode = 'real' | 'obfuscated'
+
 type AssessmentHistoryRecord = {
   id: string
   assessmentType: string
@@ -105,7 +107,10 @@ class ApiRequestError extends Error {
   }
 }
 
-export function AssessmentWorkspace({ currentSchoolYear }: { currentSchoolYear?: string }) {
+export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'real' }: {
+  currentSchoolYear?: string
+  studentDisplayMode?: StudentDisplayMode
+}) {
   const [context, setContext] = useState<WorkspaceContext | null>(null)
   const [selection, setSelection] = useState<Selection>(emptySelection)
   const [sectionGroups, setSectionGroups] = useState<SectionGroupOption[]>([])
@@ -236,6 +241,9 @@ export function AssessmentWorkspace({ currentSchoolYear }: { currentSchoolYear?:
 
   const selectedSection = sections.find((section) => section.id === selectedSectionId)
   const selectedStudent = students.find((student) => student.id === selection.studentId)
+  const displayStudents = useMemo(() => [...students].sort((left, right) =>
+    getStudentDisplayName(left, studentDisplayMode).localeCompare(getStudentDisplayName(right, studentDisplayMode))),
+  [students, studentDisplayMode])
 
   const clearLoadedStudents = () => {
     setSelectedSectionId('')
@@ -375,7 +383,10 @@ export function AssessmentWorkspace({ currentSchoolYear }: { currentSchoolYear?:
               label="Student"
               value={selection.studentId}
               placeholder="Select student"
-              options={students.map((student) => ({ value: student.id, label: student.name }))}
+              options={displayStudents.map((student) => ({
+                value: student.id,
+                label: getStudentDisplayName(student, studentDisplayMode),
+              }))}
               onChange={selectStudent}
             />
           ) : null}
@@ -384,7 +395,7 @@ export function AssessmentWorkspace({ currentSchoolYear }: { currentSchoolYear?:
         <div className="assessment-filter-footer">
           <div className="assessment-live-selection">
             <Search size={14} />
-            <span>{describeSelection(selection, context, sections, students)}</span>
+            <span>{describeSelection(selection, context, sections, students, studentDisplayMode)}</span>
           </div>
           <button type="button" className="assessment-reset" onClick={reset}>
             <RotateCcw size={14} /> Reset filters
@@ -466,11 +477,12 @@ export function AssessmentWorkspace({ currentSchoolYear }: { currentSchoolYear?:
               </div>
             </div>
             <div className="student-card-grid">
-              {students
+              {displayStudents
                 .filter((student) => !selection.studentId || student.id === selection.studentId)
                 .map((student) => (
                   <StudentCard
                     student={student}
+                    studentDisplayMode={studentDisplayMode}
                     selected={student.id === selection.studentId}
                     onSelect={() => selectStudent(student.id)}
                     key={student.studentSectionId}
@@ -484,6 +496,7 @@ export function AssessmentWorkspace({ currentSchoolYear }: { currentSchoolYear?:
       {selectedStudent ? (
         <StudentAssessmentPanel
           student={selectedStudent}
+          studentDisplayMode={studentDisplayMode}
           currentSchoolYear={currentSchoolYear}
           focusArea={selection.sectionGroup}
           teacherSectionId={selectedSectionId}
@@ -517,18 +530,22 @@ function AssessmentEmpty({ icon: Icon, text }: { icon: typeof School; text: stri
   return <div className="assessment-empty"><Icon size={24} /><span>{text}</span></div>
 }
 
-function StudentCard({ student, selected, onSelect }: {
+function StudentCard({ student, studentDisplayMode, selected, onSelect }: {
   student: Student
+  studentDisplayMode: StudentDisplayMode
   selected: boolean
   onSelect: () => void
 }) {
+  const studentName = getStudentDisplayName(student, studentDisplayMode)
+  const studentAsn = getStudentDisplayAsn(student, studentDisplayMode)
+
   return (
     <article
       className={`student-card interactive${selected ? ' selected' : ''}`}
       role="button"
       tabIndex={0}
       aria-pressed={selected}
-      aria-label={`Select ${student.name}`}
+      aria-label={`Select ${studentName}`}
       onClick={onSelect}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -538,10 +555,10 @@ function StudentCard({ student, selected, onSelect }: {
       }}
     >
       <div className="student-card-heading">
-        <div><strong>{student.name}</strong><span>{student.grade ?? 'Grade not recorded'}</span></div>
+        <div><strong>{studentName}</strong><span>{student.grade ?? 'Grade not recorded'}</span></div>
       </div>
       <dl>
-        <div><dt>ASN</dt><dd>{student.asn ?? 'Not recorded'}</dd></div>
+        <div><dt>ASN</dt><dd>{studentAsn}</dd></div>
         <div><dt>Date of birth</dt><dd>{formatDate(student.dateOfBirth)}</dd></div>
         <div><dt>Gender</dt><dd>{student.gender ?? 'Not recorded'}</dd></div>
         <div><dt>SPED</dt><dd>{student.spedCategory ?? student.spedSeries ?? 'Not coded'}</dd></div>
@@ -550,8 +567,9 @@ function StudentCard({ student, selected, onSelect }: {
   )
 }
 
-function StudentAssessmentPanel({ student, currentSchoolYear, focusArea, teacherSectionId, onClear }: {
+function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear, focusArea, teacherSectionId, onClear }: {
   student: Student
+  studentDisplayMode: StudentDisplayMode
   currentSchoolYear?: string
   focusArea: string
   teacherSectionId: string
@@ -604,7 +622,7 @@ function StudentAssessmentPanel({ student, currentSchoolYear, focusArea, teacher
       <div className="student-assessment-heading">
         <div>
           <span className="eyebrow">Student assessments</span>
-          <h2 id="student-assessment-heading">{student.name}</h2>
+          <h2 id="student-assessment-heading">{getStudentDisplayName(student, studentDisplayMode)}</h2>
           <p>Assessment history will be grouped by assessment type and focus area.</p>
         </div>
         <div className="student-assessment-actions">
@@ -704,12 +722,24 @@ function describeSelection(
   context: WorkspaceContext | null,
   sections: TeacherSection[],
   students: Student[],
+  studentDisplayMode: StudentDisplayMode,
 ) {
   const school = context?.schools.find((option) => option.id === selection.schoolId)?.name
   const course = sections.find((section) => section.courseNumber === selection.courseNumber)?.courseName
   const teacher = sections.find((section) => section.teacherId === selection.teacherId)?.teacherName
-  const student = students.find((row) => row.id === selection.studentId)?.name
+  const selectedStudent = students.find((row) => row.id === selection.studentId)
+  const student = selectedStudent ? getStudentDisplayName(selectedStudent, studentDisplayMode) : undefined
   return [school, selection.sectionGroup, course, teacher, student].filter(Boolean).join(' / ') || 'Choose a school to begin'
+}
+
+function getStudentDisplayName(student: Student, mode: StudentDisplayMode) {
+  if (mode === 'obfuscated') return student.obfuscatedName?.trim() || 'Obfuscated name unavailable'
+  return student.name
+}
+
+function getStudentDisplayAsn(student: Student, mode: StudentDisplayMode) {
+  if (mode === 'obfuscated') return student.obfuscatedAsn?.trim() || 'Obfuscated ASN unavailable'
+  return student.asn?.trim() || 'Not recorded'
 }
 
 function unique(values: string[]) {

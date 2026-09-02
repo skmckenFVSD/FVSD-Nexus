@@ -80,6 +80,7 @@ const initialFilters: FilterState = {
 }
 
 type ActivePage = 'executive' | 'assessments' | 'ipp-preview'
+type StudentDisplayMode = 'real' | 'obfuscated'
 
 type SidebarNavItem = {
   id: ActivePage | 'coming-soon'
@@ -159,6 +160,7 @@ export function App() {
   const [filters, setFilters] = useState<FilterState>(initialFilters)
   const [filtersReady, setFiltersReady] = useState(false)
   const [roleChanging, setRoleChanging] = useState<string | null>(null)
+  const [studentDisplayMode, setStudentDisplayMode] = useState<StudentDisplayMode>('real')
   const [error, setError] = useState<string | null>(null)
   const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>({
     analytics: true,
@@ -329,6 +331,8 @@ export function App() {
               value={user.activeDevelopmentRole}
               changing={roleChanging}
               onChange={changeDevelopmentRole}
+              studentDisplayMode={studentDisplayMode}
+              onStudentDisplayModeChange={setStudentDisplayMode}
             />
           ) : <CurrentRoleCard role={user.activeDevelopmentRole} /> : null}
           <div className="security-label"><ShieldCheck size={15} /> Secured by FVSD Entra ID</div>
@@ -427,6 +431,7 @@ export function App() {
           </> : activePage === 'assessments' ? (
             <AssessmentWorkspace
               currentSchoolYear={user.currentSchoolYear}
+              studentDisplayMode={studentDisplayMode}
               key={user.activeDevelopmentRole ?? 'assessment-workspace'}
             />
           ) : (
@@ -518,11 +523,20 @@ function MultiSelectFilter({ label, value, options, allLabel, onChange }: {
   )
 }
 
-function DevelopmentRoleSwitcher({ roles, value, changing, onChange }: {
+function DevelopmentRoleSwitcher({
+  roles,
+  value,
+  changing,
+  onChange,
+  studentDisplayMode,
+  onStudentDisplayModeChange,
+}: {
   roles: string[]
   value: string | null
   changing: string | null
   onChange: (role: string) => void
+  studentDisplayMode: StudentDisplayMode
+  onStudentDisplayModeChange: (mode: StudentDisplayMode) => void
 }) {
   return (
     <section className="development-role-card" aria-label="Development role switcher">
@@ -540,6 +554,31 @@ function DevelopmentRoleSwitcher({ roles, value, changing, onChange }: {
             {changing === role ? 'Switching…' : role}
           </button>
         ))}
+      </div>
+      <div className="development-display-mode">
+        <span>Student data</span>
+        <div className="development-display-toggle" role="group" aria-label="Student data display mode">
+          <button
+            type="button"
+            className={studentDisplayMode === 'real' ? 'active' : ''}
+            aria-pressed={studentDisplayMode === 'real'}
+            aria-label="Show real student names and ASNs"
+            title="Real student names and ASNs"
+            onClick={() => onStudentDisplayModeChange('real')}
+          >
+            R
+          </button>
+          <button
+            type="button"
+            className={studentDisplayMode === 'obfuscated' ? 'active' : ''}
+            aria-pressed={studentDisplayMode === 'obfuscated'}
+            aria-label="Show obfuscated student names and ASNs"
+            title="Obfuscated student names and ASNs"
+            onClick={() => onStudentDisplayModeChange('obfuscated')}
+          >
+            O
+          </button>
+        </div>
       </div>
       <small>Development simulation only. Fabric RLS still uses your signed-in identity.</small>
     </section>
