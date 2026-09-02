@@ -7,6 +7,7 @@
 <title>FVSD Nexus: From Evidence to Action</title>
 <meta name="description" content="How one rural Alberta school division built governed, role-aware software on Microsoft Fabric, Dataverse and Power Platform, and what it taught us about trust.">
 <meta name="author" content="Scott Mckenzie">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon.png">
 
 <!-- Social preview -->
 <meta property="og:type" content="website">
@@ -68,15 +69,10 @@ body.nav-hidden #sidebar{transform:translateX(calc(-1 * var(--sidebar-w)))}
   border-block-end:1px solid var(--rule);
 }
 .sb-mark{display:flex;align-items:center;gap:11px}
-.sb-dot{
+.sb-logo{
   inline-size:34px;block-size:34px;border-radius:9px;flex:none;
-  background:linear-gradient(135deg,var(--cyan) 0%,var(--teal) 60%,var(--navy) 100%);
+  display:block;object-fit:contain;
   box-shadow:0 0 0 1px rgba(255,255,255,.14),0 6px 18px rgba(74,144,226,.3);
-  position:relative;
-}
-.sb-dot::after{
-  content:"";position:absolute;inset:9px 9px auto auto;
-  inline-size:8px;block-size:8px;border-radius:50%;background:var(--mint);
 }
 .sb-name{font-size:16px;font-weight:700;letter-spacing:.2px}
 .sb-sub{font-size:10.5px;color:var(--ink-faint);letter-spacing:1.3px;text-transform:uppercase;margin-block-start:2px}
@@ -409,7 +405,7 @@ body.grid-on #grid{display:block}
 <nav id="sidebar" aria-label="Presentation contents">
   <div class="sb-head">
     <div class="sb-mark">
-      <div class="sb-dot" aria-hidden="true"></div>
+      <img class="sb-logo" src="favicon.png" alt="">
       <div>
         <div class="sb-name">FVSD Nexus</div>
         <div class="sb-sub">Evidence to Action</div>

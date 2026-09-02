@@ -9,7 +9,7 @@ FVSD Nexus is expected to grow as a set of related capabilities built on common 
 | Leadership analytics | Working PoC | [Leadership analytics](leadership-analytics/README.md) |
 | School and student profiles | Planned | [Profiles](profiles/README.md) |
 | Assessment entry and scoring | Locked and deployed Class Assignment/TOSREC history PoC | [Assessments](assessments/README.md) |
-| Individual Program Plans | Proposed; majority of Dataverse foundation exists | [IPP](ipp/README.md) |
+| Individual Program Plans | Static Foundations 1 design preview; operational capability proposed | [IPP](ipp/README.md) |
 | Intervention tracking | Future definition required | [Interventions](interventions/README.md) |
 | PASI provincial connector | Proposed strategic differentiator; feasibility discovery documented | [PASI connector](pasi-connector/README.md) |
 | Purview governance and Data Analyst workspace | Proposed; existing external agent and Fabric governance foundation identified | [Purview governance](purview-governance/README.md) |
@@ -35,7 +35,7 @@ The application shell groups pages beneath collapsible capability headings:
 
 - **Analytics:** all existing analytical destinations, including the Executive overview.
 - **Assessments:** contains the locked role-scoped Class Assignment workspace, student roster, and read-only TOSREC history; assessment forms and writes follow later.
-- **Individual Program Plans:** reserved for IPP workflows.
+- **Individual Program Plans:** contains a view-only Foundations 1 design preview; student-linked plans, the builder, live data, and workflow remain proposed.
 - **Interventions:** reserved for future intervention workflows.
 - **PASI provincial connector:** a proposed backend integration capability rather than a general-user page; administrative status and reconciliation experiences would be added only for authorized roles.
 - **Purview governance:** a proposed Data Analyst workspace that composes governed documentation, data-product lifecycle, enterprise catalog, and policy-aware application functions; it is not a general-user or Purview-administration page.

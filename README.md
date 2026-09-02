@@ -24,7 +24,7 @@ FVSD Nexus is the proposed unified operational and analytics platform for Fort V
 | Leadership analytics | Working PoC | [Leadership analytics](docs/capabilities/leadership-analytics/README.md) |
 | School and student profiles | Planned | [Profiles](docs/capabilities/profiles/README.md) |
 | Assessment entry and scoring | Working Class Assignment and TOSREC history PoC | [Assessments](docs/capabilities/assessments/README.md) |
-| Individual Program Plans | Proposed; majority of data foundation exists | [IPP](docs/capabilities/ipp/README.md) |
+| Individual Program Plans | Static Foundations 1 design preview; operational capability proposed | [IPP](docs/capabilities/ipp/README.md) |
 | Intervention tracking | Future definition required | [Interventions](docs/capabilities/interventions/README.md) |
 | PASI provincial connector | Proposed strategic differentiator; public technical feasibility established | [PASI connector](docs/capabilities/pasi-connector/README.md) |
 | Purview governance and Data Analyst workspace | Proposed; existing FVSD agent and Fabric governance foundation identified | [Purview governance](docs/capabilities/purview-governance/README.md) |
@@ -109,6 +109,7 @@ Documentation uses explicit status labels so current functionality, confirmed pr
 
 ```text
 FVSD-Nexus/
+|-- assets/                     Reusable FVSD Nexus brand source assets
 |-- src/
 |   |-- FVSDNexus.Api/          ASP.NET Core backend-for-frontend
 |   `-- FVSDNexus.Web/          React and TypeScript interface

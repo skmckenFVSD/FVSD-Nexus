@@ -8,6 +8,7 @@ import {
   CircleAlert,
   CircleCheck,
   Database,
+  FileText,
   GraduationCap,
   Home,
   LifeBuoy,
@@ -19,7 +20,8 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { ExecutiveDashboard } from './ExecutiveDashboard'
 import { AssessmentWorkspace } from './AssessmentWorkspace'
-import fvsdAnalyticsAgentLogo from './assets/fvsd-analytics-agent.svg'
+import { IppPreview } from './IppPreview'
+import fvsdNexusLogo from './assets/fvsd-nexus-logo.png'
 
 type User = {
   name: string
@@ -77,8 +79,10 @@ const initialFilters: FilterState = {
   period: [],
 }
 
+type ActivePage = 'executive' | 'assessments' | 'ipp-preview'
+
 type SidebarNavItem = {
-  id: 'executive' | 'assessments' | 'coming-soon'
+  id: ActivePage | 'coming-soon'
   label: string
   icon: LucideIcon
   isComingSoon?: boolean
@@ -119,8 +123,9 @@ const navGroups: SidebarNavGroup[] = [
     id: 'individual-program-plans',
     label: 'Individual Program Plans',
     icon: GraduationCap,
-    items: [],
-    emptyMessage: 'Capability pages will be added here.',
+    items: [
+      { id: 'ipp-preview', label: 'Foundations 1 preview', icon: FileText },
+    ],
   },
   {
     id: 'interventions',
@@ -146,7 +151,7 @@ async function getJson<T>(url: string): Promise<T> {
 }
 
 export function App() {
-  const [activePage, setActivePage] = useState<'executive' | 'assessments'>('executive')
+  const [activePage, setActivePage] = useState<ActivePage>('executive')
   const [user, setUser] = useState<User | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [filterOptions, setFilterOptions] = useState<FilterOptions>(emptyFilterOptions)
@@ -249,7 +254,7 @@ export function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark"><img src={fvsdAnalyticsAgentLogo} alt="" /></div>
+          <div className="brand-mark"><img src={fvsdNexusLogo} alt="" /></div>
           <div className="brand-copy">
             <strong>FVSD Nexus</strong>
             <span className="brand-division">Fort Vermilion School Division</span>
@@ -291,7 +296,7 @@ export function App() {
                         aria-current={isActive ? 'page' : undefined}
                         disabled={itemId === 'coming-soon'}
                         onClick={() => {
-                          if (itemId === 'executive' || itemId === 'assessments') setActivePage(itemId)
+                          if (itemId !== 'coming-soon') setActivePage(itemId)
                         }}
                       >
                         <Icon size={17} aria-hidden="true" />
@@ -331,16 +336,24 @@ export function App() {
         </div>
       </aside>
 
-      <main className={activePage === 'assessments' ? 'assessment-page' : undefined}>
+      <main className={activePage === 'assessments' ? 'assessment-page' : activePage === 'ipp-preview' ? 'ipp-page' : undefined}>
         <header className="page-header">
           <div>
             <span className="eyebrow">{activePage === 'executive'
               ? (user?.activeDevelopmentRole ? `${user.activeDevelopmentRole} development view` : 'FVSD leadership')
-              : 'Assessment data entry · proof of concept'}</span>
-            <h1>{activePage === 'executive' ? 'Executive Dashboard' : 'Class Assignment'}</h1>
+              : activePage === 'assessments'
+                ? 'Assessment data entry - proof of concept'
+                : 'Individual Program Plans - design preview'}</span>
+            <h1>{activePage === 'executive'
+              ? 'Executive Dashboard'
+              : activePage === 'assessments'
+                ? 'Class Assignment'
+                : 'Foundations 1 IPP'}</h1>
             <p>{activePage === 'executive'
               ? 'Move from district-level achievement signals to the schools and periods that need attention.'
-              : 'Find a teacher section, load its assigned students, and prepare for governed assessment entry.'}</p>
+              : activePage === 'assessments'
+                ? 'Find a teacher section, load its assigned students, and prepare for governed assessment entry.'
+                : 'Preview how a selected student plan could be reviewed, printed, and later opened from Class Assignment.'}</p>
           </div>
           {user ? (
             <div className="header-actions">
@@ -411,10 +424,17 @@ export function App() {
             {filtersReady
               ? <ExecutiveDashboard filters={filters} />
               : <div className="loading-panel">Loading governed filters…</div>}
-          </> : (
+          </> : activePage === 'assessments' ? (
             <AssessmentWorkspace
               currentSchoolYear={user.currentSchoolYear}
               key={user.activeDevelopmentRole ?? 'assessment-workspace'}
+            />
+          ) : (
+            <IppPreview
+              onBackToClassAssignment={() => {
+                setActivePage('assessments')
+                setExpandedNavGroups((current) => ({ ...current, assessments: true }))
+              }}
             />
           )
         )}
