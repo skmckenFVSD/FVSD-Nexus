@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Validated - Student Identifier Display Toggle Release
+> **Status:** Deployed - IPP Preview, Nexus Branding, and Student Identifier Display PoC
 
 Generated: 2026-08-25
 
@@ -258,6 +258,12 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
   - [x] Reconcile the existing infrastructure with no resource changes required
   - [x] Publish the validated application package to the existing App Service
   - [x] Verify production health, exact release asset, Entra sign-in challenge, Key Vault reference, and live RBAC
+- [x] Deploy the Foundations 1 IPP preview, FVSD Nexus branding, and developer student identifier display release on 2026-09-02
+  - [x] Reconcile the existing infrastructure with no resource changes required
+  - [x] Publish GitHub commit `6444aa1` with `azd deploy --no-prompt`
+  - [x] Confirm `azd show` reports the intended App Service endpoint
+  - [x] Verify production health and exact JavaScript and CSS release fingerprints
+  - [x] Verify the FVSD Entra sign-in challenge, Nexus favicon, Key Vault reference, and live RBAC
 
 ---
 
@@ -845,6 +851,23 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Provisioning preview | `azd provision --preview --no-prompt` | Passed; no resource creation or deletion; preview contains only existing App Service and monitoring property reconciliation |
 | Package validation | `azd package --no-prompt` | Passed; the developer display toggle and documentation compiled into the existing App Service package |
 | Release fingerprints | Local SHA-256 | JavaScript `20B6503B40D9B1394C8ECD2BD312270FA5D6CB9DDDCC88DFC0D0FD366B39C49C`; CSS `0ABAAE7136449DB190E0C7909B30DF93A731322780AA83A0D20E7E72E2CF71E1` |
+
+### IPP Preview, Nexus Branding, and Student Identifier Display Deployment - 2026-09-02T08:44:07-06:00
+
+| Check | Command | Result |
+|-------|---------|--------|
+| GitHub release | `git push origin main` | Passed; application release commit `6444aa1` is published on `main` |
+| Infrastructure reconciliation | `azd provision --no-prompt` | Passed; existing Canada Central resources required no changes |
+| Application deployment | `azd deploy --no-prompt` | Passed; the validated App Service package deployed successfully |
+| Endpoint inventory | `azd show` | Passed; `web` resolves to `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/` |
+| Production health | `GET /health` | HTTP 200 with `{"status":"healthy","service":"FVSD Nexus"}` |
+| Exact frontend release | Production HTML asset inspection and SHA-256 comparison | Passed; production serves `assets/index-e2FLpO-d.js` and `assets/index-rkCssgqh.css`, exactly matching the validated local bundle |
+| Release fingerprints | Production SHA-256 | JavaScript `20B6503B40D9B1394C8ECD2BD312270FA5D6CB9DDDCC88DFC0D0FD366B39C49C`; CSS `0ABAAE7136449DB190E0C7909B30DF93A731322780AA83A0D20E7E72E2CF71E1` |
+| Student display control | Production JavaScript inspection | Passed; the obfuscated-mode label and no-real-identifier fallback are present in the deployed bundle |
+| Nexus browser branding | `GET /favicon-32.png` | HTTP 200 with `image/png` content type |
+| Entra sign-in challenge | `GET /api/auth/signin` without following redirects | HTTP 302 to the FVSD tenant at `login.microsoftonline.com` |
+| Key Vault reference | App Service configuration-reference API | `AzureAd__ClientSecret` reports `Resolved` through the system-assigned identity |
+| Live RBAC | App Service identity and vault-scoped role query | `Key Vault Secrets User` remains assigned to the App Service system identity at the application vault only |
 
 ### Class Assignment and TOSREC History PoC Revalidation - 2026-09-01T11:10:08-06:00
 
