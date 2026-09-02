@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Validated - End-to-End Governed TOSREC Lifecycle Release
+> **Status:** Deployed - End-to-End Governed TOSREC Lifecycle PoC
 
 Generated: 2026-08-25
 
@@ -277,6 +277,12 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
   - [x] Confirm `azd show` reports the intended App Service endpoint
   - [x] Verify production health and exact JavaScript and CSS release fingerprints
   - [x] Verify the FVSD Entra sign-in challenge, Nexus favicon, Key Vault reference, and live RBAC
+- [x] Deploy the end-to-end governed TOSREC assessment lifecycle release on 2026-09-02
+  - [x] Reconcile the existing infrastructure with no resource changes required
+  - [x] Publish GitHub commit `3afb8d1` with `azd deploy --no-prompt`
+  - [x] Confirm `azd show` reports the intended App Service endpoint
+  - [x] Verify production health, exact JavaScript and CSS release fingerprints, and the FVSD Entra sign-in challenge
+  - [x] Verify the Key Vault reference and live managed-identity role assignment
 
 ---
 
@@ -844,6 +850,23 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Provisioning preview | `azd provision --preview --no-prompt` | Passed; no resource creation or deletion; preview contains only existing App Service and monitoring property reconciliation |
 | Package validation | `azd package --no-prompt` | Passed after closing the local Vite preview that held a Windows native-module file lock |
 | Release fingerprints | Local SHA-256 | JavaScript `A7843193942719867A7B35A99ED7A50CCEC0F542C4FC39E7511F4D246682D727`; CSS `6A2E88D70F51FECB3C76C9C7BE61E3A7F21824C092DE1494B86BEE073760649D` |
+
+### End-to-End Governed TOSREC Lifecycle Deployment - 2026-09-02T14:08:55-06:00
+
+> **Release designation:** This deployed state is the locked PoC baseline for the complete TOSREC assessment lifecycle and the reusable master-detail operational pattern.
+
+| Check | Command | Result |
+|-------|---------|--------|
+| GitHub release | `git push origin main` | Passed; application release commit `3afb8d1` is published on `main` |
+| Infrastructure reconciliation | `azd provision --no-prompt` | Passed; the existing Canada Central resources required no changes |
+| Application deployment | `azd deploy --no-prompt` | Passed; the validated App Service package deployed successfully |
+| Endpoint inventory | `azd show` | Passed; `web` resolves to `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/` |
+| Production health | `GET /health` | HTTP 200 with `{"status":"healthy","service":"FVSD Nexus"}` |
+| Exact frontend release | Production HTML asset inspection and SHA-256 comparison | Passed; production serves `assets/index-DulN5HUe.js` and `assets/index-BLQ7B_wz.css`, exactly matching the validated local bundle |
+| Release fingerprints | Production SHA-256 | JavaScript `A7843193942719867A7B35A99ED7A50CCEC0F542C4FC39E7511F4D246682D727`; CSS `6A2E88D70F51FECB3C76C9C7BE61E3A7F21824C092DE1494B86BEE073760649D` |
+| Entra sign-in challenge | `GET /api/auth/signin` without following redirects | HTTP 302 to `login.microsoftonline.com` |
+| Key Vault reference | App Service configuration-reference API | `AzureAd__ClientSecret` reports `Resolved` through the system-assigned identity |
+| Live RBAC | App Service identity and vault-scoped role query | `Key Vault Secrets User` remains assigned to the App Service system identity at the application vault only |
 
 ### Foundations 1 IPP Preview and FVSD Nexus Branding Revalidation - 2026-09-02T08:17:34-06:00
 
