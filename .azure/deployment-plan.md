@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Validated - Responsive Role-Aware Sidebar Navigation UX Release
+> **Status:** Deployed - Responsive Role-Aware Sidebar Navigation UX Release
 
 Generated: 2026-08-25
 
@@ -296,6 +296,12 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
   - [x] Confirm `azd show` reports the intended App Service endpoint
   - [x] Verify production health, exact JavaScript and CSS release fingerprints, and the FVSD Entra sign-in challenge
   - [x] Verify the Key Vault reference and live managed-identity role assignment
+- [x] Deploy the responsive role-aware sidebar navigation UX release on 2026-09-03
+  - [x] Reconcile the existing infrastructure with no resource changes required
+  - [x] Publish GitHub commit `3672464` with `azd deploy --no-prompt`
+  - [x] Confirm `azd show` reports the intended App Service endpoint
+  - [x] Verify production health and exact JavaScript and CSS release fingerprints
+  - [x] Verify the FVSD Entra sign-in challenge, Key Vault reference, and live managed-identity role assignment
 
 ---
 
@@ -318,6 +324,23 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
 | Provisioning preview | `azd provision --preview --no-prompt` | Passed; no resource creation or deletion; preview contains only existing App Service and monitoring property reconciliation |
 | Package validation | `azd package --no-prompt` | Passed; the responsive navigation, Settings surface, and updated documentation packaged successfully |
 | Release fingerprints | Local SHA-256 | JavaScript `F08BE303600247BE6233B97CC4ADAD3BF2A6B0949D0D9F089AA16BE114F9668E`; CSS `380C66D52D3A9A80D9CB47AE22D6EABEE6B6B220C7115C34D4FE947EFD7116D9` |
+
+### Responsive Role-Aware Sidebar Navigation UX Deployment - 2026-09-03T15:21:38-06:00
+
+> **Release designation:** This deployed state locks the shared navigation and settings-shell UX for the Executive discussion. The next planned UX focus is the Class Assignments page; analytical content remains subject to Executive question framing and current program/model design decisions.
+
+| Check | Command | Result |
+|-------|---------|--------|
+| GitHub release | `git push origin main` | Passed; application release commit `3672464` is published on `main` |
+| Infrastructure reconciliation | `azd provision --no-prompt` | Passed; the existing Canada Central resources required no changes |
+| Application deployment | `azd deploy --no-prompt` | Passed; the validated App Service package deployed successfully |
+| Endpoint inventory | `azd show` | Passed; `web` resolves to `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/` |
+| Production health | `GET /health` | HTTP 200 with `{"status":"healthy","service":"FVSD Nexus"}` |
+| Exact frontend release | Production HTML asset inspection and SHA-256 comparison | Passed; production serves `assets/index-VTmH0MD3.js` and `assets/index-mtsugIXW.css`, exactly matching the validated local bundle |
+| Release fingerprints | Production SHA-256 | JavaScript `F08BE303600247BE6233B97CC4ADAD3BF2A6B0949D0D9F089AA16BE114F9668E`; CSS `380C66D52D3A9A80D9CB47AE22D6EABEE6B6B220C7115C34D4FE947EFD7116D9` |
+| Entra sign-in challenge | `GET /api/auth/signin` without following redirects | HTTP 302 to the FVSD tenant with the production callback and delegated Dataverse scope |
+| Key Vault reference | App Service configuration-reference API | `AzureAd__ClientSecret` reports `Resolved` through the system-assigned identity |
+| Live RBAC | App Service identity and vault-scoped role query | `Key Vault Secrets User` remains assigned to the App Service system identity at the application vault only |
 
 Validation completed on 2026-08-26:
 
