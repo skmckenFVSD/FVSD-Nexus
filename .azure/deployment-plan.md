@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Deployed - End-to-End Governed TOSREC Lifecycle PoC
+> **Status:** Validated - Responsive Role-Aware Sidebar Navigation UX Release
 
 Generated: 2026-08-25
 
@@ -196,6 +196,19 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
 
 - [x] Invoke azure-validate skill
 - [x] All validation checks pass
+  - [x] Revalidate the responsive role-aware sidebar navigation UX release
+    - [x] 1. AZD Installation
+    - [x] 2. Schema Validation
+    - [x] 3. Environment Setup
+    - [x] 4. Authentication Check
+    - [x] 5. Subscription/Location Check
+    - [x] 6. Aspire Pre-Provisioning Checks - not applicable; the solution is not .NET Aspire
+    - [x] 7. Provision Preview
+    - [x] 8. Build Verification
+    - [x] 9. Docker Build Context Validation - not applicable; the service has no Dockerfile
+    - [x] 10. Package Validation
+    - [x] 11. Azure Policy Validation
+    - [x] 12. Aspire Post-Provisioning Checks - not applicable; the solution is not .NET Aspire
   - [x] AZD installation and `azure.yaml` schema/package validation
   - [x] AZD environment, authentication, subscription, and Canada Central checks
   - [x] Confirm the solution is not .NET Aspire and has no Docker build context
@@ -287,6 +300,24 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
 ---
 
 ## 8. Validation Proof
+
+### Responsive Role-Aware Sidebar Navigation UX Revalidation - 2026-09-03T15:15:33-06:00
+
+> **Release boundary:** This release reorganizes the shared Nexus shell into role-aware Analytics, School Administration, Governance, and Settings destinations; adds manual desktop and automatic breakpoint-driven compact navigation; consolidates developer role simulation; and moves connection, identity, assignment, and licensing-policy context to Settings. It does not add new Analytics, assessment, intervention, IPP, or Governance business capabilities.
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Azure context | `azd version`, `azd auth login --check-status`, `azd env list`, selected environment values, and `az account show` | Passed; signed-in FVSD identity, existing `fvsd-insights-dev` environment, Pay-As-You-Go subscription, and Canada Central |
+| Project schema and specialization | `azure.yaml` inspection plus Aspire and Dockerfile scan | Passed; the existing App Service service definition remains valid, and the solution is neither Aspire nor container based |
+| React build and dependency audit | `npm ci --include=dev`, `npm audit --audit-level=high`, and `npm run build` | Passed; TypeScript and Vite production bundle generated and zero vulnerabilities reported |
+| ASP.NET Core tests and dependency audit | `dotnet test FVSDNexus.sln --configuration Release --no-restore` and `dotnet list ... --vulnerable --include-transitive` | Passed; 65 tests, zero failures, and no vulnerable packages reported |
+| Application publish | `dotnet publish src/FVSDNexus.Api/FVSDNexus.Api.csproj --configuration Release` | Passed; React assets were bundled into the ASP.NET Core App Service output |
+| Bicep compile/lint | `az bicep build --file infra/main.bicep --stdout` and `az bicep lint --file infra/main.bicep` | Passed without errors or warnings |
+| Static RBAC review | `infra/resources.bicep` role-assignment inspection | Passed; the App Service system identity retains only Key Vault Secrets User on the application vault with `ServicePrincipal` principal type |
+| Azure policy review | `az policy assignment list` at subscription scope | Passed; no blocking subscription policy assignment was returned |
+| Provisioning preview | `azd provision --preview --no-prompt` | Passed; no resource creation or deletion; preview contains only existing App Service and monitoring property reconciliation |
+| Package validation | `azd package --no-prompt` | Passed; the responsive navigation, Settings surface, and updated documentation packaged successfully |
+| Release fingerprints | Local SHA-256 | JavaScript `F08BE303600247BE6233B97CC4ADAD3BF2A6B0949D0D9F089AA16BE114F9668E`; CSS `380C66D52D3A9A80D9CB47AE22D6EABEE6B6B220C7115C34D4FE947EFD7116D9` |
 
 Validation completed on 2026-08-26:
 

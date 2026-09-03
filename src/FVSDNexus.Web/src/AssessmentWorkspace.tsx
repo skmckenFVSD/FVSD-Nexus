@@ -402,7 +402,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
             <h2>Find a teacher section</h2>
             <p>Choose a school, section group, course and teacher to load the assigned students.</p>
           </div>
-          <div className="assessment-role-badge"><BookOpenCheck size={15} />{context?.role}</div>
+          <div className="assessment-role-badge"><BookOpenCheck size={15} />{context?.role === 'Class Room Support' ? 'Classroom Support' : context?.role}</div>
         </div>
 
         <div className="assessment-filter-grid">

@@ -2,17 +2,21 @@
 
 > [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Platform administration
 
-**Status:** Partially present; operational expansion required
+**Status:** Initial Settings surface present; operational expansion required
 
 Administration provides the controlled capabilities needed to operate Nexus safely without exposing technical complexity to general users.
 
 ## Current PoC capabilities
 
 - Developer-only role simulation for UX and RLS testing.
-- Connection and current-context status.
+- Compact developer-role selection and real/obfuscated student-data display controls.
+- A Settings destination showing live Fabric and Dataverse connection context.
+- Signed-in identity, effective role, school assignments, named-user policy, and PoC access context.
 - Entra sign-in and sign-out.
 - Azure telemetry and health endpoint.
 - Governed server-side semantic-model queries.
+
+The sidebar no longer duplicates capability filter context. School, school year, grade, period, and other selections remain visible with the page-specific filter controls that own them.
 
 ## Proposed operational capabilities
 

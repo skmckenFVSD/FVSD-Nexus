@@ -29,19 +29,18 @@ Every capability should:
 
 ## Navigation structure
 
-**Status:** Current shell pattern as of September 1, 2026
+**Status:** Current shell pattern as of September 3, 2026
 
-The application shell groups pages beneath collapsible capability headings:
+The application shell uses role-aware capability headings and can be collapsed manually on wider screens. It enters the same icon-first compact presentation automatically at narrower breakpoints.
 
-- **Analytics:** all existing analytical destinations, including the Executive overview.
-- **Assessments:** contains the locked role-scoped Class Assignment workspace, student roster, and read-only TOSREC history; assessment forms and writes follow later.
-- **Individual Program Plans:** contains a view-only Foundations 1 design preview; student-linked plans, the builder, live data, and workflow remain proposed.
-- **Interventions:** reserved for future intervention workflows.
+- **Analytics:** Overview, Literacy, Numeracy, Wellness, Interventions, and Attendance for Executive. School Administration, Teacher, Classroom Support, and Data Analyst also receive Student Progression and Submission Tracking.
+- **School Administration:** shared destinations for Class Assignments, Assessments, Interventions, and Individual Program Plans. Class Assignments and the Foundations 1 IPP preview are the currently active destinations.
+- **Governance:** Data Analyst-only destinations for Data Quality, Data Catalog, and Data Administration. These remain future capabilities.
+- **Settings:** a single destination available to all roles for identity, assignment, licensing-policy, and governed connection context. The current-context summary was removed from the sidebar because filter context belongs with each capability's filters.
 - **PASI provincial connector:** a proposed backend integration capability rather than a general-user page; administrative status and reconciliation experiences would be added only for authorized roles.
 - **Purview governance:** a proposed Data Analyst workspace that composes governed documentation, data-product lifecycle, enterprise catalog, and policy-aware application functions; it is not a general-user or Purview-administration page.
-- **Administration:** settings and future authorized administration pages.
 
-Analytics, Assessments, and Administration are initially expanded. The other capability groups can be expanded and currently explain that their pages will be added as the PoC progresses. Grouping and page visibility remain role-aware UX concerns; backend and destination-service authorization remain authoritative.
+Analytics and School Administration are initially expanded. Parent headings use stronger uppercase styling, while destination labels use title case. The compact state retains icons and the FVSD Nexus identity without overlaying the logo. Grouping and page visibility remain role-aware UX concerns; backend and destination-service authorization remain authoritative.
 
 ## Capability lifecycle
 

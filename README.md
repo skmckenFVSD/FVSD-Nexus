@@ -2,7 +2,7 @@
 
 FVSD Nexus is the proposed unified operational and analytics platform for Fort Vermilion School Division. It is intended to help staff move from governed evidence to action through a purpose-built, role-aware experience.
 
-> **Status - September 2, 2026:** Leadership Analytics and the end-to-end Class Assignment/TOSREC vertical slice are locked PoC releases. TOSREC now proves governed assessment creation, scoring, viewing, current-period editing, privileged deletion, exemption handling, and immediate history refresh against Dataverse. Additional assessment patterns, live IPP, and the broader operational platform remain future phases until formally authorized.
+> **Status - September 3, 2026:** Leadership Analytics and the end-to-end Class Assignment/TOSREC vertical slice are locked PoC releases. The shared application shell now adds a responsive, user-collapsible, role-aware navigation pattern and a settings surface for identity, assignment, licensing policy, and governed connection context. Additional assessment patterns, live IPP, and the broader operational platform remain future phases until formally authorized.
 
 ## At a glance
 
@@ -41,6 +41,7 @@ The Nexus PoC now contains two connected vertical slices. The first was develope
 - Present governed measures without embedding a Power BI report.
 - Provide responsive, task-oriented filters, signals, matrices, and charts.
 - Adapt the experience by role while retaining the real service identity.
+- Provide a responsive application shell with manual desktop collapse, automatic compact navigation at narrower breakpoints, role-specific Analytics destinations, shared School Administration destinations, and Data Analyst-only Governance destinations.
 
 The second slice begins the operational assessment experience and proves that the application can:
 
@@ -164,7 +165,7 @@ npm run build --prefix .\src\FVSDNexus.Web
 dotnet publish .\src\FVSDNexus.Api\FVSDNexus.Api.csproj --configuration Release
 ```
 
-For the September 2 end-to-end TOSREC release, all 65 backend tests pass, the React production build succeeds, dependency audits report no known high-severity vulnerabilities, and the ASP.NET application packages successfully for Azure.
+For the September 3 navigation UX release, all 65 backend tests pass, the React production build succeeds, dependency audits report no known high-severity vulnerabilities, and the ASP.NET application packages successfully for Azure.
 
 ## Deployment
 
