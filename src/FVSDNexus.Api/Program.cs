@@ -285,6 +285,32 @@ app.MapGet("/api/assessments/teacher-sections", async (
     }
 });
 
+app.MapGet("/api/assessments/completion/tosrec", async (
+    Guid schoolId, string sectionGroup, string? courseNumber, Guid? teacherId,
+    HttpContext context, IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments, IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears, CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Assessment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetCompletionAsync(accessContext, role.ActiveRole, role.IsDeveloper,
+            schoolId, sectionGroup, courseNumber, teacherId, schoolYears.GetCurrentSchoolYear(context.User), cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message });
+    }
+});
+
 app.MapGet("/api/assessments/section-groups", async (
     Guid schoolId,
     HttpContext context,

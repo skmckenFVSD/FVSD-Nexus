@@ -57,6 +57,9 @@ The second slice begins the operational assessment experience and proves that th
 - Open any history record in a complete read-only view, then permit edits only when the record belongs to the current operational period.
 - Restrict permanent deletion to School Administration and Data Analyst roles, with server-side authorization and explicit confirmation.
 - Refresh the selected student's assessment history immediately after create, edit, or delete.
+- Review current-year TOSREC completion directly from Dataverse on the Assessments page, with school, section group, course and teacher filters, period progress, missing-student lists and manual refresh.
+- Count distinct students with an active assessment record, including exemptions: Grades 2–10 require all periods, ELALIT1 requires Winter and Spring, and ELA has no requirement. Current roster membership scopes students; submissions from a prior teacher still count.
+- Use wider two-row filters, consistently sized teacher and student cards, and compact selected-student details beside the teacher to leave more room for assessment history.
 - Enforce section/student scope on the server and request a fresh delegated Microsoft session when token acquisition requires user interaction.
 - Let the developer switch student names and ASNs between real and synchronized obfuscated values for safe demonstrations and documentation captures, without changing the governed record identity or issuing another Dataverse request.
 

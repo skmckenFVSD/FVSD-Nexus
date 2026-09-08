@@ -93,7 +93,7 @@ const initialFilters: FilterState = {
   period: [],
 }
 
-type ActivePage = 'executive' | 'assessments' | 'ipp-preview' | 'settings'
+type ActivePage = 'executive' | 'completion' | 'assessments' | 'ipp-preview' | 'settings'
 type StudentDisplayMode = 'real' | 'obfuscated'
 
 type SidebarNavItem = {
@@ -144,7 +144,7 @@ function getNavGroups(role: string | null | undefined): SidebarNavGroup[] {
       icon: School,
       items: [
         { id: 'assessments', label: 'Class Assignments', icon: BookOpenText },
-        { id: 'coming-soon', label: 'Assessments', icon: FileCheck2, isComingSoon: true },
+        { id: 'completion', label: 'Assessments', icon: FileCheck2 },
         { id: 'coming-soon', label: 'Interventions', icon: LifeBuoy, isComingSoon: true },
         { id: 'ipp-preview', label: 'Individual Program Plans', icon: GraduationCap },
       ],
@@ -377,18 +377,17 @@ export function App() {
         </div>
       </aside>
 
-      <main className={activePage === 'assessments' ? 'assessment-page' : activePage === 'ipp-preview' ? 'ipp-page' : undefined}>
+      <main className={(activePage === 'assessments' || activePage === 'completion') ? 'assessment-page' : activePage === 'ipp-preview' ? 'ipp-page' : undefined}>
         <header className="page-header">
           <div>
-            {activePage !== 'executive' ? <span className="eyebrow">{activePage === 'assessments'
-                ? 'Assessment data entry - proof of concept'
-                : activePage === 'ipp-preview'
-                  ? 'Individual Program Plans - design preview'
-                  : 'Account and system configuration'}</span> : null}
+            {activePage !== 'executive' && activePage !== 'assessments' && activePage !== 'completion' ? <span className="eyebrow">{activePage === 'ipp-preview'
+              ? 'Individual Program Plans - design preview'
+              : 'Account and system configuration'}</span> : null}
             <h1>{activePage === 'executive'
               ? 'Analytics Overview'
               : activePage === 'assessments'
                 ? 'Class Assignment'
+                : activePage === 'completion' ? 'Assessments'
                 : activePage === 'ipp-preview'
                   ? 'Foundations 1 IPP'
                   : 'Settings'}</h1>
@@ -396,13 +395,18 @@ export function App() {
               ? 'Move from district-level achievement signals to the schools and periods that need attention.'
               : activePage === 'assessments'
                 ? 'Find a teacher section, load its assigned students, and prepare for governed assessment entry.'
+                : activePage === 'completion' ? 'Check assessment completion and find missing submissions for your school and classes.'
                 : activePage === 'ipp-preview'
                   ? 'Preview how a selected student plan could be reviewed, printed, and later opened from Class Assignment.'
                   : 'Review your identity, role, assignments, licensing policy, and governed data connections.'}</p>
           </div>
           {user ? (
             <div className="header-actions">
-              {user.isDeveloper ? (
+              {(activePage === 'assessments' || activePage === 'completion') ? (
+                <div className="development-context">
+                  <strong>{user.isDeveloper ? 'Simulated: ' : ''}{formatRoleLabel(user.activeDevelopmentRole ?? 'FVSD user')}</strong>
+                </div>
+              ) : user.isDeveloper ? (
                 <div className="development-context">
                   <strong>Simulated: {formatRoleLabel(user.activeDevelopmentRole ?? 'FVSD user')}</strong>
                   <span>Fabric RLS: {user.rlsIdentity}</span>
@@ -469,11 +473,11 @@ export function App() {
             {filtersReady
               ? <ExecutiveDashboard filters={filters} />
               : <div className="loading-panel">Loading governed filters…</div>}
-          </> : activePage === 'assessments' ? (
-            <AssessmentWorkspace
+          </> : (activePage === 'assessments' || activePage === 'completion') ? (
+            <AssessmentWorkspace completion={activePage === 'completion'}
               currentSchoolYear={user.currentSchoolYear}
               studentDisplayMode={studentDisplayMode}
-              key={user.activeDevelopmentRole ?? 'assessment-workspace'}
+              key={activePage + '-' + (user.activeDevelopmentRole ?? 'assessment-workspace')}
             />
           ) : activePage === 'ipp-preview' ? (
             <IppPreview

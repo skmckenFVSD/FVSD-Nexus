@@ -2,6 +2,11 @@ namespace FVSDNexus.Api.Dataverse;
 
 public interface IDataverseAssessmentWorkspaceClient
 {
+    Task<AssessmentCompletionSummary> GetCompletionAsync(
+        DataverseAccessContext accessContext, string? developmentRole, bool isDeveloper,
+        Guid schoolId, string sectionGroup, string? courseNumber, Guid? teacherId,
+        string schoolYear, CancellationToken cancellationToken = default);
+
     Task<AssessmentWorkspaceContext> GetWorkspaceContextAsync(
         DataverseAccessContext accessContext,
         string? developmentRole,

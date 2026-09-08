@@ -8,7 +8,7 @@ using Microsoft.Identity.Web;
 
 namespace FVSDNexus.Api.Dataverse;
 
-public sealed class DataverseAssessmentWorkspaceClient(
+public sealed partial class DataverseAssessmentWorkspaceClient(
     HttpClient httpClient,
     ITokenAcquisition tokenAcquisition,
     IOptions<DataverseOptions> options,
@@ -82,7 +82,7 @@ public sealed class DataverseAssessmentWorkspaceClient(
             return [];
         }
 
-        using var sectionsDocument = await GetJsonAsync(
+        using var sectionsDocument = await GetAllJsonAsync(
             BuildTeacherSectionsQuery(
                 schoolId,
                 GetSectionGroupValue(sectionGroup),

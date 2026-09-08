@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Deployed - Responsive Role-Aware Sidebar Navigation UX Release
+> **Status:** Validated - Class Assignment UX and TOSREC Completion Release (application-only)
 
 Generated: 2026-08-25
 
@@ -1037,3 +1037,28 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Entra sign-in challenge | `GET /api/auth/signin` without following redirects | HTTP 302 to the FVSD tenant using client `b9a8631e-8e03-4204-8d7e-a487bfe33b2f`, the production callback, and delegated `Dataset.Read.All` scope |
 | Key Vault reference | App Service configuration-reference API | `AzureAd__ClientSecret` reports `Resolved` through the system-assigned identity |
 | Live RBAC | App Service identity and vault-scoped role query | `Key Vault Secrets User` remains assigned to the App Service system identity at the application vault only |
+
+### Class Assignment UX and TOSREC Completion Release — 2026-09-08
+
+- [x] All validation checks pass
+  - [x] AZD installation and azure.yaml schema/package handling
+  - [x] Existing environment, authentication, subscription and location
+  - [x] Application-only release: provision preview/reprovisioning excluded; unchanged Bicep compiles successfully
+  - [x] Release build and API tests
+  - [x] Package validation
+  - [x] Azure policy and static role verification
+  - [x] Aspire and Docker checks: not applicable
+
+#### Validation Proof — 2026-09-08 application release
+
+- `dotnet test FVSDNexus.sln --no-restore --configuration Release`: 76 passed, zero failed.
+- `npm run build --prefix src/FVSDNexus.Web`: TypeScript and Vite production build passed.
+- `azd package --no-prompt`: passed; package `fvsd-insights-web-azddeploy-1788902818.zip`.
+- `az bicep build --file infra/main.bicep --stdout`: passed. No infrastructure or azure.yaml changes.
+- Deployment scope: application-only to existing App Service. Full provision preview requires the existing secret, which the interactive user cannot read; no permission changes or reprovisioning performed. Existing App Service keeps its Key Vault reference.
+- Azure context: signed-in ScottM, Pay-As-You-Go subscription, existing Canada Central resource group; local AZD target restored as `fvsd-insights-dev`.
+- Resource discovery: one `web` service tag, on `app-fvsd-insights-iwmpkez4`.
+- Policy inventory: default Defender assignment only.
+- Static role review: App Service managed identity has vault-scoped Key Vault Secrets User; Dataverse continues to use delegated user access.
+- Live role check: the same vault-scoped role remains assigned to App Service identity `3ac2acd7-3412-4161-b4bf-af96c4051a85`.
+- UI validation: user reviewed localhost; production signed-in data validation remains a post-release user check.

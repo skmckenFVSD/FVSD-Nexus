@@ -106,7 +106,7 @@ main.assessment-page { min-height: 100dvh; display: flex; flex-direction: column
 
 /* FVSD Fluent theme mapping: structural chrome, seven active data colours, sentiment, and divergence. */
 .sidebar { background: var(--fvsd-structural); border-right-color: var(--fvsd-structural-secondary); }
-.brand { border-color: var(--fvsd-data-6); background: #102a56; }
+.brand { flex-shrink: 0; border-color: transparent; background: #102a56; }
 .brand-mark { background: transparent; }
 .nav-item.active, .selection { color: white; background: var(--fvsd-structural-secondary); }
 .eyebrow, .filter-title { color: var(--fvsd-structural-secondary); }
@@ -204,6 +204,10 @@ tbody tr:nth-child(7n + 7) .bar-track span { background: var(--fvsd-data-7); }
 @media (max-width: 480px) { .kpi-grid, .filter-row, .persistent-filter-row.without-school, .single-page-filter { grid-template-columns: 1fr; }.filter-panel { padding-bottom: 50px; }.filter-panel-heading > span { display: none; }.selection { white-space: normal; }.domain-tabs { flex-wrap: wrap; }.domain-tabs button { flex: 1 1 120px; justify-content: center; }.chart-focus-banner, .connection-row { align-items: stretch; flex-direction: column; }.chart-focus-banner button { align-self: start; }.connection-badge { align-self: start; }.settings-detail-list div { grid-template-columns: 1fr; gap: 4px; }.settings-detail-list dd { text-align: left; } }
 
 /* Assessment data-entry PoC */
+.assessment-page .page-header h1 { margin-top: 0; }
+.assessment-page .page-header p { color: var(--fvsd-structural-secondary); }
+.assessment-page .assessment-filter-panel h2 { margin-top: 0; }
+.assessment-page .assessment-filter-panel .assessment-select-filter > span { font-size: 13px; }
 .assessment-workspace { display: grid; gap: 14px; width: 100%; min-width: 0; }
 .assessment-page .assessment-workspace { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
 .assessment-filter-panel { display: grid; gap: 14px; padding: 16px; border: 1px solid #d4dee4; border-radius: 12px; background: #e6e6e6; box-shadow: 0 2px 7px rgba(14, 40, 58, .04); }
@@ -211,8 +215,9 @@ tbody tr:nth-child(7n + 7) .bar-track span { background: var(--fvsd-data-7); }
 .assessment-panel-heading h2, .assessment-results-heading h2 { margin: 4px 0 0; color: var(--fvsd-structural); font: 700 17px/1.2 "Segoe UI", sans-serif; }
 .assessment-panel-heading p, .assessment-results-heading p { margin: 4px 0 0; color: #5f7181; font-size: 10px; line-height: 1.4; }
 .assessment-role-badge, .assessment-result-count { display: inline-flex; flex: none; gap: 6px; align-items: center; min-height: 31px; padding: 7px 10px; color: var(--fvsd-structural-secondary); border: 1px solid #c4d5df; border-radius: 999px; background: white; font-size: 9px; font-weight: 800; }
-.assessment-filter-grid { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 11px; align-items: end; }
+.assessment-filter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; align-items: end; }
 .assessment-select-filter { display: grid; gap: 6px; min-width: 0; }
+.assessment-filter-secondary .assessment-reset { grid-column: 3; justify-self: end; min-height: 36px; }
 .assessment-select-filter > span { color: #40586a; font-size: 11px; font-weight: 700; }
 .assessment-select-filter select { width: 100%; min-width: 0; height: 36px; padding: 8px 30px 8px 10px; color: #213e57; border: 1px solid #c5d2da; border-radius: 7px; background: white; font-size: 11px; text-overflow: ellipsis; }
 .assessment-select-filter select:focus-visible { outline: 2px solid rgba(91, 123, 214, .35); outline-offset: 1px; border-color: var(--fvsd-data-6); }
@@ -227,7 +232,7 @@ tbody tr:nth-child(7n + 7) .bar-track span { background: var(--fvsd-data-7); }
 .assessment-results:not(.with-student-roster) { align-content: start; }
 .assessment-results.with-student-roster { min-height: 0; grid-template-rows: auto auto minmax(0, 1fr); overflow: hidden; }
 .assessment-page .assessment-results.with-selected-student { flex: 0 0 auto; }
-.assessment-results.with-selected-student { grid-template-rows: auto auto auto; overflow: visible; }
+.assessment-results.with-selected-student { grid-template-rows: auto auto; overflow: visible; }
 .teacher-section-groups { display: grid; gap: 13px; }
 .teacher-section-group { overflow: hidden; border: 1px solid #cbd8df; border-radius: 10px; background: #f3f6f8; box-shadow: 0 3px 10px rgba(7, 25, 64, .045); }
 .teacher-section-course { display: flex; gap: 10px; align-items: center; min-width: 0; padding: 12px 14px; color: #dceafb; background: var(--fvsd-structural-secondary); border-bottom: 1px solid #183f66; }
@@ -235,7 +240,10 @@ tbody tr:nth-child(7n + 7) .bar-track span { background: var(--fvsd-data-7); }
 .teacher-section-course strong, .teacher-section-course span { display: block; }
 .teacher-section-course strong { overflow: hidden; color: white; font-size: 13px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
 .teacher-section-course span { margin-top: 4px; color: #c9daec; font-size: 10px; font-weight: 600; }
-.teacher-section-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; padding: 12px; }
+.assessment-results-heading h2 { margin-top: 0; }
+.assessment-results-heading p { color: var(--fvsd-structural-secondary); }
+.teacher-section-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 12px; }
+@media (max-width: 1250px) { .teacher-section-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .teacher-section-button { position: relative; display: grid; grid-template-columns: 36px minmax(0, 1fr) 18px; gap: 11px; align-items: center; min-width: 0; min-height: 62px; padding: 10px 12px; overflow: hidden; color: #24445e; border: 1px solid #cbd8df; border-radius: 8px; background: white; cursor: pointer; text-align: left; }
 .teacher-section-button::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: #8da7cc; }
 .teacher-section-button:hover { border-color: #789db4; box-shadow: 0 5px 14px rgba(7, 25, 64, .1); transform: translateY(-1px); }
@@ -260,10 +268,27 @@ tbody tr:nth-child(7n + 7) .bar-track span { background: var(--fvsd-data-7); }
 .student-roster-heading { align-items: end; }
 .student-roster-heading h3 { margin: 4px 0 0; color: var(--fvsd-structural); font-size: 16px; }
 .student-roster-actions { display: flex; gap: 10px; align-items: center; }
+.selected-student-summary { display: grid; align-content: center; gap: 4px; min-width: 0; padding: 10px 12px; border: 1px solid #bdd4df; border-radius: 8px; background: #eaf4f8; color: var(--fvsd-structural); }
+.selected-student-summary strong { font-size: 12px; overflow-wrap: anywhere; }
+.selected-student-summary span { font-size: 10px; color: #40586a; }
+.selected-student-actions { align-self: center; }
+.completion-panel { display: grid; align-content: start; gap: 18px; }
+.completion-freshness { margin: 0; color: #536b7b; font-size: 11px; }
+.completion-periods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.completion-period { display: grid; gap: 12px; padding: 18px; min-width: 0; text-align: left; border: 1px solid #cbd8df; border-radius: 10px; color: var(--fvsd-structural); background: #f4f7f9; cursor: pointer; }
+.completion-period.selected { border-color: var(--fvsd-structural-secondary); box-shadow: 0 0 0 1px var(--fvsd-structural-secondary); background: #eaf4f8; }
+.completion-period:focus-visible { outline: 3px solid #789db4; outline-offset: 3px; }
+.completion-count { font-size: 28px; font-weight: 700; }
+.completion-count small { font-size: 12px; font-weight: 500; }
+.completion-period > span:last-child { font-size: 12px; }
+.completion-period progress { width: 100%; height: 12px; accent-color: var(--fvsd-structural-secondary); }
+.completion-missing h3 { margin: 0 0 14px; font-size: 16px; color: var(--fvsd-structural); }
+.completion-missing > p { font-size: 13px; color: #536b7b; }
+@media (max-width: 850px) { .completion-periods { grid-template-columns: 1fr; } }
 .student-roster-actions > span { color: #536b7b; font-size: 10px; font-weight: 800; }
 .student-roster-actions button, .student-assessment-actions button { display: inline-flex; gap: 6px; align-items: center; min-height: 31px; padding: 7px 10px; color: var(--fvsd-structural-secondary); border: 1px solid #bdccd5; border-radius: 7px; background: white; cursor: pointer; font-size: 9px; font-weight: 800; }
 .student-roster-actions button:hover, .student-assessment-actions button:hover { border-color: #789db4; background: #f5f8fa; }
-.student-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-height: 540px; padding: 2px 8px 2px 2px; overflow-y: auto; align-content: start; scrollbar-gutter: stable; }
+.student-card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-height: 540px; padding: 2px 8px 2px 2px; overflow-y: auto; align-content: start; scrollbar-gutter: stable; }
 .assessment-results.with-student-roster .student-card-grid { height: 100%; min-height: 0; max-height: none; }
 .assessment-results.with-selected-student .student-card-grid { width: 100%; height: auto; max-height: none; grid-template-columns: minmax(280px, 420px); overflow: visible; }
 .student-card { min-width: 0; padding: 14px; border: 1px solid #ccd9e0; border-radius: 10px; background: white; box-shadow: 0 3px 9px rgba(7, 25, 64, .05); }
@@ -282,8 +307,8 @@ tbody tr:nth-child(7n + 7) .bar-track span { background: var(--fvsd-data-7); }
 .student-card dd { max-width: 65%; margin: 0; overflow: hidden; color: #29465d; font-weight: 700; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .student-assessment-panel { display: grid; gap: 16px; padding: 18px; }
 .student-assessment-heading { display: flex; gap: 18px; align-items: flex-start; justify-content: space-between; }
-.student-assessment-heading h2 { margin: 4px 0 0; color: var(--fvsd-structural); font: 700 17px/1.2 "Segoe UI", sans-serif; }
-.student-assessment-heading p { margin: 4px 0 0; color: #5f7181; font-size: 10px; line-height: 1.4; }
+.student-assessment-heading h2 { margin: 0; color: var(--fvsd-structural); font: 700 17px/1.2 "Segoe UI", sans-serif; }
+.student-assessment-heading p { margin: 4px 0 0; color: var(--fvsd-structural-secondary); font-size: 10px; line-height: 1.4; }
 .student-assessment-actions { display: flex; gap: 10px; align-items: center; }
 .student-assessment-actions .assessment-add-button { color: white; border-color: var(--fvsd-structural-secondary); background: var(--fvsd-structural-secondary); box-shadow: 0 2px 7px rgba(7,25,64,.14); }
 .student-assessment-actions .assessment-add-button:hover { color: white; border-color: #153d64; background: #153d64; }
@@ -385,10 +410,11 @@ tbody tr:nth-child(7n + 7) .bar-track span { background: var(--fvsd-data-7); }
 .spin { animation: assessment-spin .8s linear infinite; }
 @keyframes assessment-spin { to { transform: rotate(360deg); } }
 
-@media (max-width: 1250px) { .assessment-filter-grid { grid-template-columns: repeat(3, minmax(170px, 1fr)); } }
+
+@media (max-width: 1450px) { .student-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 1150px) { .student-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { main.assessment-page { min-height: 0; display: block; }.assessment-page .assessment-workspace { display: grid; min-height: auto; }.assessment-page .assessment-results { min-height: 350px; } }
-@media (max-width: 850px) { .assessment-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.teacher-section-list { grid-template-columns: 1fr; }.student-assessment-heading { flex-direction: column; }.student-assessment-actions { width: 100%; justify-content: space-between; }.assessment-history-record { grid-template-columns: repeat(2, minmax(0, 1fr)); }.assessment-master-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }.assessment-calculated-results { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 850px) { .assessment-filter-grid { grid-template-columns: 1fr; }.assessment-filter-secondary .assessment-reset { grid-column: 1; }.teacher-section-list { grid-template-columns: 1fr; }.student-assessment-heading { flex-direction: column; }.student-assessment-actions { width: 100%; justify-content: space-between; }.assessment-history-record { grid-template-columns: repeat(2, minmax(0, 1fr)); }.assessment-master-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }.assessment-calculated-results { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 @media (max-width: 560px) { .assessment-panel-heading, .assessment-results-heading, .assessment-filter-footer { align-items: stretch; flex-direction: column; }.assessment-role-badge, .assessment-result-count { align-self: flex-start; }.assessment-filter-grid { grid-template-columns: 1fr; }.assessment-live-selection span { white-space: normal; }.assessment-reset { align-self: flex-start; }.assessment-results.with-student-roster { height: auto; min-height: 0; overflow: visible; }.assessment-results.with-student-roster .student-roster { overflow: visible; }.student-card-grid, .assessment-results.with-student-roster .student-card-grid { height: auto; max-height: 540px; grid-template-columns: 1fr; }.student-roster-heading, .student-assessment-actions, .assessment-history-toolbar { align-items: stretch; flex-direction: column; }.student-roster-actions { align-items: flex-start; flex-direction: column; }.assessment-focus-context { align-self: flex-start; }.assessment-history-record, .assessment-history-reconnect { grid-template-columns: 1fr; }.assessment-history-reconnect a { justify-self: start; }.assessment-entry-dialog { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }.assessment-entry-shell { max-height: calc(100dvh - 18px); }.assessment-entry-header, .assessment-entry-content, .assessment-entry-footer { padding-left: 14px; padding-right: 14px; }.assessment-master-grid, .assessment-score-inputs, .assessment-calculated-results { grid-template-columns: 1fr; }.assessment-reason-field, .assessment-readonly-field.wide { grid-column: auto; }.assessment-form-section-heading, .assessment-entry-footer { align-items: stretch; flex-direction: column; }.assessment-entry-footer > div { width: 100%; }.assessment-entry-footer button { flex: 1; } }
 
 /* Foundations 1 IPP static design preview */

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { AssessmentCompletion } from './AssessmentCompletion'
 import {
   BookOpenCheck,
   CheckCircle2,
@@ -169,9 +170,10 @@ class ApiRequestError extends Error {
   }
 }
 
-export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'real' }: {
+export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'real', completion = false }: {
   currentSchoolYear?: string
   studentDisplayMode?: StudentDisplayMode
+  completion?: boolean
 }) {
   const [context, setContext] = useState<WorkspaceContext | null>(null)
   const [selection, setSelection] = useState<Selection>(emptySelection)
@@ -395,14 +397,12 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
 
   return (
     <div className="assessment-workspace">
-      <section className="assessment-filter-panel" aria-label="Assessment filters">
+      <section className="assessment-filter-panel" aria-label="Classroom Assignment Filters">
         <div className="assessment-panel-heading">
           <div>
-            <span className="eyebrow">Assessment context</span>
-            <h2>Find a teacher section</h2>
-            <p>Choose a school, section group, course and teacher to load the assigned students.</p>
+            <h2>{completion ? 'Assessment Filters' : 'Classroom Assignment Filters'}</h2>
+            <p>{completion ? 'Choose a school and section group; narrow by course and teacher to review completion.' : 'Choose a school, section group, course and teacher to load the assigned students.'}</p>
           </div>
-          <div className="assessment-role-badge"><BookOpenCheck size={15} />{context?.role === 'Class Room Support' ? 'Classroom Support' : context?.role}</div>
         </div>
 
         <div className="assessment-filter-grid">
@@ -432,6 +432,8 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
             disabled={!selection.sectionGroup || loadingSections}
             onChange={changeCourse}
           />
+        </div>
+        <div className="assessment-filter-grid assessment-filter-secondary">
           <SelectFilter
             label="Teacher"
             value={selection.teacherId}
@@ -440,7 +442,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
             disabled={!selection.sectionGroup || loadingSections || Boolean(context?.teacherLockedToSignedInUser)}
             onChange={changeTeacher}
           />
-          {students.length > 0 ? (
+          {!completion && students.length > 0 ? (
             <SelectFilter
               label="Student"
               value={selection.studentId}
@@ -452,13 +454,6 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
               onChange={selectStudent}
             />
           ) : null}
-        </div>
-
-        <div className="assessment-filter-footer">
-          <div className="assessment-live-selection">
-            <Search size={14} />
-            <span>{describeSelection(selection, context, sections, students, studentDisplayMode)}</span>
-          </div>
           <button type="button" className="assessment-reset" onClick={reset}>
             <RotateCcw size={14} /> Reset filters
           </button>
@@ -467,11 +462,13 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
 
       {error ? <div className="error-banner"><CircleAlert size={18} />{error}</div> : null}
 
+      {completion ? <AssessmentCompletion schoolId={selection.schoolId} sectionGroup={selection.sectionGroup}
+        courseNumber={selection.courseNumber} teacherId={selection.teacherId}
+        studentDisplayMode={studentDisplayMode} currentSchoolYear={currentSchoolYear} /> : <>
       <section className={`assessment-results card${!loadingStudents && selectedSectionId && students.length > 0 ? ' with-student-roster' : ''}${selectedStudent ? ' with-selected-student' : ''}`}>
         <div className="assessment-results-heading">
           <div>
-            <span className="eyebrow">Teacher sections</span>
-            <h2>{selectedSection ? `${selectedSection.courseName} · ${selectedSection.teacherName}` : 'Available sections'}</h2>
+            <h2>{selectedSection ? `${selectedSection.courseName} · ${selectedSection.teacherName}` : selection.sectionGroup ? `${sectionGroups.find((group) => group.value === selection.sectionGroup)?.label ?? selection.sectionGroup} Sections` : 'Sections'}</h2>
             <p>{selectedSection ? `${students.length} assigned students loaded from Dataverse.` : 'Select a teacher section to load its current student roster.'}</p>
           </div>
           <div className="assessment-result-count"><UsersRound size={16} />{visibleSections.length} sections</div>
@@ -489,7 +486,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
           <AssessmentEmpty icon={Search} text="No teacher sections match the current filters." />
         ) : (
           <div className="teacher-section-groups">
-            {courseGroups.map((group) => (
+            {courseGroups.filter((group) => !selectedStudent || group.some((section) => section.id === selectedSectionId)).map((group) => (
               <div className="teacher-section-group" key={`${group[0].courseNumber}|${group[0].courseName}`}>
                 <div className="teacher-section-course">
                   <GraduationCap size={17} />
@@ -499,7 +496,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
                   </div>
                 </div>
                 <div className="teacher-section-list">
-                  {group.map((section) => (
+                  {group.filter((section) => !selectedStudent || section.id === selectedSectionId).map((section) => (
                     <button
                       type="button"
                       className={selectedSectionId === section.id ? 'teacher-section-button selected' : 'teacher-section-button'}
@@ -515,6 +512,20 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
                       <ChevronRight size={16} />
                     </button>
                   ))}
+                  {selectedStudent ? (
+                    <>
+                      <article className="selected-student-summary" aria-label="Selected student">
+                        <strong>{getStudentDisplayName(selectedStudent, studentDisplayMode)}</strong>
+                        <span>{selectedStudent.grade ?? 'Grade not recorded'}</span>
+                        <span>ASN: {getStudentDisplayAsn(selectedStudent, studentDisplayMode)}</span>
+                      </article>
+                      <div className="student-roster-actions selected-student-actions">
+                        <button type="button" onClick={() => selectStudent('')}>
+                          <ListRestart size={14} /> Back to class list
+                        </button>
+                      </div>
+                    </>
+                  ) : null}
                 </div>
               </div>
             ))}
@@ -522,7 +533,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
         )}
 
         {loadingStudents ? <div className="assessment-student-loading">Loading assigned students…</div> : null}
-        {!loadingStudents && selectedSectionId && students.length > 0 ? (
+        {!loadingStudents && selectedSectionId && students.length > 0 && !selectedStudent ? (
           <div className="student-roster">
             <div className="student-roster-heading">
               <div>
@@ -530,12 +541,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
                 <h3>{selectedSection?.teacherName}</h3>
               </div>
               <div className="student-roster-actions">
-                <span>{selectedStudent ? `1 of ${students.length} students` : `${students.length} students`}</span>
-                {selectedStudent ? (
-                  <button type="button" onClick={() => selectStudent('')}>
-                    <ListRestart size={14} /> Back to class list
-                  </button>
-                ) : null}
+                <span>{students.length} students</span>
               </div>
             </div>
             <div className="student-card-grid">
@@ -564,9 +570,9 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
           teacherSectionId={selectedSectionId}
           teacherSection={selectedSection}
           role={context?.role ?? ''}
-          onClear={() => selectStudent('')}
         />
       ) : null}
+      </>}
     </div>
   )
 }
@@ -631,7 +637,7 @@ function StudentCard({ student, studentDisplayMode, selected, onSelect }: {
   )
 }
 
-function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear, focusArea, teacherSectionId, teacherSection, role, onClear }: {
+function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear, focusArea, teacherSectionId, teacherSection, role }: {
   student: Student
   studentDisplayMode: StudentDisplayMode
   currentSchoolYear?: string
@@ -639,7 +645,6 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
   teacherSectionId: string
   teacherSection?: TeacherSection
   role: string
-  onClear: () => void
 }) {
   const [yearView, setYearView] = useState<'current' | 'previous'>('current')
   const [tosrecHistory, setTosrecHistory] = useState<AssessmentHistoryRecord[]>([])
@@ -692,8 +697,7 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
     <section className="student-assessment-panel card" aria-labelledby="student-assessment-heading">
       <div className="student-assessment-heading">
         <div>
-          <span className="eyebrow">Student assessments</span>
-          <h2 id="student-assessment-heading">{getStudentDisplayName(student, studentDisplayMode)}</h2>
+          <h2 id="student-assessment-heading">Student {focusArea ? `${focusArea} ` : ''}Assessment History</h2>
           <p>Assessment history will be grouped by assessment type and focus area.</p>
         </div>
         <div className="student-assessment-actions">
@@ -707,9 +711,6 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
             }}
           >
             <Plus size={14} /> Add assessment
-          </button>
-          <button type="button" onClick={onClear}>
-            <ListRestart size={14} /> Back to class list
           </button>
         </div>
       </div>
@@ -735,7 +736,6 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
             Previous Years
           </button>
         </div>
-        <span className="assessment-focus-context">{focusArea || 'Other'} assessments</span>
       </div>
 
       {saveNotice ? <div className="assessment-save-notice"><CheckCircle2 size={17} />{saveNotice}</div> : null}
@@ -759,7 +759,6 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
         <section className="assessment-history-group" aria-labelledby="tosrec-history-heading">
           <div className="assessment-history-group-heading">
             <div>
-              <span className="eyebrow">Literacy</span>
               <h3 id="tosrec-history-heading">TOSREC</h3>
             </div>
             <span>{visibleTosrecHistory.length} records</span>
@@ -1354,21 +1353,6 @@ function AssessmentHistoryEmpty({ text }: { text: string }) {
       <div><strong>Assessment history</strong><span>{text}</span></div>
     </div>
   )
-}
-
-function describeSelection(
-  selection: Selection,
-  context: WorkspaceContext | null,
-  sections: TeacherSection[],
-  students: Student[],
-  studentDisplayMode: StudentDisplayMode,
-) {
-  const school = context?.schools.find((option) => option.id === selection.schoolId)?.name
-  const course = sections.find((section) => section.courseNumber === selection.courseNumber)?.courseName
-  const teacher = sections.find((section) => section.teacherId === selection.teacherId)?.teacherName
-  const selectedStudent = students.find((row) => row.id === selection.studentId)
-  const student = selectedStudent ? getStudentDisplayName(selectedStudent, studentDisplayMode) : undefined
-  return [school, selection.sectionGroup, course, teacher, student].filter(Boolean).join(' / ') || 'Choose a school to begin'
 }
 
 function getStudentDisplayName(student: Student, mode: StudentDisplayMode) {
