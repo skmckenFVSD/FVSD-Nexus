@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Validated - Class Assignment UX and TOSREC Completion Release (application-only)
+> **Status:** Deployed - Class Assignment UX and TOSREC Completion Release
 
 Generated: 2026-08-25
 
@@ -1062,3 +1062,14 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 - Static role review: App Service managed identity has vault-scoped Key Vault Secrets User; Dataverse continues to use delegated user access.
 - Live role check: the same vault-scoped role remains assigned to App Service identity `3ac2acd7-3412-4161-b4bf-af96c4051a85`.
 - UI validation: user reviewed localhost; production signed-in data validation remains a post-release user check.
+
+#### Deployment Proof — 2026-09-08T15:28:42-06:00
+
+| Check | Result |
+|-------|--------|
+| GitHub release | Commit `ed78884` is published on `main` and matches `origin/main` |
+| Azure deployment | App Service deployment `ae37b655-cf68-4812-8c50-ba69201de776` completed successfully via ZipDeploy |
+| Production health | `GET /health` returned HTTP 200 with `{"status":"healthy","service":"FVSD Nexus"}` |
+| Production bundle | Live HTML serves `assets/index-DKfj5BdO.js` and `assets/index-4y6TuyOG.css`; the JavaScript contains the TOSREC completion and Assessment Filters release |
+| Entra sign-in | `GET /api/auth/signin` returned HTTP 302 to the FVSD tenant with the production callback and delegated Dataverse scope |
+| Live RBAC | App Service identity retains `Key Vault Secrets User` at `kv-fvsdi-iwmpkez4` only |
