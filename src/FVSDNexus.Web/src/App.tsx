@@ -23,6 +23,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { ExecutiveDashboard } from './ExecutiveDashboard'
 import { AssessmentWorkspace } from './AssessmentWorkspace'
+import { emptyAssessmentWorkspaceSelection } from './AssessmentWorkspaceState'
 import { IppPreview } from './IppPreview'
 import fvsdNexusLogo from './assets/fvsd-nexus-logo.png'
 
@@ -178,6 +179,7 @@ export function App() {
   const [filtersReady, setFiltersReady] = useState(false)
   const [roleChanging, setRoleChanging] = useState<string | null>(null)
   const [studentDisplayMode, setStudentDisplayMode] = useState<StudentDisplayMode>('real')
+  const [assessmentSelection, setAssessmentSelection] = useState(emptyAssessmentWorkspaceSelection)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>({
@@ -251,6 +253,7 @@ export function App() {
         rlsEvaluation: update.rlsEvaluation,
       } : current)
       setFilters(initialFilters)
+      setAssessmentSelection(emptyAssessmentWorkspaceSelection)
     } catch {
       setFiltersReady(true)
       setError('The development role could not be changed. Your real Fabric identity and access were not altered.')
@@ -477,7 +480,9 @@ export function App() {
             <AssessmentWorkspace completion={activePage === 'completion'}
               currentSchoolYear={user.currentSchoolYear}
               studentDisplayMode={studentDisplayMode}
-              key={activePage + '-' + (user.activeDevelopmentRole ?? 'assessment-workspace')}
+              selection={assessmentSelection}
+              setSelection={setAssessmentSelection}
+              key={user.activeDevelopmentRole ?? 'assessment-workspace'}
             />
           ) : activePage === 'ipp-preview' ? (
             <IppPreview

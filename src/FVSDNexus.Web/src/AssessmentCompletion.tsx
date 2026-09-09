@@ -5,7 +5,8 @@ type MissingStudent = { id: string; name: string; obfuscatedName?: string; asn?:
 type Period = { period: number; label: string; expected: number; completed: number; missing: MissingStudent[] }
 type Summary = { assessmentType: string; schoolYear: string; refreshedAt: string; periods: Period[]; rosterCount: number; rosterGrades: { grade: string; students: number }[] }
 
-export function AssessmentCompletion({ schoolId, sectionGroup, courseNumber, teacherId, studentDisplayMode, currentSchoolYear }: {
+export function AssessmentCompletion({ assessmentType, schoolId, sectionGroup, courseNumber, teacherId, studentDisplayMode, currentSchoolYear }: {
+  assessmentType: string
   schoolId: string; sectionGroup: string; courseNumber: string; teacherId: string
   studentDisplayMode: 'real' | 'obfuscated'; currentSchoolYear?: string
 }) {
@@ -18,7 +19,8 @@ export function AssessmentCompletion({ schoolId, sectionGroup, courseNumber, tea
   const query = new URLSearchParams({ schoolId, sectionGroup })
   if (courseNumber) query.set('courseNumber', courseNumber)
   if (teacherId) query.set('teacherId', teacherId)
-  const queryKey = query.toString()
+  const queryKey = `${assessmentType}|${query.toString()}`
+  const completionUrl = `/api/assessments/completion/${encodeURIComponent(assessmentType.toLowerCase())}?${query.toString()}`
 
   useEffect(() => {
     const controller = new AbortController()
@@ -29,7 +31,7 @@ export function AssessmentCompletion({ schoolId, sectionGroup, courseNumber, tea
     setLoading(true)
     async function load() {
       try {
-        const response = await fetch(`/api/assessments/completion/tosrec?${queryKey}`, { signal: controller.signal, cache: 'no-store' })
+        const response = await fetch(completionUrl, { signal: controller.signal, cache: 'no-store' })
         if (!response.ok) {
           if (response.status === 401) setReconnect(true)
           const problem = await response.json().catch(() => ({}))
@@ -45,7 +47,7 @@ export function AssessmentCompletion({ schoolId, sectionGroup, courseNumber, tea
     }
     void load()
     return () => controller.abort()
-  }, [schoolId, sectionGroup, queryKey, refresh])
+  }, [schoolId, sectionGroup, queryKey, completionUrl, refresh])
 
   const data = result?.key === queryKey ? result.data : null
   const selectedPeriod = data?.periods.find(period => period.period === periodId)
@@ -57,7 +59,7 @@ export function AssessmentCompletion({ schoolId, sectionGroup, courseNumber, tea
   return <section className="completion-panel card" aria-labelledby="completion-title" aria-busy={loading}>
     <div className="student-assessment-heading">
       <div>
-        <h2 id="completion-title">TOSREC Completion · {data?.schoolYear ?? currentSchoolYear}</h2>
+        <h2 id="completion-title">{assessmentType} Completion · {data?.schoolYear ?? currentSchoolYear}</h2>
         <p>Grades 2–10: all periods · ELALIT1: Winter and Spring · ELA: not required. Exempt records count as complete.</p>
       </div>
       <button className="assessment-reset" type="button" disabled={loading || !schoolId || !sectionGroup} onClick={() => setRefresh(value => value + 1)}>

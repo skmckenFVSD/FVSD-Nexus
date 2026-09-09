@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import { createPortal } from 'react-dom'
 import { AssessmentCompletion } from './AssessmentCompletion'
+import { emptyAssessmentWorkspaceSelection, type AssessmentWorkspaceSelection } from './AssessmentWorkspaceState'
 import {
   BookOpenCheck,
+  Check,
   CheckCircle2,
   ChevronRight,
   CircleAlert,
@@ -67,6 +70,25 @@ type Student = {
 
 type StudentDisplayMode = 'real' | 'obfuscated'
 
+type StudentAssessmentPeriodStatus = {
+  period: number
+  label: string
+  required: boolean
+  complete: boolean
+}
+
+type StudentAssessmentRequirementStatus = {
+  assessmentType: string
+  simulated: boolean
+  periods: StudentAssessmentPeriodStatus[]
+}
+
+type StudentAssessmentStatus = {
+  studentId: string
+  schoolYear: string
+  assessments: StudentAssessmentRequirementStatus[]
+}
+
 type AssessmentHistoryRecord = {
   id: string
   assessmentType: string
@@ -111,21 +133,12 @@ type AssessmentTypeOption = {
   enabled: boolean
 }
 
-type Selection = {
-  schoolId: string
-  sectionGroup: string
-  courseNumber: string
-  teacherId: string
-  studentId: string
-}
-
-const emptySelection: Selection = {
-  schoolId: '',
-  sectionGroup: '',
-  courseNumber: '',
-  teacherId: '',
-  studentId: '',
-}
+const assessmentTypeOptions = [
+  { value: 'TOSREC', label: 'TOSREC' },
+  { value: 'TOWRE', label: 'TOWRE', disabled: true },
+  { value: 'PNSA', label: 'PNSA', disabled: true },
+  { value: 'WRAT-5', label: 'WRAT-5', disabled: true },
+]
 
 async function getJson<T>(url: string): Promise<T> {
   const response = await fetch(url, { credentials: 'include', cache: 'no-store' })
@@ -170,13 +183,14 @@ class ApiRequestError extends Error {
   }
 }
 
-export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'real', completion = false }: {
+export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'real', completion = false, selection, setSelection }: {
   currentSchoolYear?: string
   studentDisplayMode?: StudentDisplayMode
   completion?: boolean
+  selection: AssessmentWorkspaceSelection
+  setSelection: Dispatch<SetStateAction<AssessmentWorkspaceSelection>>
 }) {
   const [context, setContext] = useState<WorkspaceContext | null>(null)
-  const [selection, setSelection] = useState<Selection>(emptySelection)
   const [sectionGroups, setSectionGroups] = useState<SectionGroupOption[]>([])
   const [sections, setSections] = useState<TeacherSection[]>([])
   const [students, setStudents] = useState<Student[]>([])
@@ -185,6 +199,13 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
   const [loadingSectionGroups, setLoadingSectionGroups] = useState(false)
   const [loadingSections, setLoadingSections] = useState(false)
   const [loadingStudents, setLoadingStudents] = useState(false)
+  const [studentStatuses, setStudentStatuses] = useState<Record<string, StudentAssessmentStatus>>({})
+  const [studentStatusesSectionId, setStudentStatusesSectionId] = useState('')
+  const [studentStatusesLoading, setStudentStatusesLoading] = useState(false)
+  const [studentStatusesError, setStudentStatusesError] = useState('')
+  const studentStatusesRequest = useRef<Promise<void> | null>(null)
+  const selectedSectionIdRef = useRef(selectedSectionId)
+  selectedSectionIdRef.current = selectedSectionId
   const [error, setError] = useState<string | null>(null)
   const [needsReconnect, setNeedsReconnect] = useState(false)
 
@@ -197,7 +218,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
         setContext(workspaceContext)
         setSelection((current) => ({
           ...current,
-          schoolId: workspaceContext.defaultSchoolId ?? '',
+          schoolId: current.schoolId || workspaceContext.defaultSchoolId || '',
         }))
       })
       .catch((requestError: Error) => {
@@ -211,6 +232,12 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
       })
     return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    if (completion && selection.studentId) {
+      setSelection((current) => ({ ...current, studentId: '' }))
+    }
+  }, [completion, selection.studentId, setSelection])
 
   useEffect(() => {
     let cancelled = false
@@ -271,6 +298,46 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
     return () => { cancelled = true }
   }, [selection.schoolId, selection.sectionGroup, context?.teacherLockedToSignedInUser])
 
+  useEffect(() => {
+    setStudentStatuses({})
+    setStudentStatusesSectionId('')
+    setStudentStatusesError('')
+    studentStatusesRequest.current = null
+  }, [selectedSectionId])
+
+  function loadStudentStatuses() {
+    if (!selectedSectionId
+      || studentStatusesSectionId === selectedSectionId
+      || studentStatusesRequest.current) return
+
+    setStudentStatusesLoading(true)
+    setStudentStatusesError('')
+    const sectionId = selectedSectionId
+    const request = getJson<StudentAssessmentStatus[]>(
+      `/api/assessments/teacher-sections/${encodeURIComponent(sectionId)}/student-statuses`,
+    )
+      .then((statuses) => {
+        if (selectedSectionIdRef.current !== sectionId) return
+        setStudentStatuses(Object.fromEntries(statuses.map((status) => [status.studentId, status])))
+        setStudentStatusesSectionId(sectionId)
+      })
+      .catch((requestError: Error) => {
+        if (selectedSectionIdRef.current === sectionId) setStudentStatusesError(requestError.message)
+      })
+      .finally(() => {
+        studentStatusesRequest.current = null
+        setStudentStatusesLoading(false)
+      })
+    studentStatusesRequest.current = request
+  }
+
+  function invalidateStudentStatuses() {
+    setStudentStatuses({})
+    setStudentStatusesSectionId('')
+    setStudentStatusesError('')
+    studentStatusesRequest.current = null
+  }
+
   const courseOptions = useMemo(() => uniqueBy(
     sections.filter((section) =>
       (!selection.sectionGroup || section.sectionGroup === selection.sectionGroup)
@@ -316,7 +383,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
   }
 
   const changeSchool = (schoolId: string) => {
-    setSelection({ ...emptySelection, schoolId })
+    setSelection({ ...emptyAssessmentWorkspaceSelection, schoolId })
     setStudents([])
     setSelectedSectionId('')
   }
@@ -367,7 +434,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
 
   const reset = () => {
     setSelection((current) => ({
-      ...emptySelection,
+      ...emptyAssessmentWorkspaceSelection,
       schoolId: current.schoolId || context?.defaultSchoolId || '',
     }))
     setSelectedSectionId('')
@@ -401,7 +468,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
         <div className="assessment-panel-heading">
           <div>
             <h2>{completion ? 'Assessment Filters' : 'Classroom Assignment Filters'}</h2>
-            <p>{completion ? 'Choose a school and section group; narrow by course and teacher to review completion.' : 'Choose a school, section group, course and teacher to load the assigned students.'}</p>
+            <p>{completion ? 'Review current-year completion by school, section group, course, teacher and assessment type.' : 'Choose a school, section group, course and teacher to load the assigned students.'}</p>
           </div>
         </div>
 
@@ -442,6 +509,15 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
             disabled={!selection.sectionGroup || loadingSections || Boolean(context?.teacherLockedToSignedInUser)}
             onChange={changeTeacher}
           />
+          {completion ? (
+            <SelectFilter
+              label="Assessment Type"
+              value={selection.assessmentType}
+              placeholder="Select assessment type"
+              options={assessmentTypeOptions}
+              onChange={(assessmentType) => setSelection((current) => ({ ...current, assessmentType }))}
+            />
+          ) : null}
           {!completion && students.length > 0 ? (
             <SelectFilter
               label="Student"
@@ -462,7 +538,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
 
       {error ? <div className="error-banner"><CircleAlert size={18} />{error}</div> : null}
 
-      {completion ? <AssessmentCompletion schoolId={selection.schoolId} sectionGroup={selection.sectionGroup}
+      {completion ? <AssessmentCompletion assessmentType={selection.assessmentType} schoolId={selection.schoolId} sectionGroup={selection.sectionGroup}
         courseNumber={selection.courseNumber} teacherId={selection.teacherId}
         studentDisplayMode={studentDisplayMode} currentSchoolYear={currentSchoolYear} /> : <>
       <section className={`assessment-results card${!loadingStudents && selectedSectionId && students.length > 0 ? ' with-student-roster' : ''}${selectedStudent ? ' with-selected-student' : ''}`}>
@@ -551,6 +627,10 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
                   <StudentCard
                     student={student}
                     studentDisplayMode={studentDisplayMode}
+                    assessmentStatus={studentStatuses[student.id]}
+                    assessmentStatusLoading={studentStatusesLoading}
+                    assessmentStatusError={studentStatusesError}
+                    onPreview={loadStudentStatuses}
                     selected={student.id === selection.studentId}
                     onSelect={() => selectStudent(student.id)}
                     key={student.studentSectionId}
@@ -570,6 +650,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
           teacherSectionId={selectedSectionId}
           teacherSection={selectedSection}
           role={context?.role ?? ''}
+          onAssessmentChanged={invalidateStudentStatuses}
         />
       ) : null}
       </>}
@@ -581,7 +662,7 @@ function SelectFilter({ label, value, placeholder, options, disabled = false, on
   label: string
   value: string
   placeholder: string
-  options: { value: string; label: string }[]
+  options: { value: string; label: string; disabled?: boolean }[]
   disabled?: boolean
   onChange: (value: string) => void
 }) {
@@ -590,7 +671,7 @@ function SelectFilter({ label, value, placeholder, options, disabled = false, on
       <span>{label}</span>
       <select value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)}>
         <option value="">{placeholder}</option>
-        {options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
+        {options.map((option) => <option value={option.value} disabled={option.disabled} key={option.value}>{option.label}</option>)}
       </select>
     </label>
   )
@@ -600,24 +681,70 @@ function AssessmentEmpty({ icon: Icon, text }: { icon: typeof School; text: stri
   return <div className="assessment-empty"><Icon size={24} /><span>{text}</span></div>
 }
 
-function StudentCard({ student, studentDisplayMode, selected, onSelect }: {
+function StudentCard({ student, studentDisplayMode, assessmentStatus, assessmentStatusLoading, assessmentStatusError, selected, onSelect, onPreview }: {
   student: Student
   studentDisplayMode: StudentDisplayMode
+  assessmentStatus?: StudentAssessmentStatus
+  assessmentStatusLoading: boolean
+  assessmentStatusError: string
   selected: boolean
   onSelect: () => void
+  onPreview: () => void
 }) {
   const studentName = getStudentDisplayName(student, studentDisplayMode)
   const studentAsn = getStudentDisplayAsn(student, studentDisplayMode)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewPosition, setPreviewPosition] = useState({ left: 0, top: 0 })
+  const cardRef = useRef<HTMLElement | null>(null)
+  const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const previewId = `student-status-${student.id}`
+
+  useEffect(() => () => {
+    if (previewTimer.current) clearTimeout(previewTimer.current)
+  }, [])
+
+  function openPreview(immediate = false) {
+    if (previewTimer.current) clearTimeout(previewTimer.current)
+    previewTimer.current = setTimeout(() => {
+      const bounds = cardRef.current?.getBoundingClientRect()
+      if (!bounds) return
+      const previewWidth = 310
+      const previewHeight = 235
+      const left = Math.max(10, Math.min(bounds.left, window.innerWidth - previewWidth - 10))
+      const top = bounds.bottom + previewHeight + 10 <= window.innerHeight
+        ? bounds.bottom + 8
+        : Math.max(10, bounds.top - previewHeight - 8)
+      setPreviewPosition({ left, top })
+      setPreviewOpen(true)
+      onPreview()
+    }, immediate ? 0 : 300)
+  }
+
+  function closePreview() {
+    if (previewTimer.current) clearTimeout(previewTimer.current)
+    setPreviewOpen(false)
+  }
 
   return (
+    <>
     <article
+      ref={cardRef}
       className={`student-card interactive${selected ? ' selected' : ''}`}
       role="button"
       tabIndex={0}
       aria-pressed={selected}
       aria-label={`Select ${studentName}`}
+      aria-describedby={previewOpen ? previewId : undefined}
       onClick={onSelect}
+      onPointerEnter={() => openPreview()}
+      onPointerLeave={closePreview}
+      onFocus={() => openPreview(true)}
+      onBlur={closePreview}
       onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          closePreview()
+          return
+        }
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           onSelect()
@@ -634,10 +761,49 @@ function StudentCard({ student, studentDisplayMode, selected, onSelect }: {
         <div><dt>SPED</dt><dd>{student.spedCategory ?? student.spedSeries ?? 'Not coded'}</dd></div>
       </dl>
     </article>
+    {previewOpen ? createPortal(
+      <aside
+        id={previewId}
+        className="student-assessment-preview"
+        role="tooltip"
+        style={{ left: previewPosition.left, top: previewPosition.top }}
+      >
+        <div className="student-assessment-preview-heading">
+          <strong>Assessment completion</strong>
+          <span>{assessmentStatus?.schoolYear ?? 'Current year'}</span>
+        </div>
+        {!assessmentStatus && !assessmentStatusError ? <p>{assessmentStatusLoading ? 'Loading assessment status…' : 'Preparing assessment status…'}</p>
+          : assessmentStatusError && !assessmentStatus ? <p>{assessmentStatusError}</p>
+          : !assessmentStatus || assessmentStatus.assessments.length === 0
+            ? <p>No assessments are required for this student in the selected class.</p>
+            : <>
+              <div className="student-assessment-preview-grid" role="table" aria-label={`${studentName} assessment completion`}>
+                <span aria-hidden="true" />
+                {['Fall', 'Winter', 'Spring'].map((period) => <span className="preview-period" role="columnheader" key={period}>{period}</span>)}
+                {assessmentStatus.assessments.flatMap((assessment) => [
+                  <span className="preview-assessment" role="rowheader" key={`${assessment.assessmentType}-label`}>
+                    {assessment.assessmentType}{assessment.simulated ? <small>Simulated</small> : null}
+                  </span>,
+                  ...assessment.periods.map((period) => <span
+                    className={`preview-status${period.required ? period.complete ? ' complete' : ' missing' : ' not-required'}`}
+                    role="cell"
+                    aria-label={`${period.label}: ${period.required ? assessment.simulated ? `simulated ${period.complete ? 'complete' : 'missing'}` : period.complete ? 'complete' : 'missing' : 'not required'}`}
+                    key={`${assessment.assessmentType}-${period.period}`}
+                  >
+                    {period.required ? period.complete ? <Check size={16} /> : <X size={16} /> : <span aria-hidden="true">—</span>}
+                  </span>),
+                ])}
+              </div>
+              <p className="student-assessment-preview-note">TOSREC is live from Dataverse. Other rows are simulated for this UX preview.</p>
+            </>}
+      </aside>,
+      document.body,
+    ) : null}
+    </>
   )
 }
 
-function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear, focusArea, teacherSectionId, teacherSection, role }: {
+function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear, focusArea, teacherSectionId, teacherSection, role, onAssessmentChanged }: {
   student: Student
   studentDisplayMode: StudentDisplayMode
   currentSchoolYear?: string
@@ -645,6 +811,7 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
   teacherSectionId: string
   teacherSection?: TeacherSection
   role: string
+  onAssessmentChanged: () => void
 }) {
   const [yearView, setYearView] = useState<'current' | 'previous'>('current')
   const [tosrecHistory, setTosrecHistory] = useState<AssessmentHistoryRecord[]>([])
@@ -823,6 +990,7 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
             if (!wasEditing) setYearView('current')
             setSaveNotice(wasEditing ? 'TOSREC assessment updated.' : 'TOSREC assessment added.')
             setHistoryRefreshKey((value) => value + 1)
+            onAssessmentChanged()
           }}
           onDeleted={() => {
             setLoadingHistory(true)
@@ -832,6 +1000,7 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
             setEditingRecord(null)
             setSaveNotice('TOSREC assessment deleted.')
             setHistoryRefreshKey((value) => value + 1)
+            onAssessmentChanged()
           }}
         />
       ) : null}

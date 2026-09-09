@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Deployed - Class Assignment UX and TOSREC Completion Release
+> **Status:** Validated - Student Assessment Hover and Synchronized Filters Release
 
 Generated: 2026-08-25
 
@@ -263,6 +263,19 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
   - [x] Run `azd provision --preview --no-prompt`
   - [x] Run `azd package --no-prompt`
   - [x] Record release fingerprints and validation proof
+  - [x] Validate the student assessment hover and synchronized assessment filters release
+    - [x] 1. AZD Installation
+    - [x] 2. Schema Validation
+    - [x] 3. Environment Setup
+    - [x] 4. Authentication Check
+    - [x] 5. Subscription/Location Check
+    - [x] 6. Aspire Pre-Provisioning Checks - not applicable; the solution is not .NET Aspire
+    - [x] 7. Provision Preview
+    - [x] 8. Build Verification
+    - [x] 9. Docker Build Context Validation - not applicable; the service has no Dockerfile
+    - [x] 10. Package Validation
+    - [x] 11. Azure Policy Validation
+    - [x] 12. Aspire Post-Provisioning Checks - not applicable; the solution is not .NET Aspire
 
 ### Phase 4: Deployment
 
@@ -1073,3 +1086,20 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Production bundle | Live HTML serves `assets/index-DKfj5BdO.js` and `assets/index-4y6TuyOG.css`; the JavaScript contains the TOSREC completion and Assessment Filters release |
 | Entra sign-in | `GET /api/auth/signin` returned HTTP 302 to the FVSD tenant with the production callback and delegated Dataverse scope |
 | Live RBAC | App Service identity retains `Key Vault Secrets User` at `kv-fvsdi-iwmpkez4` only |
+
+### Student Assessment Hover and Synchronized Filters Release — 2026-09-09T10:55:41-06:00
+
+#### Validation Proof
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Azure context | `azd version`, `azd auth login --check-status`, `azd env list`, `azd env get-values`, and `az account show` | Passed; AZD 1.31.2, signed-in FVSD user, existing `fvsd-insights-dev` environment, Pay-As-You-Go subscription, and Canada Central |
+| Target inventory | Resource group and `azd-service-name=web` inventory | Passed; the existing resource group is Succeeded and contains exactly one App Service deployment target |
+| Project specialization | `azure.yaml` inspection plus Aspire and Dockerfile scans | Passed; valid App Service service definition, no Aspire markers, and no Docker build context |
+| React validation | `npm run build --prefix src/FVSDNexus.Web` and `npm audit --prefix src/FVSDNexus.Web --audit-level=high` | Passed; TypeScript/Vite bundle generated and zero vulnerabilities reported |
+| ASP.NET Core validation | `dotnet test FVSDNexus.sln --no-restore --configuration Release` and `dotnet list ... --vulnerable --include-transitive` | Passed; 82 tests, zero failures, and no vulnerable packages reported |
+| Bicep validation | `az bicep build --file infra/main.bicep --stdout` and `az bicep lint --file infra/main.bicep` | Passed without template errors or lint findings |
+| Provision preview | `azd provision --preview --no-prompt` with a validation-only placeholder for the intentionally unpersisted Entra secret | Passed; no resource creation or deletion and no changes were applied |
+| Package validation | `azd package --no-prompt` | Passed; `fvsd-insights-web-azddeploy-1788972894.zip`, SHA-256 `CA6DCBEDE222572B4318546ACC56F5E39F7A970434E579E87DCF65747AEACE4B` |
+| Azure policy | `az policy assignment list` at subscription scope | Passed; only the existing Microsoft Defender for Cloud default assignment is active |
+| Static RBAC | `infra/resources.bicep` role-assignment review | Passed; the App Service system identity retains only vault-scoped `Key Vault Secrets User`, matching its secret-read operation |

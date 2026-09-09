@@ -296,6 +296,20 @@ tbody tr:nth-child(7n + 7) .bar-track span { background: var(--fvsd-data-7); }
 .student-card.interactive:hover { border-color: #789db4; box-shadow: 0 6px 16px rgba(7, 25, 64, .11); transform: translateY(-1px); }
 .student-card.interactive:focus-visible { outline: 2px solid rgba(91, 123, 214, .55); outline-offset: 2px; }
 .student-card.selected { border-color: var(--fvsd-structural-secondary); box-shadow: 0 0 0 2px rgba(31, 78, 121, .12); }
+.student-assessment-preview { position: fixed; z-index: 1000; width: min(310px, calc(100vw - 20px)); box-sizing: border-box; padding: 14px; color: #122333; border: 1px solid #0b2939; border-radius: 28px; background: white; box-shadow: 0 12px 30px rgba(7, 25, 64, .2); pointer-events: none; }
+.student-assessment-preview-heading { display: flex; justify-content: space-between; gap: 10px; margin: 0 6px 10px; }
+.student-assessment-preview-heading strong { color: var(--fvsd-structural); font-size: 13px; }
+.student-assessment-preview-heading span { color: #607684; font-size: 10px; }
+.student-assessment-preview > p { margin: 10px; color: #536b7b; font-size: 11px; line-height: 1.45; }
+.student-assessment-preview-grid { display: grid; grid-template-columns: minmax(82px, 1fr) repeat(3, 44px); align-items: center; row-gap: 9px; }
+.preview-period { color: #122333; font-size: 12px; text-align: center; }
+.preview-assessment { display: grid; gap: 2px; color: #122333; font-size: 12px; }
+.preview-assessment small { color: #748592; font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.preview-status { display: grid; place-items: center; }
+.preview-status.complete { color: #27b874; }
+.preview-status.missing { color: #f34f79; }
+.preview-status.not-required { color: #a8b4bc; }
+.student-assessment-preview-note { padding-top: 8px; border-top: 1px solid #e1e7eb; }
 .student-card-heading { min-width: 0; padding-bottom: 10px; border-bottom: 1px solid #e5eaed; }
 .student-card-heading > div { min-width: 0; }
 .student-card-heading strong, .student-card-heading span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
