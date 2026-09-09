@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Validated - Student Assessment Hover and Synchronized Filters Release
+> **Status:** Deployed - Student Assessment Hover and Synchronized Filters Release
 
 Generated: 2026-08-25
 
@@ -315,6 +315,12 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
   - [x] Confirm `azd show` reports the intended App Service endpoint
   - [x] Verify production health and exact JavaScript and CSS release fingerprints
   - [x] Verify the FVSD Entra sign-in challenge, Key Vault reference, and live managed-identity role assignment
+- [x] Deploy the student assessment hover and synchronized filters release on 2026-09-09
+  - [x] Publish GitHub commit `883b6f3` on `main`
+  - [x] Deploy the application-only release with `azd deploy --no-prompt`
+  - [x] Confirm `azd show` reports the intended App Service endpoint
+  - [x] Verify production health, exact JavaScript and CSS release fingerprints, and the Entra production callback
+  - [x] Verify the resolved Key Vault reference and live managed-identity role assignment
 
 ---
 
@@ -1103,3 +1109,16 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Package validation | `azd package --no-prompt` | Passed; `fvsd-insights-web-azddeploy-1788972894.zip`, SHA-256 `CA6DCBEDE222572B4318546ACC56F5E39F7A970434E579E87DCF65747AEACE4B` |
 | Azure policy | `az policy assignment list` at subscription scope | Passed; only the existing Microsoft Defender for Cloud default assignment is active |
 | Static RBAC | `infra/resources.bicep` role-assignment review | Passed; the App Service system identity retains only vault-scoped `Key Vault Secrets User`, matching its secret-read operation |
+
+#### Deployment Proof — 2026-09-09T11:04:56-06:00
+
+| Check | Result |
+|-------|--------|
+| GitHub release | Commit `883b6f3` is published on `main` and matches `origin/main` |
+| Azure deployment | App Service deployment `8ee504c8-b65c-420f-9e60-8d0e316e5c20` completed successfully via push deployment |
+| Production endpoint | `azd show` reports `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/` |
+| Production health | `GET /health` returned HTTP 200 with `{"status":"healthy","service":"FVSD Nexus"}` |
+| Production bundle | Live HTML serves `assets/index-BQq58xy5.js` and `assets/index-CsSPMtTR.css`; the JavaScript contains the assessment hover, synchronized-filter, assessment-type, and current-year release markers |
+| Entra sign-in | `GET /api/auth/signin` returned HTTP 302 to the FVSD tenant with `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/signin-oidc` as the callback |
+| Key Vault reference | `AzureAd__ClientSecret` reports `Resolved` against `kv-fvsdi-iwmpkez4` |
+| Live RBAC | App Service identity `3ac2acd7-3412-4161-b4bf-af96c4051a85` has role definition `4633458b-17de-408a-b874-0445c86b69e6` (`Key Vault Secrets User`) scoped only to `kv-fvsdi-iwmpkez4` |
