@@ -47,6 +47,72 @@ public interface IDataverseAssessmentWorkspaceClient
         Guid studentId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<StudentPlanHistoryRecord>> GetStudentPlansAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanHistoryRecord> CreateStudentPlanAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        string currentSchoolYear,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanModulesResponse> GetStudentPlanModulesAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanScreenersResponse> GetStudentPlanScreenersAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanInterventionsResponse> GetStudentPlanInterventionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanModulesResponse> AddStudentPlanModuleAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid moduleId,
+        string eTag,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanModulesResponse> RemoveStudentPlanModuleAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid moduleId,
+        string eTag,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<TosrecReferenceOption>> GetTosrecReferenceOptionsAsync(
         DataverseAccessContext accessContext,
         string? developmentRole,

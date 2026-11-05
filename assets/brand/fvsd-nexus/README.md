@@ -1,6 +1,6 @@
 # FVSD Nexus logo pack
 
-This directory contains the approved FVSD Nexus application mark supplied for the proof of concept.
+This directory contains the approved FVSD Nexus application mark used by the product.
 
 ## Files
 

@@ -1,109 +1,123 @@
 # FVSD Nexus
 
-FVSD Nexus is the proposed unified operational and analytics platform for Fort Vermilion School Division. It is intended to help staff move from governed evidence to action through a purpose-built, role-aware experience.
+FVSD Nexus is Fort Vermilion School Division's unified operational and analytics application. It helps staff move from governed evidence to action through a purpose-built, role-aware experience.
 
-> **Status - September 3, 2026:** Leadership Analytics and the end-to-end Class Assignment/TOSREC vertical slice are locked PoC releases. The shared application shell now adds a responsive, user-collapsible, role-aware navigation pattern and a settings surface for identity, assignment, licensing policy, and governed connection context. Additional assessment patterns, live IPP, and the broader operational platform remain future phases until formally authorized.
+> **Status — November 5, 2026:** FVSD has approved Nexus as the application for next year. Phase 1 is active: Leadership Analytics, Class Assignments, TOSREC assessment entry and completion monitoring are working; the modular IEP/IPP experience is in active development from the Educational Framework Canvas app and existing Dataverse foundation.
 
 ## At a glance
 
-| Area | Current position |
+| Area | Product position |
 |---|---|
+| Application | Azure-hosted React, TypeScript, and ASP.NET Core 8 application |
+| Intelligence services | Microsoft Foundry for approved APIs, model access, agents, evaluation, toolboxes, and MCP components |
 | Operational truth | Microsoft Dataverse |
 | Governed analytics | `FVSDAnalytics` Fabric semantic model |
 | Student context | PowerSchool data synchronized to Dataverse |
-| Application | React, TypeScript, and ASP.NET Core 8 |
 | Identity | FVSD Entra ID with delegated service access |
 | Hosting | Azure Canada Central |
 | Residency | Production student information remains in the approved Canadian geography |
-| Delivery horizon | Full testable PoC proposed for February 2027; phased production target September 2027 |
+| Delivery | Four phases: core build; Dossier transition; Microsoft 365 Copilot integration; PASI connector |
+
+## Delivery phases
+
+| Phase | Outcome | Position |
+|---|---|---|
+| 1. Nexus foundation and core workflows | Finish Fabric integration and page designs, Class Assignments, Assessments, and core IEP/IPP. | Active build |
+| 2. Dossier transition | Extend IEP/IPP modules, interventions, history, and migration to incorporate agreed Dossier functionality. | Defined direction |
+| 3. Microsoft 365 Copilot integration | Connect Copilot, Work IQ, FVSD agents, skills, and governed tools; use Foundry for the service and MCP component plane. | Architecture and contract definition |
+| 4. PASI connector | Add FVSD-owned provincial exchange, status, retry, reconciliation, and support capability. | Feasibility established |
+
+See the [phased delivery plan](docs/delivery/roadmap.md), [Phase 1 build record](docs/delivery/phase-1-product-build.md), and [adoption approach](docs/delivery/adoption-and-engagement.md).
 
 ## Product capabilities
 
 | Capability | Status | Documentation |
 |---|---|---|
-| Leadership analytics | Working PoC | [Leadership analytics](docs/capabilities/leadership-analytics/README.md) |
+| Leadership analytics | Current capability; remaining pages and design work in Phase 1 | [Leadership analytics](docs/capabilities/leadership-analytics/README.md) |
+| Class Assignments and assessment history | Current capability | [Assessments](docs/capabilities/assessments/README.md) |
+| Assessment entry and completion monitoring | TOSREC working; additional adapters in Phase 1 | [Assessments](docs/capabilities/assessments/README.md) |
+| IEP / IPP | Active modular implementation in Phase 1; Dossier expansion in Phase 2 | [IEP/IPP](docs/capabilities/ipp/README.md) |
+| Intervention tracking | Incorporated into the IEP/IPP module direction | [Interventions](docs/capabilities/interventions/README.md) |
 | School and student profiles | Planned | [Profiles](docs/capabilities/profiles/README.md) |
-| Assessment entry and scoring | Working end-to-end Class Assignment and TOSREC PoC | [Assessments](docs/capabilities/assessments/README.md) |
-| Individual Program Plans | Static Foundations 1 design preview; operational capability proposed | [IPP](docs/capabilities/ipp/README.md) |
-| Intervention tracking | Future definition required | [Interventions](docs/capabilities/interventions/README.md) |
-| PASI provincial connector | Proposed strategic differentiator; public technical feasibility established | [PASI connector](docs/capabilities/pasi-connector/README.md) |
-| Purview governance and Data Analyst workspace | Proposed; existing FVSD agent and Fabric governance foundation identified | [Purview governance](docs/capabilities/purview-governance/README.md) |
-| Platform administration | Partially present | [Administration](docs/capabilities/administration/README.md) |
+| Microsoft 365 Copilot, Work IQ, agents, and skills | Phase 3 | [Purview and agent workspace](docs/capabilities/purview-governance/README.md) |
+| PASI provincial connector | Phase 4 | [PASI connector](docs/capabilities/pasi-connector/README.md) |
+| Platform administration | Partially implemented; expands with each phase | [Administration](docs/capabilities/administration/README.md) |
 
-## Current proof of concept
+## Current build
 
-The Nexus PoC now contains two connected vertical slices. The first was developed as **FVSD Insights** and proves that the application can:
+The current application provides two connected foundations.
 
-- Authenticate an FVSD user with Microsoft Entra ID.
-- Query Fabric using the signed-in user's delegated identity.
-- Preserve Fabric permissions and row-level security.
-- Use predefined DAX against the existing semantic model.
-- Present governed measures without embedding a Power BI report.
-- Provide responsive, task-oriented filters, signals, matrices, and charts.
-- Adapt the experience by role while retaining the real service identity.
-- Provide a responsive application shell with manual desktop collapse, automatic compact navigation at narrower breakpoints, role-specific Analytics destinations, shared School Administration destinations, and Data Analyst-only Governance destinations.
+### Governed analytics
 
-The second slice begins the operational assessment experience and proves that the application can:
+- FVSD Entra authentication and delegated Fabric access.
+- Existing Fabric permissions and row-level security.
+- Predefined DAX against the governed semantic model.
+- Responsive, role-aware analytics without embedding a Power BI report.
+- A shared application shell for Analytics, School Administration, Governance, and Settings destinations.
 
-- Establish the signed-in user's Dataverse role, permitted schools, default school, and teacher boundary.
-- Cascade School, Section Group, Course, Teacher, and Student selections without loading class assignments prematurely.
-- Return authorized teacher sections and assigned student rosters from the existing Dataverse structures.
-- Establish a stable Edmonton-time school-year context for the authenticated session.
-- Load a selected student's TOSREC history with Current Year and Previous Years views.
-- Present the governed descriptive term and its existing Dataverse colours alongside school year, period, and standard score.
-- Create a TOSREC assessment through a two-stage master-detail and assessment-specific scoring experience.
-- Query the existing TOSREC reference and descriptive-term tables, calculate the governed result, and save the complete assessment context to Dataverse.
-- Save exempt TOSREC records using only the applicable master detail and required exemption reason, without requiring scoring inputs.
-- Open any history record in a complete read-only view, then permit edits only when the record belongs to the current operational period.
-- Restrict permanent deletion to School Administration and Data Analyst roles, with server-side authorization and explicit confirmation.
-- Refresh the selected student's assessment history immediately after create, edit, or delete.
-- Review current-year TOSREC completion directly from Dataverse on the Assessments page, with school, section group, course and teacher filters, period progress, missing-student lists and manual refresh.
-- Count distinct students with an active assessment record, including exemptions: Grades 2–10 require all periods, ELALIT1 requires Winter and Spring, and ELA has no requirement. Current roster membership scopes students; submissions from a prior teacher still count.
-- Use wider two-row filters, consistently sized teacher and student cards, and compact selected-student details beside the teacher to leave more room for assessment history.
-- Enforce section/student scope on the server and request a fresh delegated Microsoft session when token acquisition requires user interaction.
-- Let the developer switch student names and ASNs between real and synchronized obfuscated values for safe demonstrations and documentation captures, without changing the governed record identity or issuing another Dataverse request.
+### Class Assignments and assessments
 
-This locked slice proves the reusable assessment lifecycle with TOSREC. The remaining assessment types require only their documented field, reference, calculation, and visibility adapters; historical administrative correction requests remain deferred.
+- Role and school context from Dataverse, with server-side section and student authorization.
+- Cascading School, Section Group, Course, Teacher, and Student filters.
+- Authorized teacher sections, class rosters, selected-student details, and assessment history.
+- Current-year TOSREC completion by period, including exemptions and missing-student lists.
+- TOSREC create, governed reference scoring, exemption, view, current-period edit, and authorized deletion workflows.
+- Immediate Dataverse history refresh after a change and explicit separation from asynchronous Fabric refresh.
+- Shared filter context between Class Assignments and Assessments.
+- Grade- and period-aware assessment status summaries on student cards.
 
-Current PoC endpoint:
+### IEP / IPP
+
+- One annual master plan per student and school year.
+- Governed modular sections from `fvsd_ippsection` and audited section allocation on `fvsd_studentipp`.
+- Module selection, locking, focus navigation, and plan-oriented rendering.
+- Live Student Details, Screener Results, Signatures, and Intervention Focus sections.
+- A document-oriented plan view designed to align the on-screen and exported experience.
+- Planned app-native PDF generation from structured records, replacing the Power Automate and OneDrive HTML-conversion chain.
+
+Current Azure endpoint:
 
 <https://app-fvsd-insights-iwmpkez4.azurewebsites.net/>
 
-The deployed Azure resources retain their existing `fvsd-insights` identifiers. The active source solution and future product use the FVSD Nexus name.
+The deployed resources retain their established `fvsd-insights` identifiers. The product and source solution are FVSD Nexus.
 
 ## Architecture
 
 ```text
-FVSD user
-  |
-  v
-FVSD Nexus - React / TypeScript
-  |
-  v
-ASP.NET Core backend-for-frontend
+FVSD staff
+  |-- FVSD Nexus Azure App
+  `-- Microsoft 365 Copilot harness (Phase 3)
+            |
+            v
+ASP.NET Core application services + Microsoft Foundry service/agent/MCP plane
   |-- Delegated Dataverse access for operational workflows
-  `-- Delegated Fabric access for governed analytics
+  |-- Delegated Fabric access for governed analytics
+  `-- Published tools and contracts for approved agents
 
-PowerSchool -- existing synchronization --> Dataverse
-Dataverse  -- low-latency OneLake link --> Fabric --> FVSDAnalytics
-Dataverse  -- proposed durable connector --> Alberta Education PASI
+PowerSchool --> Dataverse --> OneLake / Fabric --> FVSDAnalytics
+                    |
+                    `--> PASI durable connector (Phase 4)
+
+Entra governs identity. Fabric catalog metadata and Purview protection/compliance
+provide understanding and control without replacing source-system authorization.
 ```
 
 Core premises:
 
 1. Dataverse remains the operational system of record.
-2. The Fabric semantic model remains the calculation and analytics layer.
-3. Users act through named identities and delegated tokens.
-4. Backend, Dataverse, and Fabric authorization are authoritative.
-5. Canadian data residency is a non-negotiable production boundary.
-6. Existing stable structures and calculations are reused.
+2. The Fabric semantic model remains the governed analytical layer.
+3. Nexus remains the primary Azure application; Foundry supplies approved intelligence services and components.
+4. Users act through named identities and delegated access where interactive user context is required.
+5. Backend and destination-service authorization are authoritative.
+6. Canadian data residency is a non-negotiable production boundary.
 7. Dataverse confirms operational saves; Fabric analytics update asynchronously.
+8. Agents retrieve, explain, validate, and coordinate through bounded contracts; they do not become the source of student records or business rules.
 
-Read the [architecture documentation](docs/architecture/README.md) and [decision register](docs/decisions/decision-register.md) for the detailed rationale.
+See the [architecture diagram](docs/architecture/overview.md), [data-layer examples](docs/architecture/data-and-integrations.md), [Copilot interoperability](docs/architecture/copilot-interoperability.md), [document generation](docs/architecture/document-generation.md), and [decision register](docs/decisions/decision-register.md).
 
 ## Documentation
 
-The [documentation hub](docs/README.md) provides navigation across:
+The [documentation hub](docs/README.md) includes:
 
 - [Capabilities](docs/capabilities/README.md)
 - [Architecture](docs/architecture/README.md)
@@ -111,10 +125,8 @@ The [documentation hub](docs/README.md) provides navigation across:
 - [Decision register](docs/decisions/decision-register.md)
 - [Architecture decision records](docs/decisions/adr/README.md)
 - [Glossary](docs/reference/glossary.md)
-- [PASI official references](docs/reference/pasi-resources.md)
-- [Purview and FVSD governance-agent references](docs/reference/purview-resources.md)
 
-Documentation uses explicit status labels so current functionality, confirmed premises, proposals, and open questions do not become confused.
+Documentation labels current functionality, approved work, future phases, and open decisions explicitly.
 
 ## Repository structure
 
@@ -125,7 +137,7 @@ FVSD-Nexus/
 |   |-- FVSDNexus.Api/          ASP.NET Core backend-for-frontend
 |   `-- FVSDNexus.Web/          React and TypeScript interface
 |-- tests/
-|   `-- FVSDNexus.Api.Tests/    API, role, and semantic-query tests
+|   `-- FVSDNexus.Api.Tests/    API, role, integration-contract, and query tests
 |-- docs/                       Product, architecture, and delivery documentation
 |-- infra/                      Azure Bicep infrastructure
 |-- scripts/                    Entra and environment configuration
@@ -142,8 +154,6 @@ FVSD-Nexus/
 - Azure CLI
 - Azure Developer CLI
 - Required FVSD tenant and Fabric access
-
-### Run the application
 
 Run the API and web development server in separate terminals:
 
@@ -168,11 +178,11 @@ npm run build --prefix .\src\FVSDNexus.Web
 dotnet publish .\src\FVSDNexus.Api\FVSDNexus.Api.csproj --configuration Release
 ```
 
-For the September 3 navigation UX release, all 65 backend tests pass, the React production build succeeds, dependency audits report no known high-severity vulnerabilities, and the ASP.NET application packages successfully for Azure.
+The backend suite and React production build must pass before an Azure release. Deployment validation, accessibility checks, and dependency audits remain required in proportion to the change.
 
 ## Deployment
 
-Repository updates and Azure deployment are intentionally separate. The current PoC remains deployed in Canada Central using its established resources and Entra registration. Deployment should occur only after the applicable validation and explicit approval.
+Repository updates and Azure deployment are intentionally separate. The current application remains deployed in Canada Central using its established resources and Entra registration. Deployment occurs only after the applicable validation and explicit release decision.
 
 See the retained [deployment plan](.azure/deployment-plan.md) for the current Azure implementation history.
 
@@ -183,9 +193,10 @@ See the retained [deployment plan](.azure/deployment-plan.md) for the current Az
 - Treat React visibility as UX, not authorization.
 - Do not expose arbitrary DAX or reusable service tokens to the browser.
 - Keep operational writes attributable to the signed-in user.
+- Treat MCP servers, agents, and skills as governed integration surfaces with explicit permissions and audit.
 
-The repository currently contains FVSD-specific architecture and generated prototype metadata. Repository visibility should remain an explicit governance decision before operational detail is expanded.
+Repository visibility remains an explicit governance decision as operational detail expands.
 
 ## Living documentation
 
-This repository is expected to grow capability by capability. Update the relevant landing page and decision record in the same change that introduces new behaviour or changes a premise.
+Update the relevant capability, architecture page, delivery phase, and decision record in the same change that introduces new behaviour or changes a premise.

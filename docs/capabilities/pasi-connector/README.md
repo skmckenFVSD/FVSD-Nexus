@@ -2,11 +2,11 @@
 
 > [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / PASI provincial connector
 
-**Status:** Proposed strategic capability; public technical feasibility established, FVSD onboarding and submission scope remain open
+**Status:** Phase 4; public technical feasibility established, FVSD onboarding and submission scope remain open
 
-An FVSD-owned Provincial Approach to Student Information (PASI) connector could become one of the strongest reasons to move Nexus from proof of concept to funded development. It would allow FVSD to govern operational student workflows in Nexus and Dataverse while exchanging authorized provincial records directly with Alberta Education.
+An FVSD-owned Provincial Approach to Student Information (PASI) connector is Phase 4 of the approved product direction. It will allow FVSD to govern operational student workflows in Nexus and Dataverse while exchanging authorized provincial records directly with Alberta Education.
 
-This is not the next application build. The next direct slice remains one complete assessment-entry journey. PASI is documented now so Leadership can see that it is a credible, staged extension rather than an undefined aspiration.
+PASI follows the core build, Dossier transition, and Microsoft 365 Copilot integration phases. It is documented now so onboarding, certificate, contract, privacy, support, and incumbent-integration decisions can be resolved before implementation.
 
 ## Executive value
 
@@ -36,7 +36,7 @@ The publicly available Alberta Education technical material supports the feasibi
 
 These assets demonstrate technical viability. They do not by themselves confirm FVSD registration, approved operations, the production contract version, delivery effort, or authorization to replace an incumbent connector.
 
-## Proposed capability boundary
+## Phase 4 capability boundary
 
 The connector should be a separate integration service. It should not be embedded in React and should not make an ordinary Nexus save depend synchronously on provincial service availability.
 
@@ -53,7 +53,7 @@ Authorized Nexus user
 
 Dataverse remains the operational truth store for Nexus. PASI remains authoritative for the provincial information and version returned by PASI. The connector must preserve both sides of that boundary rather than pretending one database owns every fact.
 
-## Proposed connector capabilities
+## Planned connector capabilities
 
 ### Submission
 
@@ -106,7 +106,7 @@ The exact certificate issuance, registration, renewal, production endpoint, and 
 
 ## Relationship to IPP and third-party replacement
 
-The proposed [IPP capability](../ipp/README.md) and PASI connector reinforce one another but are not the same project:
+The [IEP/IPP capability](../ipp/README.md) and PASI connector reinforce one another but are not the same project:
 
 - The IPP experience owns plan creation, goals, progress, review, approval, and parent-facing output.
 - The PASI connector owns only the provincial data exchanges that Alberta Education supports and FVSD is authorized to perform.
@@ -157,5 +157,5 @@ That evidence would prove more than a successful API call: it would demonstrate 
 - [Data and integrations](../../architecture/data-and-integrations.md)
 - [Identity, licensing, and security](../../architecture/identity-licensing-security.md)
 - [IPP capability](../ipp/README.md)
-- [Full PoC definition](../../delivery/full-poc-definition.md)
+- [Phased delivery plan](../../delivery/roadmap.md)
 - [Decision register](../../decisions/decision-register.md)

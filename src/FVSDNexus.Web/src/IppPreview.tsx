@@ -9,6 +9,7 @@ import {
   UsersRound,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { IppWorkspace } from './IppWorkspace'
 
 const screenerRows = [
   { assessment: 'Comprehension (TOSREC)', short: 'TOSREC', fall: '58', winter: '60', spring: '79', change: '+21', term: 'Poor' },
@@ -72,13 +73,37 @@ const writingGoals = [
   ['Writes with growing independence', 2],
 ] as const
 
-export function IppPreview({ onBackToClassAssignment }: { onBackToClassAssignment: () => void }) {
+export type IppPreviewContext = {
+  teacherSectionId: string
+  studentId: string
+  planId?: string
+  studentName: string
+  studentAsn?: string
+  grade?: string
+  schoolName?: string
+  schoolYear?: string
+  teacherName?: string
+  courseName?: string
+}
+
+export function IppPreview({ context, onBackToClassAssignment }: {
+  context?: IppPreviewContext | null
+  onBackToClassAssignment: () => void
+}) {
+  const studentName = context?.studentName ?? 'Sample Student'
+  const schoolYear = context?.schoolYear ?? '2026 / 2027'
+  const courseName = context?.courseName ?? 'Foundations 1'
+
+  if (context) {
+    return <IppWorkspace context={context} onBackToClassAssignment={onBackToClassAssignment} />
+  }
+
   return (
     <section className="ipp-preview" aria-labelledby="ipp-preview-title">
       <div className="ipp-preview-notice" role="status">
         <div>
           <strong>Static design preview</strong>
-          <span>Illustrative sample values only. Dataverse questions, live student records, editing, and approvals are not connected.</span>
+          <span>Illustrative sample values only. Dataverse modules, editing, and approvals are not connected.</span>
         </div>
         <span className="ipp-preview-state">View only</span>
       </div>
@@ -107,11 +132,11 @@ export function IppPreview({ onBackToClassAssignment }: { onBackToClassAssignmen
         <header className="ipp-document-hero">
           <div>
             <span>Individual Program Plan</span>
-            <h2 id="ipp-preview-title">Sample Student</h2>
-            <p>Foundations 1 - Term 1</p>
+            <h2 id="ipp-preview-title">{studentName}</h2>
+            <p>{courseName} - Term 1</p>
           </div>
           <div className="ipp-document-status">
-            <span>2026 / 2027</span>
+            <span>{schoolYear}</span>
             <strong>Draft preview</strong>
           </div>
         </header>
@@ -130,10 +155,10 @@ export function IppPreview({ onBackToClassAssignment }: { onBackToClassAssignmen
           <SectionHeading eyebrow="Section overview" title="Student details" icon={UsersRound} />
           <p className="ipp-lede">The future plan will combine approved student context with the staff and reporting information required for the active plan.</p>
           <dl className="ipp-detail-grid">
-            <Detail label="Student name" value="Sample Student" />
+            <Detail label="Student name" value={studentName} />
             <Detail label="Grade" value="3" />
             <Detail label="School" value="Blue Hills Community School" />
-            <Detail label="School year" value="2026 / 2027" />
+            <Detail label="School year" value={schoolYear} />
             <Detail label="Report period" value="Term 1" />
             <Detail label="Report date" value="November 20, 2026" />
             <Detail label="Foundations teacher" value="Awaiting entry" pending />
@@ -251,7 +276,7 @@ export function IppPreview({ onBackToClassAssignment }: { onBackToClassAssignmen
 
         <footer className="ipp-document-footer">
           <strong>Fort Vermilion School Division</strong>
-          <span>Foundations 1 Individual Program Plan - static Nexus preview</span>
+          <span>IEP / IPP modular plan - static Nexus preview</span>
         </footer>
       </article>
     </section>

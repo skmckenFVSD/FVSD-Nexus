@@ -24,7 +24,7 @@ import type { LucideIcon } from 'lucide-react'
 import { ExecutiveDashboard } from './ExecutiveDashboard'
 import { AssessmentWorkspace } from './AssessmentWorkspace'
 import { emptyAssessmentWorkspaceSelection } from './AssessmentWorkspaceState'
-import { IppPreview } from './IppPreview'
+import { IppPreview, type IppPreviewContext } from './IppPreview'
 import fvsdNexusLogo from './assets/fvsd-nexus-logo.png'
 
 type User = {
@@ -146,8 +146,6 @@ function getNavGroups(role: string | null | undefined): SidebarNavGroup[] {
       items: [
         { id: 'assessments', label: 'Class Assignments', icon: BookOpenText },
         { id: 'completion', label: 'Assessments', icon: FileCheck2 },
-        { id: 'coming-soon', label: 'Interventions', icon: LifeBuoy, isComingSoon: true },
-        { id: 'ipp-preview', label: 'Individual Program Plans', icon: GraduationCap },
       ],
     },
     ...(dataAnalystRole ? [{
@@ -180,6 +178,7 @@ export function App() {
   const [roleChanging, setRoleChanging] = useState<string | null>(null)
   const [studentDisplayMode, setStudentDisplayMode] = useState<StudentDisplayMode>('real')
   const [assessmentSelection, setAssessmentSelection] = useState(emptyAssessmentWorkspaceSelection)
+  const [ippPreviewContext, setIppPreviewContext] = useState<IppPreviewContext | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>({
@@ -254,6 +253,7 @@ export function App() {
       } : current)
       setFilters(initialFilters)
       setAssessmentSelection(emptyAssessmentWorkspaceSelection)
+      setIppPreviewContext(null)
     } catch {
       setFiltersReady(true)
       setError('The development role could not be changed. Your real Fabric identity and access were not altered.')
@@ -384,7 +384,7 @@ export function App() {
         <header className="page-header">
           <div>
             {activePage !== 'executive' && activePage !== 'assessments' && activePage !== 'completion' ? <span className="eyebrow">{activePage === 'ipp-preview'
-              ? 'Individual Program Plans - design preview'
+              ? 'Individual Education / Program Plan'
               : 'Account and system configuration'}</span> : null}
             <h1>{activePage === 'executive'
               ? 'Analytics Overview'
@@ -392,15 +392,22 @@ export function App() {
                 ? 'Class Assignment'
                 : activePage === 'completion' ? 'Assessments'
                 : activePage === 'ipp-preview'
-                  ? 'Foundations 1 IPP'
+                  ? ippPreviewContext?.studentName ? `${ippPreviewContext.studentName} · IEP / IPP` : 'IEP / IPP'
                   : 'Settings'}</h1>
+            {activePage === 'ipp-preview' && ippPreviewContext ? (
+              <p className="ipp-page-context">
+                <span>{ippPreviewContext.grade ?? 'Grade not recorded'}</span>
+                <span aria-hidden="true">·</span>
+                <span>{ippPreviewContext.schoolName ?? 'School not recorded'}</span>
+              </p>
+            ) : null}
             <p className={activePage === 'executive' ? 'page-header-description accent' : 'page-header-description'}>{activePage === 'executive'
               ? 'Move from district-level achievement signals to the schools and periods that need attention.'
               : activePage === 'assessments'
-                ? 'Find a teacher section, load its assigned students, and prepare for governed assessment entry.'
+                ? 'Find a teacher section, load its assigned students, and open governed assessment or annual-plan history.'
                 : activePage === 'completion' ? 'Check assessment completion and find missing submissions for your school and classes.'
                 : activePage === 'ipp-preview'
-                  ? 'Preview how a selected student plan could be reviewed, printed, and later opened from Class Assignment.'
+                  ? 'Review the selected student, compose the annual plan, and work through its governed modules.'
                   : 'Review your identity, role, assignments, licensing policy, and governed data connections.'}</p>
           </div>
           {user ? (
@@ -482,10 +489,15 @@ export function App() {
               studentDisplayMode={studentDisplayMode}
               selection={assessmentSelection}
               setSelection={setAssessmentSelection}
+              onOpenIpp={(context) => {
+                setIppPreviewContext(context)
+                setActivePage('ipp-preview')
+              }}
               key={user.activeDevelopmentRole ?? 'assessment-workspace'}
             />
           ) : activePage === 'ipp-preview' ? (
             <IppPreview
+              context={ippPreviewContext}
               onBackToClassAssignment={() => {
                 setActivePage('assessments')
                 setExpandedNavGroups((current) => ({ ...current, 'school-administration': true }))
@@ -702,7 +714,7 @@ function SettingsPage({ user, connection }: { user: User; connection: Connection
             <div><dt>Authentication</dt><dd>FVSD Entra ID</dd></div>
             <div><dt>Application access</dt><dd>Named user</dd></div>
             <div><dt>Power Apps model</dt><dd>Pay-as-you-go</dd></div>
-            <div><dt>PoC enabled</dt><dd>{dataverse ? (dataverse.pocEnabled ? 'Yes' : 'No') : 'Checking'}</dd></div>
+            <div><dt>Application enabled</dt><dd>{dataverse ? (dataverse.pocEnabled ? 'Yes' : 'No') : 'Checking'}</dd></div>
           </dl>
         </article>
 

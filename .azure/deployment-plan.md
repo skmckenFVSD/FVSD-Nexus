@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Deployed - Student Assessment Hover and Synchronized Filters Release
+> **Status:** Validated - Modular IEP/IPP and Product Documentation Release
 
 Generated: 2026-08-25
 
@@ -264,6 +264,19 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
   - [x] Run `azd package --no-prompt`
   - [x] Record release fingerprints and validation proof
   - [x] Validate the student assessment hover and synchronized assessment filters release
+    - [x] 1. AZD Installation
+    - [x] 2. Schema Validation
+    - [x] 3. Environment Setup
+    - [x] 4. Authentication Check
+    - [x] 5. Subscription/Location Check
+    - [x] 6. Aspire Pre-Provisioning Checks - not applicable; the solution is not .NET Aspire
+    - [x] 7. Provision Preview
+    - [x] 8. Build Verification
+    - [x] 9. Docker Build Context Validation - not applicable; the service has no Dockerfile
+    - [x] 10. Package Validation
+    - [x] 11. Azure Policy Validation
+    - [x] 12. Aspire Post-Provisioning Checks - not applicable; the solution is not .NET Aspire
+  - [x] Validate the modular IEP/IPP and product documentation release
     - [x] 1. AZD Installation
     - [x] 2. Schema Validation
     - [x] 3. Environment Setup
@@ -1122,3 +1135,21 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Entra sign-in | `GET /api/auth/signin` returned HTTP 302 to the FVSD tenant with `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/signin-oidc` as the callback |
 | Key Vault reference | `AzureAd__ClientSecret` reports `Resolved` against `kv-fvsdi-iwmpkez4` |
 | Live RBAC | App Service identity `3ac2acd7-3412-4161-b4bf-af96c4051a85` has role definition `4633458b-17de-408a-b874-0445c86b69e6` (`Key Vault Secrets User`) scoped only to `kv-fvsdi-iwmpkez4` |
+
+### Modular IEP/IPP and Product Documentation Release — 2026-11-05T21:41:08Z
+
+#### Validation Proof
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Azure context | `azd version`, `azd auth login --check-status`, `azd env list`, targeted environment values, and `az account show` | Passed; AZD 1.31.2, signed-in FVSD user, existing `fvsd-insights-dev` environment, Pay-As-You-Go subscription, and Canada Central |
+| Project and schema | `azure.yaml` inspection and `azd package --no-prompt` | Passed; the existing App Service service definition is valid and packages successfully |
+| Project specialization | Aspire marker and Dockerfile scans | Passed; not Aspire and no Docker build context |
+| React validation | `npm run build --prefix src/FVSDNexus.Web` and `npm audit --prefix src/FVSDNexus.Web --audit-level=high` | Passed with Vite 8.3.6; production bundle generated and zero vulnerabilities reported |
+| ASP.NET Core validation | `dotnet test FVSDNexus.sln --configuration Release --no-restore` and `dotnet list ... --vulnerable --include-transitive` | Passed; 88 tests, zero failures, and no vulnerable packages after updating Microsoft.Identity.Web to 4.18.0 |
+| Bicep validation | `az bicep build --file infra/main.bicep --stdout` and `az bicep lint --file infra/main.bicep` | Passed without template errors or lint findings |
+| Provision preview | `azd provision --preview --no-prompt` with a process-scoped validation-only placeholder for the intentionally unpersisted Entra secret | Passed; no resources were created, deleted, or changed; preview reports only existing App Service and monitoring property reconciliation |
+| Package validation | `azd package --no-prompt` | Passed; `fvsd-insights-web-azddeploy-1793914860.zip`, SHA-256 `752E6C6CCD8732AFE9BF3A57CEF42785A9C832E50D2835CA46C92B103324D8AC` |
+| Release fingerprints | Local SHA-256 | JavaScript `2506A679A11EDA9FFE121A4FA31F7B7426A99FECB93EEFE910C6D3302D38D285`; CSS `20291606FC79BF378F9F537C99A8580A844F72E39E20A35D4AD1A5EFA95C0227` |
+| Azure policy | `az policy assignment list` at subscription scope | Passed; only the existing Microsoft Defender for Cloud default assignment is active |
+| Static RBAC | `infra/resources.bicep` role-assignment review | Passed; the App Service system identity retains only vault-scoped `Key Vault Secrets User`, matching its secret-read operation |

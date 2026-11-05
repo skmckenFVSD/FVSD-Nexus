@@ -154,6 +154,277 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         return ParseTosrecAssessments(document.RootElement);
     }
 
+    public async Task<IReadOnlyList<StudentPlanHistoryRecord>> GetStudentPlansAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        CancellationToken cancellationToken = default)
+    {
+        var permittedStudents = await GetStudentsAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            cancellationToken);
+        if (!permittedStudents.Any(student => student.Id == studentId))
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected student is outside the signed-in user's teacher-section scope.");
+        }
+
+        using var document = await GetJsonAsync(BuildStudentPlansQuery(studentId), cancellationToken);
+        return ParseStudentPlans(document.RootElement);
+    }
+
+    public async Task<StudentPlanHistoryRecord> CreateStudentPlanAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        string currentSchoolYear,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        using var existingDocument = await GetJsonAsync(
+            BuildStudentPlanDuplicateQuery(studentId, currentSchoolYear),
+            cancellationToken);
+        if (existingDocument.RootElement.GetProperty("value").GetArrayLength() > 0)
+        {
+            throw new AssessmentWorkspaceConflictException(
+                "This student already has an IEP / IPP for the current school year.");
+        }
+
+        using var modulesDocument = await GetJsonAsync(BuildIppSectionsQuery(), cancellationToken);
+        var definitions = ParseIppSections(modulesDocument.RootElement);
+        var requiredNames = new List<string> { "Student Details", "Screener Results" };
+        if (subject.IsSpedCoded)
+        {
+            requiredNames.Add("Student Conditions and Coding");
+        }
+
+        var selectedIds = requiredNames.Select(name =>
+            definitions.FirstOrDefault(module => string.Equals(module.Name, name, StringComparison.OrdinalIgnoreCase))
+                ?? throw new InvalidOperationException($"The required IPP module '{name}' is not configured."))
+            .Select(module => module.Id)
+            .ToHashSet();
+        var selectedText = SerializeIppSectionIds(selectedIds, definitions);
+        var school = await GetPlanSchoolContextAsync(subject.SchoolId, cancellationToken);
+        var schoolYearStart = GetSchoolYearStart(currentSchoolYear);
+        if (schoolYearStart == int.MinValue)
+        {
+            throw new ArgumentException("The current school year is not valid.");
+        }
+
+        var payload = new Dictionary<string, object?>
+        {
+            ["fvsd_name"] = $"{schoolYearStart}|{subject.StudentAsn}|{school.Alias}|IPP",
+            ["fvsd_student@odata.bind"] = $"/fvsd_studentdetails({subject.StudentId:D})",
+            ["fvsd_schoolyear"] = currentSchoolYear,
+            ["fvsd_schoolatipp"] = subject.SchoolName,
+            ["fvsd_gradeatipp"] = subject.StudentGradeValue,
+            ["fvsd_curriculum"] = subject.SectionGroup,
+            ["fvsd_coursename"] = subject.CourseName,
+            ["fvsd_courseno"] = subject.CourseNumber,
+            ["fvsd_teacheratipp"] = subject.TeacherName,
+            ["fvsd_principalatipp"] = school.PrincipalName,
+            ["fvsd_ippsections"] = selectedText
+        };
+        await SendJsonAsync(
+            HttpMethod.Post,
+            "fvsd_studentipps",
+            payload,
+            null,
+            cancellationToken);
+
+        using var createdDocument = await GetJsonAsync(
+            BuildStudentPlanDuplicateQuery(studentId, currentSchoolYear),
+            cancellationToken);
+        return ParseStudentPlans(createdDocument.RootElement).Single();
+    }
+
+    public async Task<StudentPlanModulesResponse> GetStudentPlanModulesAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        return await LoadStudentPlanModulesAsync(subject, planId, cancellationToken);
+    }
+
+    public async Task<StudentPlanScreenersResponse> GetStudentPlanScreenersAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId),
+            cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var schoolYear = ReadString(planRows[0], "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+        var assessmentDocuments = await Task.WhenAll(
+            GetJsonAsync(BuildPlanTosrecScreenersQuery(studentId, schoolYear), cancellationToken),
+            GetJsonAsync(BuildPlanTowreScreenersQuery(studentId, schoolYear), cancellationToken),
+            GetJsonAsync(BuildPlanWratScreenersQuery(studentId, schoolYear), cancellationToken));
+        using var tosrecDocument = assessmentDocuments[0];
+        using var towreDocument = assessmentDocuments[1];
+        using var wratDocument = assessmentDocuments[2];
+        return new StudentPlanScreenersResponse(
+            planId,
+            schoolYear,
+            ParseStudentPlanScreeners(
+                tosrecDocument.RootElement,
+                towreDocument.RootElement,
+                wratDocument.RootElement));
+    }
+
+    public async Task<StudentPlanInterventionsResponse> GetStudentPlanInterventionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId),
+            cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var schoolYear = ReadString(planRows[0], "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+        using var interventionsDocument = await GetJsonAsync(
+            BuildPlanInterventionsQuery(studentId, schoolYear),
+            cancellationToken);
+        return new StudentPlanInterventionsResponse(
+            planId,
+            schoolYear,
+            ParseStudentPlanInterventions(interventionsDocument.RootElement));
+    }
+
+    public async Task<StudentPlanModulesResponse> AddStudentPlanModuleAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid moduleId,
+        string eTag,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var current = await LoadStudentPlanModulesAsync(subject, planId, cancellationToken);
+        var module = current.Modules.FirstOrDefault(item => item.Id == moduleId)
+            ?? throw new ArgumentException("The selected IEP / IPP module is not configured.");
+        if (!module.Available && !module.Selected)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                module.StateReason ?? "The selected module is not available for this plan.");
+        }
+        if (module.Selected)
+        {
+            return current;
+        }
+
+        var selectedIds = current.Modules.Where(item => item.Selected).Select(item => item.Id).ToHashSet();
+        selectedIds.Add(moduleId);
+        await UpdateStudentPlanSectionsAsync(planId, selectedIds, eTag, cancellationToken);
+        return await LoadStudentPlanModulesAsync(subject, planId, cancellationToken);
+    }
+
+    public async Task<StudentPlanModulesResponse> RemoveStudentPlanModuleAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid moduleId,
+        string eTag,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var current = await LoadStudentPlanModulesAsync(subject, planId, cancellationToken);
+        var module = current.Modules.FirstOrDefault(item => item.Id == moduleId)
+            ?? throw new ArgumentException("The selected IEP / IPP module is not configured.");
+        if (!module.Selected)
+        {
+            return current;
+        }
+        if (!module.CanRemove)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                module.StateReason ?? "The selected module is locked and cannot be removed.");
+        }
+
+        var selectedIds = current.Modules.Where(item => item.Selected).Select(item => item.Id).ToHashSet();
+        selectedIds.Remove(moduleId);
+        await UpdateStudentPlanSectionsAsync(planId, selectedIds, eTag, cancellationToken);
+        return await LoadStudentPlanModulesAsync(subject, planId, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<TosrecReferenceOption>> GetTosrecReferenceOptionsAsync(
         DataverseAccessContext accessContext,
         string? developmentRole,
@@ -353,7 +624,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
 
     internal static string BuildSectionGroupsQuery(Guid schoolId, Guid? teacherEntraObjectId)
     {
-        var filter = $"statecode eq 0 and _fvsd_school_value eq {schoolId:D}";
+        var filter = $"statecode eq 0 and _fvsd_school_value eq {schoolId:D} and fvsd_sectiongrouping ne 4";
         if (teacherEntraObjectId is not null)
         {
             filter += $" and fvsd_teacher/fvsd_azureadobjectid eq '{teacherEntraObjectId.Value:D}'";
@@ -401,6 +672,76 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         "$expand=fvsd_descriptiveterm(" +
         "$select=fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)&" +
         "$orderby=fvsd_schoolyear desc,fvsd_period desc&$top=5000";
+
+    internal static string BuildStudentPlansQuery(Guid studentId) =>
+        "fvsd_studentipps?" +
+        "$select=fvsd_studentippid,fvsd_name,fvsd_schoolyear,fvsd_gradeatipp," +
+        "fvsd_schoolatipp,fvsd_teacheratipp,fvsd_coursename,fvsd_curriculum,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"statecode eq 0 and _fvsd_student_value eq {studentId:D}")}&" +
+        "$orderby=fvsd_schoolyear desc,modifiedon desc&$top=5000";
+
+    private static string BuildStudentPlanDuplicateQuery(Guid studentId, string schoolYear) =>
+        "fvsd_studentipps?" +
+        "$select=fvsd_studentippid,fvsd_name,fvsd_schoolyear,fvsd_gradeatipp," +
+        "fvsd_schoolatipp,fvsd_teacheratipp,fvsd_coursename,fvsd_curriculum,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"statecode eq 0 and _fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&" +
+        "$orderby=modifiedon desc&$top=2";
+
+    private static string BuildStudentPlanValidationQuery(Guid studentId, Guid planId) =>
+        "fvsd_studentipps?" +
+        "$select=fvsd_studentippid,fvsd_ippsections,fvsd_schoolyear,fvsd_gradeatipp," +
+        "fvsd_schoolatipp,fvsd_coursename,fvsd_teacheratipp,fvsd_principalatipp," +
+        "fvsd_parentorguardianname,fvsd_fallattendance,fvsd_winterattendance," +
+        "fvsd_springattendance,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"statecode eq 0 and fvsd_studentippid eq {planId:D} and _fvsd_student_value eq {studentId:D}")}&$top=1";
+
+    private static string BuildIppSectionsQuery() =>
+        "fvsd_ippsections?" +
+        "$select=fvsd_ippsectionid,fvsd_name,fvsd_description,fvsd_frontfacingdescription," +
+        "fvsd_includeindropdown,fvsd_showlevelskey,fvsd_lockonselect,fvsd_schoolspecific," +
+        "fvsd_sortorder,_fvsd_curriculum_value,_fvsd_school_value&" +
+        "$filter=statecode eq 0&" +
+        "$expand=fvsd_curriculum($select=fvsd_name),fvsd_school($select=name)&$top=5000";
+
+    private static string BuildPlanSchoolContextQuery(Guid schoolId) =>
+        "businessunits?" +
+        "$select=businessunitid,name,fvsd_alias,_fvsd_principal_value&" +
+        $"$filter={Uri.EscapeDataString($"isdisabled eq false and businessunitid eq {schoolId:D}")}&" +
+        "$expand=fvsd_principal($select=fullname)&$top=1";
+
+    internal static string BuildPlanTosrecScreenersQuery(Guid studentId, string schoolYear) =>
+        "fvsd_studenttosrecassessments?" +
+        "$select=fvsd_period,fvsd_assessmentdate,fvsd_standardscore,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"statecode eq 0 and _fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&" +
+        "$expand=fvsd_descriptiveterm($select=fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)&" +
+        "$orderby=fvsd_assessmentdate desc,modifiedon desc&$top=50";
+
+    internal static string BuildPlanTowreScreenersQuery(Guid studentId, string schoolYear) =>
+        "fvsd_studenttowreassessments?" +
+        "$select=fvsd_period,fvsd_assessmentdate,fvsd_standardscore,fvsd_rwstandardscore," +
+        "fvsd_nwstandardscore,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"statecode eq 0 and _fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&" +
+        "$expand=fvsd_descriptiveterm($select=fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)," +
+        "fvsd_rwdescriptiveterm($select=fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)," +
+        "fvsd_nwdescriptiveterm($select=fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)&" +
+        "$orderby=fvsd_assessmentdate desc,modifiedon desc&$top=50";
+
+    internal static string BuildPlanWratScreenersQuery(Guid studentId, string schoolYear) =>
+        "fvsd_studentwratassessments?" +
+        "$select=fvsd_period,fvsd_assessmentdate,fvsd_standardscore,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"statecode eq 0 and _fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&" +
+        "$expand=fvsd_descriptiveterm($select=fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)&" +
+        "$orderby=fvsd_assessmentdate desc,modifiedon desc&$top=50";
+
+    internal static string BuildPlanInterventionsQuery(Guid studentId, string schoolYear) =>
+        "fvsd_studentinterventions?" +
+        "$select=fvsd_studentinterventionid,fvsd_curriculum,fvsd_schoolatintervention," +
+        "fvsd_teacheratintervention,fvsd_interventionist,fvsd_gradeatintervention," +
+        "fvsd_datestarted,fvsd_datewithdrawn,fvsd_withdrawnreason," +
+        "fvsd_additionalinformation,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"_fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&" +
+        "$expand=fvsd_interventiontype($select=fvsd_name)&" +
+        "$orderby=fvsd_datestarted desc,modifiedon desc&$top=5000";
 
     internal static string BuildTosrecReferencesQuery(int grade, int period) =>
         "fvsd_tosrecreferences?" +
@@ -584,6 +925,415 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             .ToArray();
     }
 
+    internal static IReadOnlyList<StudentPlanHistoryRecord> ParseStudentPlans(JsonElement root)
+    {
+        var plans = new List<StudentPlanHistoryRecord>();
+        foreach (var row in root.GetProperty("value").EnumerateArray())
+        {
+            var id = ReadGuid(row, "fvsd_studentippid");
+            if (id is null)
+            {
+                continue;
+            }
+
+            plans.Add(new StudentPlanHistoryRecord(
+                id.Value,
+                ReadString(row, "fvsd_name") ?? "IEP / IPP",
+                ReadString(row, "fvsd_schoolyear") ?? "School year not recorded",
+                ReadFormattedString(row, "fvsd_gradeatipp"),
+                ReadString(row, "fvsd_schoolatipp"),
+                ReadString(row, "fvsd_teacheratipp"),
+                ReadString(row, "fvsd_coursename"),
+                ReadString(row, "fvsd_curriculum"),
+                ReadDateTimeOffset(row, "modifiedon")));
+        }
+
+        return plans
+            .OrderByDescending(plan => GetSchoolYearStart(plan.SchoolYear))
+            .ThenByDescending(plan => plan.ModifiedOn)
+            .ToArray();
+    }
+
+    internal static IReadOnlyList<StudentPlanScreenerResult> ParseStudentPlanScreeners(
+        JsonElement tosrecRoot,
+        JsonElement towreRoot,
+        JsonElement wratRoot)
+    {
+        var results = new List<StudentPlanScreenerResult>();
+        foreach (var row in tosrecRoot.GetProperty("value").EnumerateArray())
+        {
+            results.Add(CreatePlanScreenerResult(
+                row,
+                "TOSREC",
+                "fvsd_standardscore",
+                "fvsd_descriptiveterm"));
+        }
+
+        foreach (var row in towreRoot.GetProperty("value").EnumerateArray())
+        {
+            results.Add(CreatePlanScreenerResult(
+                row,
+                "TOWRE",
+                "fvsd_standardscore",
+                "fvsd_descriptiveterm"));
+            results.Add(CreatePlanScreenerResult(
+                row,
+                "TOWRE RW",
+                "fvsd_rwstandardscore",
+                "fvsd_rwdescriptiveterm"));
+            results.Add(CreatePlanScreenerResult(
+                row,
+                "TOWRE NW",
+                "fvsd_nwstandardscore",
+                "fvsd_nwdescriptiveterm"));
+        }
+
+        foreach (var row in wratRoot.GetProperty("value").EnumerateArray())
+        {
+            results.Add(CreatePlanScreenerResult(
+                row,
+                "WRAT-5",
+                "fvsd_standardscore",
+                "fvsd_descriptiveterm"));
+        }
+
+        return results
+            .Where(result => result.PeriodSortOrder > 0)
+            .GroupBy(result => new { result.AssessmentType, result.Period })
+            .Select(group => group.First())
+            .OrderBy(result => GetPlanScreenerOrder(result.AssessmentType))
+            .ThenBy(result => result.PeriodSortOrder)
+            .ToArray();
+    }
+
+    private static StudentPlanScreenerResult CreatePlanScreenerResult(
+        JsonElement row,
+        string assessmentType,
+        string standardScoreProperty,
+        string descriptiveTermProperty)
+    {
+        var period = ReadFormattedString(row, "fvsd_period")
+            ?? GetPeriodLabel(ReadInteger(row, "fvsd_period"))
+            ?? "Period not recorded";
+        var term = row.TryGetProperty(descriptiveTermProperty, out var descriptiveTerm)
+            && descriptiveTerm.ValueKind == JsonValueKind.Object
+                ? descriptiveTerm
+                : default;
+        return new StudentPlanScreenerResult(
+            assessmentType,
+            period,
+            GetPeriodSortOrder(period),
+            ReadDateTimeOffset(row, "fvsd_assessmentdate"),
+            ReadInteger(row, standardScoreProperty),
+            term.ValueKind == JsonValueKind.Object ? ReadString(term, "fvsd_name") : null,
+            term.ValueKind == JsonValueKind.Object
+                ? NormalizeHexColour(ReadString(term, "fvsd_fillhexcode"))
+                : null,
+            term.ValueKind == JsonValueKind.Object
+                ? NormalizeHexColour(ReadString(term, "fvsd_fonthexcode"))
+                : null);
+    }
+
+    private static int GetPlanScreenerOrder(string assessmentType) => assessmentType switch
+    {
+        "TOSREC" => 1,
+        "TOWRE" => 2,
+        "TOWRE RW" => 3,
+        "TOWRE NW" => 4,
+        "WRAT-5" => 5,
+        _ => int.MaxValue
+    };
+
+    internal static IReadOnlyList<StudentPlanIntervention> ParseStudentPlanInterventions(JsonElement root)
+    {
+        var interventions = new List<StudentPlanIntervention>();
+        foreach (var row in root.GetProperty("value").EnumerateArray())
+        {
+            var id = ReadGuid(row, "fvsd_studentinterventionid");
+            if (id is null)
+            {
+                continue;
+            }
+
+            var typeName = row.TryGetProperty("fvsd_interventiontype", out var type)
+                && type.ValueKind == JsonValueKind.Object
+                    ? ReadString(type, "fvsd_name")
+                    : null;
+            interventions.Add(new StudentPlanIntervention(
+                id.Value,
+                typeName ?? "Intervention type not recorded",
+                ReadString(row, "fvsd_interventionist"),
+                ReadString(row, "fvsd_teacheratintervention"),
+                ReadString(row, "fvsd_schoolatintervention"),
+                ReadFormattedString(row, "fvsd_gradeatintervention"),
+                ReadString(row, "fvsd_curriculum"),
+                ReadDateTimeOffset(row, "fvsd_datestarted"),
+                ReadDateTimeOffset(row, "fvsd_datewithdrawn"),
+                ReadFormattedString(row, "fvsd_withdrawnreason"),
+                ReadString(row, "fvsd_additionalinformation")));
+        }
+
+        return interventions
+            .OrderByDescending(intervention => intervention.DateStarted)
+            .ToArray();
+    }
+
+    private async Task<PlanSubject> GetPlanSubjectAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        CancellationToken cancellationToken)
+    {
+        var students = await GetStudentsAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            cancellationToken);
+        var student = students.FirstOrDefault(item => item.Id == studentId)
+            ?? throw new AssessmentWorkspaceAccessException(
+                "The selected student is outside the signed-in user's teacher-section scope.");
+
+        using var sectionDocument = await GetJsonAsync(
+            BuildAssessmentSectionQuery(teacherSectionId),
+            cancellationToken);
+        var sectionRows = sectionDocument.RootElement.GetProperty("value");
+        if (sectionRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException("The selected teacher section is not available.");
+        }
+
+        var section = sectionRows[0];
+        var schoolId = ReadGuid(section, "_fvsd_school_value")
+            ?? throw new AssessmentWorkspaceAccessException("The selected teacher section does not have a school.");
+        var sectionGroup = ReadFormattedString(section, "fvsd_sectiongrouping")
+            ?? GetSectionGroupLabel(ReadInteger(section, "fvsd_sectiongrouping"))
+            ?? string.Empty;
+        if (sectionGroup is not ("Foundations" or "Homeroom"))
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "IEP / IPP entry is available only from Foundations or Homeroom sections.");
+        }
+
+        return new PlanSubject(
+            student.Id,
+            student.Name,
+            student.Asn ?? string.Empty,
+            student.Grade,
+            student.GradeValue,
+            string.Equals(student.SpedCategory, "Coded", StringComparison.OrdinalIgnoreCase),
+            schoolId,
+            ReadFormattedString(section, "_fvsd_school_value") ?? schoolId.ToString(),
+            ReadString(section, "fvsd_courseno") ?? string.Empty,
+            ReadString(section, "fvsd_coursename") ?? string.Empty,
+            ReadString(section, "fvsd_teacher", "fvsd_name")
+                ?? ReadFormattedString(section, "_fvsd_teacher_value")
+                ?? "Teacher",
+            sectionGroup);
+    }
+
+    private async Task<StudentPlanModulesResponse> LoadStudentPlanModulesAsync(
+        PlanSubject subject,
+        Guid planId,
+        CancellationToken cancellationToken)
+    {
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId),
+            cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var plan = planRows[0];
+        var selectedIds = ParseIppSectionIds(ReadString(plan, "fvsd_ippsections"));
+        using var definitionsDocument = await GetJsonAsync(BuildIppSectionsQuery(), cancellationToken);
+        var definitions = ParseIppSections(definitionsDocument.RootElement);
+        var modules = definitions
+            .Select(definition => BuildStudentPlanModuleState(definition, selectedIds, subject))
+            .Concat(selectedIds
+                .Where(id => definitions.All(definition => definition.Id != id))
+                .Select(id => new StudentPlanModuleState(
+                    id,
+                    "Unavailable module",
+                    "General",
+                    "This allocated module definition is inactive or unavailable.",
+                    string.Empty,
+                    int.MaxValue,
+                    true,
+                    false,
+                    true,
+                    true,
+                    false,
+                    "Retained to prevent existing plan data from being hidden.")))
+            .Where(module => module.Selected || module.Available)
+            .OrderBy(module => module.SortOrder)
+            .ThenBy(module => module.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var eTag = ReadString(plan, "@odata.etag")
+            ?? throw new InvalidOperationException("Dataverse did not return concurrency information for the plan.");
+        var details = new StudentPlanDetails(
+            ReadString(plan, "fvsd_schoolyear") ?? "School year not recorded",
+            ReadFormattedString(plan, "fvsd_gradeatipp"),
+            ReadString(plan, "fvsd_schoolatipp"),
+            ReadString(plan, "fvsd_coursename"),
+            ReadString(plan, "fvsd_teacheratipp"),
+            ReadString(plan, "fvsd_principalatipp"),
+            ReadString(plan, "fvsd_parentorguardianname"),
+            ReadDecimal(plan, "fvsd_fallattendance"),
+            ReadDecimal(plan, "fvsd_winterattendance"),
+            ReadDecimal(plan, "fvsd_springattendance"),
+            ReadDateTimeOffset(plan, "modifiedon"));
+        return new StudentPlanModulesResponse(planId, eTag, details, modules);
+    }
+
+    private async Task UpdateStudentPlanSectionsAsync(
+        Guid planId,
+        IReadOnlySet<Guid> selectedIds,
+        string eTag,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(eTag))
+        {
+            throw new ArgumentException("Reload the plan before changing its modules.");
+        }
+
+        using var definitionsDocument = await GetJsonAsync(BuildIppSectionsQuery(), cancellationToken);
+        var definitions = ParseIppSections(definitionsDocument.RootElement);
+        var selectedText = SerializeIppSectionIds(selectedIds, definitions);
+        if (selectedText.Length > 2000)
+        {
+            throw new ArgumentException("The selected module list exceeds the Dataverse column limit.");
+        }
+
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_studentipps({planId:D})",
+            new Dictionary<string, object?> { ["fvsd_ippsections"] = selectedText },
+            eTag,
+            cancellationToken);
+    }
+
+    private async Task<PlanSchoolContext> GetPlanSchoolContextAsync(
+        Guid schoolId,
+        CancellationToken cancellationToken)
+    {
+        using var document = await GetJsonAsync(BuildPlanSchoolContextQuery(schoolId), cancellationToken);
+        var rows = document.RootElement.GetProperty("value");
+        if (rows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException("The selected school is not available.");
+        }
+
+        var row = rows[0];
+        return new PlanSchoolContext(
+            ReadString(row, "fvsd_alias")
+                ?? ReadString(row, "name")
+                ?? schoolId.ToString("N"),
+            ReadString(row, "fvsd_principal", "fullname")
+                ?? ReadFormattedString(row, "_fvsd_principal_value"));
+    }
+
+    private static IReadOnlyList<IppSectionDefinition> ParseIppSections(JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row => new IppSectionDefinition(
+                ReadGuid(row, "fvsd_ippsectionid") ?? Guid.Empty,
+                ReadString(row, "fvsd_name") ?? "Unnamed module",
+                ReadString(row, "fvsd_curriculum", "fvsd_name") ?? "General",
+                ReadString(row, "fvsd_description") ?? string.Empty,
+                ReadString(row, "fvsd_frontfacingdescription") ?? string.Empty,
+                ReadBoolean(row, "fvsd_includeindropdown") ?? false,
+                ReadBoolean(row, "fvsd_lockonselect") ?? false,
+                ReadBoolean(row, "fvsd_schoolspecific") ?? false,
+                ReadString(row, "fvsd_school", "name"),
+                ParseSortOrder(ReadString(row, "fvsd_sortorder"))))
+            .Where(module => module.Id != Guid.Empty)
+            .OrderBy(module => module.SortOrder)
+            .ThenBy(module => module.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    private static StudentPlanModuleState BuildStudentPlanModuleState(
+        IppSectionDefinition definition,
+        IReadOnlySet<Guid> selectedIds,
+        PlanSubject subject)
+    {
+        var selected = selectedIds.Contains(definition.Id);
+        string? unavailableReason = null;
+        if (!definition.IncludeInDropdown)
+        {
+            unavailableReason = "This module is not available for new selection.";
+        }
+        else if (string.Equals(definition.Name, "Student Conditions and Coding", StringComparison.OrdinalIgnoreCase)
+            && !subject.IsSpedCoded)
+        {
+            unavailableReason = "Available only when the student is SPED Coded.";
+        }
+        else if (string.Equals(definition.Group, "English Language Arts and Literature", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(subject.SectionGroup, "Foundations", StringComparison.OrdinalIgnoreCase))
+        {
+            unavailableReason = "Available only from a Foundations section.";
+        }
+        else if (definition.SchoolSpecific
+            && !string.Equals(definition.SchoolName, subject.SchoolName, StringComparison.OrdinalIgnoreCase))
+        {
+            unavailableReason = $"Available only at {definition.SchoolName ?? "its configured school"}.";
+        }
+
+        var required = string.Equals(definition.Name, "Student Details", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(definition.Name, "Screener Results", StringComparison.OrdinalIgnoreCase)
+            || (subject.IsSpedCoded
+                && string.Equals(definition.Name, "Student Conditions and Coding", StringComparison.OrdinalIgnoreCase));
+        var locked = selected && (required || definition.LockOnSelect || unavailableReason is not null);
+        var stateReason = locked
+            ? required
+                ? "Required for this annual plan."
+                : unavailableReason is not null
+                    ? $"Retained from the existing plan. {unavailableReason}"
+                    : "Locked when selected by module configuration."
+            : selected && unavailableReason is not null
+                ? $"Retained from the existing plan. {unavailableReason}"
+                : unavailableReason;
+        return new StudentPlanModuleState(
+            definition.Id,
+            definition.Name,
+            definition.Group,
+            definition.Description,
+            definition.FrontFacingDescription,
+            definition.SortOrder,
+            selected,
+            unavailableReason is null,
+            definition.LockOnSelect || required,
+            locked,
+            selected && !locked,
+            stateReason);
+    }
+
+    private static HashSet<Guid> ParseIppSectionIds(string? value) =>
+        (value ?? string.Empty)
+            .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(item => Guid.TryParse(item, out var id) ? id : Guid.Empty)
+            .Where(id => id != Guid.Empty)
+            .ToHashSet();
+
+    private static string SerializeIppSectionIds(
+        IReadOnlySet<Guid> selectedIds,
+        IReadOnlyList<IppSectionDefinition> definitions)
+    {
+        var definitionOrder = definitions
+            .Select((definition, index) => new { definition.Id, index })
+            .ToDictionary(item => item.Id, item => item.index);
+        return string.Join(
+            '|',
+            selectedIds
+                .OrderBy(id => definitionOrder.GetValueOrDefault(id, int.MaxValue))
+                .ThenBy(id => id)
+                .Select(id => id.ToString("D")));
+    }
+
     internal static IReadOnlyList<TosrecReferenceOption> ParseTosrecReferenceOptions(
         JsonElement referencesRoot,
         JsonElement termsRoot)
@@ -644,12 +1394,15 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
                     ? null
                     : new AssessmentSectionGroupOption(label, label, GetSectionGroupOrder(label));
             })
-            .Where(option => option is not null)
+            .Where(option => option is not null && IsClassAssignmentSectionGroup(option.Value))
             .Cast<AssessmentSectionGroupOption>()
             .DistinctBy(option => option.Value, StringComparer.OrdinalIgnoreCase)
             .OrderBy(option => option.SortOrder)
             .ThenBy(option => option.Label, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+
+    private static bool IsClassAssignmentSectionGroup(string sectionGroup) =>
+        sectionGroup is "Literacy" or "Numeracy" or "Foundations" or "Homeroom";
 
     internal static string CalculateChronologicalAge(DateOnly dateOfBirth, DateOnly assessmentDate)
     {
@@ -964,7 +1717,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         if (response.StatusCode == HttpStatusCode.PreconditionFailed)
         {
             throw new AssessmentWorkspaceConflictException(
-                "This assessment changed after it was loaded. Reload it before saving again.");
+                "This record changed after it was loaded. Reload it before saving again.");
         }
 
         if (!response.IsSuccessStatusCode)
@@ -1081,7 +1834,6 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         "Literacy" => 1,
         "Numeracy" => 2,
         "Homeroom" => 3,
-        "Other" => 4,
         "Foundations" => 5,
         _ => throw new ArgumentException("The selected Section Group is not supported.", nameof(sectionGroup))
     };
@@ -1130,6 +1882,13 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             ? value
             : null;
 
+    private static decimal? ReadDecimal(JsonElement row, string propertyName) =>
+        row.TryGetProperty(propertyName, out var property)
+        && property.ValueKind == JsonValueKind.Number
+        && property.TryGetDecimal(out var value)
+            ? value
+            : null;
+
     private static bool? ReadBoolean(JsonElement row, string propertyName) =>
         row.TryGetProperty(propertyName, out var property)
         && property.ValueKind is JsonValueKind.True or JsonValueKind.False
@@ -1159,6 +1918,36 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         string TeacherName,
         string SectionNumber,
         string SectionGroup);
+
+    private sealed record PlanSubject(
+        Guid StudentId,
+        string StudentName,
+        string StudentAsn,
+        string? StudentGrade,
+        int? StudentGradeValue,
+        bool IsSpedCoded,
+        Guid SchoolId,
+        string SchoolName,
+        string CourseNumber,
+        string CourseName,
+        string TeacherName,
+        string SectionGroup);
+
+    private sealed record PlanSchoolContext(
+        string Alias,
+        string? PrincipalName);
+
+    private sealed record IppSectionDefinition(
+        Guid Id,
+        string Name,
+        string Group,
+        string Description,
+        string FrontFacingDescription,
+        bool IncludeInDropdown,
+        bool LockOnSelect,
+        bool SchoolSpecific,
+        string? SchoolName,
+        int SortOrder);
 
     private sealed record DescriptiveTermRange(
         Guid Id,

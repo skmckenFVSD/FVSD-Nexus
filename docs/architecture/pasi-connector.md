@@ -2,7 +2,7 @@
 
 > [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / PASI connector
 
-**Status:** Proposed reference architecture; no PASI infrastructure or Dataverse connector tables have been created
+**Status:** Phase 4 reference architecture; no PASI infrastructure or Dataverse connector tables have been created
 
 ## Architectural intent
 

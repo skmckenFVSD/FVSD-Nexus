@@ -2,7 +2,7 @@
 
 > [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Assessment entry and scoring
 
-**Status:** End-to-end Class Assignment and TOSREC lifecycle PoC complete; stable Canvas App and Dataverse foundation already exists
+**Status:** Current Class Assignment and TOSREC lifecycle capability; additional Phase 1 assessment adapters remain
 
 Assessment entry is expected to be primarily a UX modernization rather than a data-platform rebuild.
 
@@ -27,7 +27,7 @@ Signed-in User Role
   -> assigned Students
 ```
 
-- `fvsd_userrole` establishes role, school assignments, PoC access, and signed-in identity context.
+- `fvsd_userrole` establishes role, school assignments, application access, and signed-in identity context.
 - Teacher sections come from `fvsd_teachersection` and their related `fvsd_teacherdetail` records.
 - Only sections with active `fvsd_studentsection` assignments are presented.
 - Course ordering reuses `fvsd_powerschoolsectionmapping.fvsd_sortorder`.
@@ -36,11 +36,25 @@ Signed-in User Role
 - The backend validates school and teacher scope before returning operational data; the browser cannot submit arbitrary OData.
 - School selection alone does not load class assignments. Section Group must be selected before Course and matching teacher sections are requested, reducing unnecessary Dataverse calls.
 - Selecting a teacher section loads a three-column, internally scrolling student roster; selecting a student replaces the class roster with a focused student record and assessment panel.
+- Class Assignment offers only Literacy, Numeracy, Foundations, and Homeroom Section Groups. The former Other group is excluded from discovery and rejected as an API selection.
 - Back to class list clears the selected student, restores the full roster, hides assessment history, and resets the history view to Current Year.
 - The developer-only Current Role card includes an in-session `R` / `O` display switch. `R` uses the real student name and ASN; `O` uses `fvsd_obfuscatedname` and `fvsd_obfuscatedasn` in the Student filter, live-selection path, roster cards, and selected-student assessment heading.
 - Display mode changes only the rendered identifiers. Student and section GUIDs, authorization checks, Dataverse queries, assessment-history requests, and saved data remain unchanged. Missing obfuscated values never fall back to real identifiers.
 
 This foundation now continues into a governed TOSREC create, view, edit, and delete lifecycle while preserving the same identity, role, section, and student scope.
+
+## Section Group capability routing
+
+The selected Section Group determines which student histories and actions are available:
+
+| Section Group | Assessments and screeners | IEP / IPP |
+|---|---|---|
+| Literacy | Relevant literacy history and entry | Not shown from this context |
+| Numeracy | Relevant numeracy history and entry | Not shown from this context |
+| Foundations | Relevant literacy and numeracy history and entry | Annual plan history and entry |
+| Homeroom | Not shown | Annual plan history and entry |
+
+The Foundations course design may change, but its current routing intentionally permits both assessment and annual-plan work. IEP/IPP history reads the selected student's `fvsd_studentipp` records through the same authorized teacher-section boundary used by assessment history. Intervention Focus is a plan module rather than a separate operational history panel.
 
 ## TOSREC history and record lifecycle
 
@@ -160,7 +174,7 @@ An administrative correction should retain the requester, reason, original and p
 - Historical records remain read-only outside the administrative correction workflow.
 - Every write is attributable to the signed-in user.
 
-## Locked PoC boundary - September 2, 2026
+## Implemented assessment boundary — September 2, 2026
 
 Included in this release:
 
@@ -188,4 +202,4 @@ Explicitly excluded from this release:
 
 - [Data and integrations](../../architecture/data-and-integrations.md)
 - [Identity, licensing, and security](../../architecture/identity-licensing-security.md)
-- [Full PoC definition](../../delivery/full-poc-definition.md)
+- [Phase 1 product build](../../delivery/phase-1-product-build.md)

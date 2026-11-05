@@ -2,16 +2,18 @@
 
 > [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Delivery
 
-Delivery documentation turns the product direction into testable outcomes without treating proposed dates as automatic authorization.
+FVSD Nexus is an approved product build. Delivery documentation records what is active, what comes next, and the evidence required to release each capability safely.
 
-- [Proposed roadmap](roadmap.md)
-- [Full PoC definition](full-poc-definition.md)
+- [Phased delivery plan](roadmap.md)
+- [Phase 1 product build](phase-1-product-build.md)
+- [Adoption and engagement](adoption-and-engagement.md)
 - [Testing strategy](testing-strategy.md)
 
 ## Delivery principles
 
-- Keep the deployed Leadership PoC stable while operational development occurs separately.
-- Deliver vertical slices that include UX, delegated access, data integrity, security, and audit behaviour.
-- Compare new operational results with established Canvas and vendor behaviour.
-- Use parallel testing before retiring an incumbent system.
-- Gate production use on evidence, not only completion of development tasks.
+- Deliver coherent vertical slices that include UX, delegated access, data integrity, security, accessibility, and audit behaviour.
+- Compare operational results with established Canvas, Dossier, and source-system behaviour before replacement.
+- Use parallel validation before retiring an incumbent workflow.
+- Keep Dataverse operational confirmation separate from asynchronously refreshed Fabric analytics.
+- Make governance understandable to the people doing the work, not only to platform specialists.
+- Gate release on evidence and support readiness, not only completion of development tasks.

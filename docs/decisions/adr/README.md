@@ -11,6 +11,8 @@ Architecture decision records explain why durable technical and product-architec
 | [0003](0003-named-user-delegated-access.md) | Interactive access uses named-user delegated identity | Accepted |
 | [0004](0004-canadian-data-residency.md) | Production student information remains in the approved Canadian geography | Accepted |
 | [0005](0005-preserve-existing-azure-resources.md) | Preserve existing Azure resource identifiers during the Nexus rename | Accepted |
+| [0006](0006-modular-annual-student-plans.md) | Compose one annual student plan from governed module allocations | Accepted |
+| [0007](0007-azure-app-and-microsoft-foundry.md) | Use an Azure App with Microsoft Foundry as the intelligence service plane | Accepted |
 
 ## ADR template
 

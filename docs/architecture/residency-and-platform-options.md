@@ -18,7 +18,7 @@ FVSD will not create a US-hosted production copy of student information solely t
 
 ### Azure-hosted React and ASP.NET Core
 
-Current approach and suitable for the PoC. It provides full control over UX, API boundaries, hosting region, and deployment timing.
+This is the confirmed application approach. It provides full control over UX, API boundaries, hosting region, and deployment timing.
 
 ### Power Apps Vibe
 

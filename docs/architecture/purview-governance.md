@@ -2,11 +2,11 @@
 
 > [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Purview governance
 
-**Status:** Proposed reference architecture; documentation only
+**Status:** Phase 3 reference architecture; documentation only
 
 ## Architectural intent
 
-The Data Analyst workspace should compose existing governed FVSD capabilities without collapsing their boundaries. Fabric documentation explains technical truth, Dataverse records the data-product lifecycle, Purview provides enterprise governance and application policy, and the Data Product Agent coordinates bounded agent workflows.
+The Data Analyst workspace should compose existing governed FVSD capabilities without collapsing their boundaries. Fabric documentation explains technical truth, Dataverse records the data-product lifecycle, Fabric catalog capabilities describe and govern Fabric assets, Purview provides protection and compliance, and the Data Product Agent coordinates bounded agent workflows.
 
 ```mermaid
 flowchart LR
@@ -22,7 +22,7 @@ flowchart LR
     DOC --> FAB[(Fabric documentation lakehouse)]
     REG --> DV[(Dataverse data products)]
     CAT --> DV
-    ENT --> PUR[Purview Data Map / Unified Catalog]
+    ENT --> PUR[Enterprise catalog<br/>Purview when adopted]
 
     BFF --> GRAPH[Microsoft Graph Purview policy APIs]
     GRAPH --> POLICY[Protection scope / content decision]
@@ -33,12 +33,13 @@ The exact invocation path is open. Nexus might initially deep-link to the existi
 
 ## Authoritative ownership
 
-| Concern | Proposed authority |
+| Concern | Authority or planned authority |
 |---|---|
 | Fabric object identity, expression, and surfaced lineage | Fabric Analytics Documentation Agent and its Catalog/Lineage tables |
 | FVSD data-product registration and lifecycle | Dataverse `fvsd_dataproduct` and established agent contracts |
 | Business ownership and stewardship assignments | Confirmed Dataverse governance bindings |
-| Enterprise catalog domains, products, glossary, curation, and health | Microsoft Purview Data Map/Unified Catalog |
+| Fabric item discovery, ownership, endorsement, and lineage | Fabric OneLake catalog and Fabric metadata |
+| Enterprise catalog domains, products, glossary, curation, and health | Microsoft Purview Unified Catalog where adopted and configured by FVSD |
 | Source-data access | Fabric, Azure, Dataverse, or other source permissions; never inferred from catalog access |
 | Nexus experience visibility | Nexus role mapping, including Data Analyst |
 | In-app text/file policy decision | Microsoft Purview policies evaluated through Microsoft Graph |
@@ -56,7 +57,7 @@ The exact invocation path is open. Nexus might initially deep-link to the existi
 
 ### Purview catalog adapter
 
-- Keep Data Map/Unified Catalog discovery and catalog writes separate from Microsoft Graph policy evaluation.
+- Keep Fabric catalog discovery, any Purview Data Map/Unified Catalog integration, and Microsoft Graph policy evaluation as separate responsibilities.
 - Use least-privilege Purview roles and supported APIs/tools for the tenant's account type.
 - Require explicit confirmation for metadata or publication changes.
 - Treat catalog metadata as descriptive governance information, not source-data authorization.

@@ -2,17 +2,17 @@
 
 > [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Capabilities
 
-FVSD Nexus is expected to grow as a set of related capabilities built on common identity, Dataverse, Fabric, design, and security foundations.
+FVSD Nexus is being delivered as a set of related capabilities built on common identity, Dataverse, Fabric, design, and security foundations.
 
 | Capability | Current status | Landing page |
 |---|---|---|
-| Leadership analytics | Working PoC | [Leadership analytics](leadership-analytics/README.md) |
+| Leadership analytics | Current capability; Phase 1 design completion | [Leadership analytics](leadership-analytics/README.md) |
 | School and student profiles | Planned | [Profiles](profiles/README.md) |
-| Assessment entry and scoring | Locked and deployed Class Assignment/TOSREC history PoC | [Assessments](assessments/README.md) |
-| Individual Program Plans | Static Foundations 1 design preview; operational capability proposed | [IPP](ipp/README.md) |
-| Intervention tracking | Future definition required | [Interventions](interventions/README.md) |
-| PASI provincial connector | Proposed strategic differentiator; feasibility discovery documented | [PASI connector](pasi-connector/README.md) |
-| Purview governance and Data Analyst workspace | Proposed; existing external agent and Fabric governance foundation identified | [Purview governance](purview-governance/README.md) |
+| Assessment entry and scoring | Current Class Assignment/TOSREC capability; additional Phase 1 adapters | [Assessments](assessments/README.md) |
+| Individual Education / Individual Program Plans | Approved for implementation; modular annual-plan model confirmed | [IEP/IPP](ipp/README.md) |
+| Intervention tracking | Student operational focus moving into the IEP/IPP module; aggregate analytics remains separate | [Interventions](interventions/README.md) |
+| PASI provincial connector | Phase 4; feasibility discovery documented | [PASI connector](pasi-connector/README.md) |
+| Purview governance and Data Analyst workspace | Phase 3; existing external agent and Fabric governance foundation identified | [Purview governance](purview-governance/README.md) |
 | Platform administration | Partially present; expansion required | [Administration](administration/README.md) |
 
 ## Shared experience principles
@@ -34,11 +34,11 @@ Every capability should:
 The application shell uses role-aware capability headings and can be collapsed manually on wider screens. It enters the same icon-first compact presentation automatically at narrower breakpoints.
 
 - **Analytics:** Overview, Literacy, Numeracy, Wellness, Interventions, and Attendance for Executive. School Administration, Teacher, Classroom Support, and Data Analyst also receive Student Progression and Submission Tracking.
-- **School Administration:** shared destinations for Class Assignments, Assessments, Interventions, and Individual Program Plans. Class Assignments and the Foundations 1 IPP preview are the currently active destinations.
-- **Governance:** Data Analyst-only destinations for Data Quality, Data Catalog, and Data Administration. These remain future capabilities.
+- **School Administration:** Class Assignments is the student entry point for assessments and annual IEP/IPP records; Assessments provides current-year completion. Student-level Intervention Focus is part of the modular plan rather than a separate operational destination.
+- **Governance:** Data Analyst-only destinations for Data Quality, Data Catalog, and Data Administration. These are developed through the Phase 3 governance and agent scope.
 - **Settings:** a single destination available to all roles for identity, assignment, licensing-policy, and governed connection context. The current-context summary was removed from the sidebar because filter context belongs with each capability's filters.
-- **PASI provincial connector:** a proposed backend integration capability rather than a general-user page; administrative status and reconciliation experiences would be added only for authorized roles.
-- **Purview governance:** a proposed Data Analyst workspace that composes governed documentation, data-product lifecycle, enterprise catalog, and policy-aware application functions; it is not a general-user or Purview-administration page.
+- **PASI provincial connector:** a Phase 4 backend integration capability rather than a general-user page; administrative status and reconciliation experiences will be available only to authorized roles.
+- **Purview governance:** a Phase 3 Data Analyst workspace that composes governed documentation, data-product lifecycle, enterprise catalog, and policy-aware application functions; it is not a general-user or Purview-administration page.
 
 Analytics and School Administration are initially expanded. Parent headings use stronger uppercase styling, while destination labels use title case. The compact state retains icons and the FVSD Nexus identity without overlaying the logo. Grouping and page visibility remain role-aware UX concerns; backend and destination-service authorization remain authoritative.
 

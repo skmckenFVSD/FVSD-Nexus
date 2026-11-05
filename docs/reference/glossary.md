@@ -12,7 +12,7 @@
 | Descriptive Term | A score classification such as Very Poor, Poor, Average, or Good, governed by reference data. |
 | Fabric RLS | Row-level security enforced when the signed-in user's identity queries the Fabric semantic model. |
 | Foundation | Cohort group replacing the previous Below Average group label. |
-| Full PoC | The proposed end-to-end testable operational and analytical system targeted for February 2027, not automatic production authorization. |
+| Product build | The approved implementation of Nexus, delivered through phased scope and evidence-based release gates. |
 | IPP | Individual Program Plan. |
 | Nexus experience role | A role used to adapt navigation and UX. It cannot grant destination-service permission. |
 | OneLake link | The established Dataverse-to-Fabric integration used to make operational data available analytically. |

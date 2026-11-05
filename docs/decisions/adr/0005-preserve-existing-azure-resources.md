@@ -7,7 +7,7 @@
 
 ## Context
 
-The Leadership PoC was deployed as FVSD Insights using working Azure resources and an existing Entra registration. The broader product is now named FVSD Nexus.
+The initial Leadership Analytics release was deployed as FVSD Insights using working Azure resources and an existing Entra registration. The broader product is now named FVSD Nexus.
 
 ## Decision
 
@@ -16,7 +16,7 @@ Rename the active source solution and user-facing product to FVSD Nexus while re
 ## Consequences
 
 - The repository can adopt the broader product identity immediately.
-- The locked deployed PoC is not disrupted by cosmetic infrastructure replacement.
+- The deployed capability is not disrupted by cosmetic infrastructure replacement.
 - Documentation must explain why some operational identifiers retain the earlier name.
 
 ## Alternatives considered

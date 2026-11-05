@@ -2,21 +2,21 @@
 
 > [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Intervention tracking
 
-**Status:** Future definition required
+**Status:** Student operational entry is moving into the modular IEP/IPP capability; wider intervention scope remains open
 
-Intervention tracking is included in the Nexus product vision but has not yet been defined to the same depth as Leadership analytics, assessment entry, or IPP.
+Student-level intervention work will not begin as a separate School Administration screen. It will be represented within the selected student's annual IEP/IPP through the existing **Intervention Focus** module definition. Aggregate intervention analytics may remain a separate Analytics destination.
 
 ## Intended direction
 
 - Connect identified evidence to a planned response.
 - Record intervention type, participants, dates, ownership, and intended outcomes.
 - Track implementation and progress over time.
-- Link interventions to authorized student, assessment, and IPP context where appropriate.
+- Link Intervention Focus content to the authorized annual plan, its goals, and relevant assessment evidence.
 - Surface governed trends without duplicating semantic-model calculations.
 
 ## Boundaries to define
 
-- Relationship between intervention tracking and IPP goals.
+- Final structured fields and lifecycle for the Intervention Focus module and its relationship to plan goals.
 - Whether interventions can exist at student, group, class, school, or division level.
 - Ownership, approval, and closure rules.
 - Evidence and progress-entry requirements.

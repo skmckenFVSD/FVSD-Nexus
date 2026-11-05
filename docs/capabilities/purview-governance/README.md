@@ -2,11 +2,11 @@
 
 > [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Purview governance
 
-**Status:** Proposed Nexus capability; substantial related agent and Fabric documentation assets already exist outside this repository
+**Status:** Phase 3 architecture; substantial related agent and Fabric documentation assets already exist outside this repository
 
 FVSD Nexus can provide a Data Analyst workspace that brings governed Fabric documentation, data-product lifecycle orchestration, Microsoft Purview catalog context, and application-level policy enforcement into one role-aware experience.
 
-This is documentation and architecture direction only. No Purview permissions, policies, API calls, agent integration, or Nexus interface have been added.
+This is the approved Phase 3 direction, not a claim that the integration is already implemented. No Purview permissions, policies, API calls, agent integration, or Nexus interface have been added.
 
 ## Existing FVSD foundation
 
@@ -22,21 +22,25 @@ The separate [FVSD Data Product Agent repository](https://github.com/skmckenFVSD
 
 Nexus should consume or deep-link to these governed capabilities. It should not duplicate their agent instructions, silently reinterpret their contracts, or become a second source of truth for data-product metadata.
 
-## Two Purview planes
+## Fabric governance and Purview protection
 
-The capability must keep two related but different Microsoft Purview planes explicit.
+The capability must keep Fabric governance, enterprise cataloguing, and protection/compliance responsibilities explicit.
 
-### Data governance and catalog
+### Fabric discovery and governance
 
-Microsoft Purview Data Map and Unified Catalog govern metadata, discovery, lineage, domains, data products, glossary concepts, ownership, quality, and access workflows. Microsoft states that these surfaces contain metadata rather than the underlying data, and their roles do not grant access to the underlying source.
+The OneLake catalog is the primary discovery and governance surface for Fabric items. It brings together Fabric metadata, ownership, endorsement, lineage, and related governance context without replacing the permissions on the underlying item.
 
 For FVSD, this plane can complement:
 
 - Fabric semantic-model documentation and lineage.
 - Dataverse `fvsd_dataproduct` lifecycle records.
 - Business Owner, Technical Owner, and Data Steward assignments.
-- Enterprise catalog publication and curation.
+- Enterprise catalog publication and curation where FVSD adopts a broader Purview catalogue.
 - Data-product health, ownership, classification, and review.
+
+### Microsoft Purview
+
+Purview supplies the information-protection and compliance plane: sensitivity labels, DLP, audit, insider-risk and related controls. Purview Unified Catalog and Data Map may also support an enterprise catalogue across platforms if FVSD enables and governs those capabilities. That metadata does not itself grant access to the underlying Dataverse, Fabric, or Azure data.
 
 ### Application policy enforcement
 
@@ -64,7 +68,7 @@ Within the Data Analyst role, this capability could demonstrate:
 
 The strongest story is not simply "Nexus connects to Purview." It is that a Data Analyst can move from technical truth to governed enterprise publication through bounded, auditable steps, while Purview policies protect content crossing the application boundary.
 
-## Proposed Data Analyst experiences
+## Planned Data Analyst experiences
 
 ### Discover and explain
 
@@ -111,7 +115,25 @@ The Data Analyst role controls the Nexus experience, not the underlying authorit
 - Purview catalog access does not grant access to the underlying Fabric or Azure data.
 - Agent operations must retain their existing tool scopes and constitutional limits.
 
-## Proposed integration boundary
+## Who uses Purview at FVSD
+
+Purview affects many users, but only a smaller group administers it.
+
+| FVSD audience | Expected relationship to Purview |
+|---|---|
+| Teachers, specialists, and principals | Work in Nexus and Microsoft 365 under applicable labels, DLP, retention, and audit controls. They are not expected to administer Purview. |
+| Data Analyst and data stewards | Use definitions, ownership, lineage, classification, and review context to help people understand and govern data products. Their Nexus role does not automatically grant Purview administration. |
+| Business and technical owners | Confirm meaning, appropriate use, sensitivity, publication, and review of data products in their area. |
+| IT, privacy, security, and records staff | Configure and monitor the protection, compliance, audit, retention, and risk controls within their assigned responsibilities. |
+| Platform and catalog administrators | Maintain connectors, scans, domains, catalog structures, role assignments, health, and integration configuration where these are adopted. |
+
+Named owners, role assignments, and the exact tenant configuration must be confirmed during the Phase 3 inventory. Until then, Nexus documentation describes a target operating model rather than assigning authority to an individual.
+
+## From governance to understanding
+
+Nexus should translate governance into questions that matter to staff: What does this mean? Where did it come from? How current is it? Who owns it? Who may change it? What happens if it is wrong? Purview and Fabric provide controls and metadata, while Nexus presents the result in language appropriate to the user's task.
+
+## Planned integration boundary
 
 ```text
 Data Analyst in Nexus
@@ -127,7 +149,7 @@ Data Analyst in Nexus
 
 See the [reference architecture](../../architecture/purview-governance.md) for system boundaries and trust decisions.
 
-## Staged delivery
+## Phase 3 staged delivery
 
 | Stage | Outcome | Evidence |
 |---|---|---|

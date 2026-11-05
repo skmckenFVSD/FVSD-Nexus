@@ -10,6 +10,8 @@ FVSD Nexus is a custom user experience over FVSD's existing Microsoft data and i
 - [Data and integrations](data-and-integrations.md)
 - [PASI connector](pasi-connector.md)
 - [Purview governance and agent integration](purview-governance.md)
+- [Copilot and agent interoperability](copilot-interoperability.md)
+- [App-native document and PDF generation](document-generation.md)
 - [Identity, licensing, and security](identity-licensing-security.md)
 - [Residency and platform options](residency-and-platform-options.md)
 
@@ -22,5 +24,6 @@ FVSD Nexus is a custom user experience over FVSD's existing Microsoft data and i
 5. Canadian data residency is a non-negotiable production boundary.
 6. Existing stable structures and calculations are reused.
 7. Operational confirmation comes from Dataverse; Fabric analytics update asynchronously.
+8. Nexus is the Azure application; Microsoft Foundry provides its approved AI, API, service, evaluation, agent, toolbox, and MCP component plane.
 
 Material changes to these premises should be recorded in an [architecture decision record](../decisions/adr/README.md).

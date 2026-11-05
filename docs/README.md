@@ -8,7 +8,7 @@ The documentation distinguishes four states:
 
 | Status | Meaning |
 |---|---|
-| Current | Implemented and available in the existing Leadership Analytics PoC. |
+| Current | Implemented and available in the active Nexus build. |
 | Confirmed | Agreed premise or constraint that guides implementation. |
 | Proposed | Intended direction that still requires Leadership approval or detailed design. |
 | Open | A decision, dependency, or requirement that has not yet been resolved. |
@@ -27,7 +27,7 @@ The documentation distinguishes four states:
 - [Leadership analytics](capabilities/leadership-analytics/README.md)
 - [School and student profiles](capabilities/profiles/README.md)
 - [Assessment entry and scoring](capabilities/assessments/README.md)
-- [Individual Program Plans](capabilities/ipp/README.md)
+- [Individual Education and Individual Program Plans](capabilities/ipp/README.md)
 - [Intervention tracking](capabilities/interventions/README.md)
 - [PASI provincial connector](capabilities/pasi-connector/README.md)
 - [Purview governance and Data Analyst workspace](capabilities/purview-governance/README.md)
@@ -39,13 +39,16 @@ The documentation distinguishes four states:
 - [Data and integrations](architecture/data-and-integrations.md)
 - [PASI connector architecture](architecture/pasi-connector.md)
 - [Purview governance and agent architecture](architecture/purview-governance.md)
+- [Copilot and agent interoperability](architecture/copilot-interoperability.md)
+- [App-native document and PDF generation](architecture/document-generation.md)
 - [Identity, licensing, and security](architecture/identity-licensing-security.md)
 - [Residency and platform options](architecture/residency-and-platform-options.md)
 
 ## Delivery and quality
 
-- [Proposed roadmap](delivery/roadmap.md)
-- [Full PoC definition](delivery/full-poc-definition.md)
+- [Phased delivery plan](delivery/roadmap.md)
+- [Phase 1 product build](delivery/phase-1-product-build.md)
+- [Adoption and engagement](delivery/adoption-and-engagement.md)
 - [Testing strategy](delivery/testing-strategy.md)
 
 ## Reference material

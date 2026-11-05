@@ -233,7 +233,7 @@ app.MapGet("/api/assessments/context", async (
     if (!accessContext.RoleRecordFound || !accessContext.PocEnabled || accessContext.EffectiveRole == "No Access")
     {
         return Results.Problem(
-            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            title: "The signed-in user is not enabled for FVSD Nexus assessment access.",
             statusCode: StatusCodes.Status403Forbidden);
     }
 
@@ -259,7 +259,7 @@ app.MapGet("/api/assessments/teacher-sections", async (
     if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
     {
         return Results.Problem(
-            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            title: "The signed-in user is not enabled for FVSD Nexus assessment access.",
             statusCode: StatusCodes.Status403Forbidden);
     }
 
@@ -323,7 +323,7 @@ app.MapGet("/api/assessments/section-groups", async (
     if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
     {
         return Results.Problem(
-            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            title: "The signed-in user is not enabled for FVSD Nexus assessment access.",
             statusCode: StatusCodes.Status403Forbidden);
     }
 
@@ -356,7 +356,7 @@ app.MapGet("/api/assessments/teacher-sections/{teacherSectionId:guid}/students",
     if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
     {
         return Results.Problem(
-            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            title: "The signed-in user is not enabled for FVSD Nexus assessment access.",
             statusCode: StatusCodes.Status403Forbidden);
     }
 
@@ -390,7 +390,7 @@ app.MapGet("/api/assessments/teacher-sections/{teacherSectionId:guid}/student-st
     if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
     {
         return Results.Problem(
-            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            title: "The signed-in user is not enabled for FVSD Nexus assessment access.",
             statusCode: StatusCodes.Status403Forbidden);
     }
 
@@ -426,7 +426,7 @@ app.MapGet("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/{
     if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
     {
         return Results.Problem(
-            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            title: "The signed-in user is not enabled for FVSD Nexus assessment access.",
             statusCode: StatusCodes.Status403Forbidden);
     }
 
@@ -448,6 +448,306 @@ app.MapGet("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/{
     }
 });
 
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus Class Assignment workspace.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        var plans = await assessments.GetStudentPlansAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        return Results.Ok(plans);
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+});
+
+app.MapPost("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus Class Assignment workspace.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        var plan = await assessments.CreateStudentPlanAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            schoolYears.GetCurrentSchoolYear(context.User),
+            cancellationToken);
+        return Results.Created(
+            $"/api/class-assignments/teacher-sections/{teacherSectionId:D}/students/{studentId:D}/plans/{plan.Id:D}",
+            plan);
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status400BadRequest);
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+});
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/modules", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus Class Assignment workspace.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanModulesAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            planId,
+            cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+});
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/screeners", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus Class Assignment workspace.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanScreenersAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            planId,
+            cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+});
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/interventions", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus Class Assignment workspace.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanInterventionsAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            planId,
+            cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+});
+
+app.MapPut("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/modules/{moduleId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid moduleId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus Class Assignment workspace.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        return Results.Ok(await assessments.AddStudentPlanModuleAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            planId,
+            moduleId,
+            context.Request.Headers.IfMatch.FirstOrDefault() ?? string.Empty,
+            cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status400BadRequest);
+    }
+});
+
+app.MapDelete("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/modules/{moduleId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid moduleId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+    {
+        return Results.Problem(
+            title: "The signed-in user is not enabled for the FVSD Nexus Class Assignment workspace.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        return Results.Ok(await assessments.RemoveStudentPlanModuleAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            teacherSectionId,
+            studentId,
+            planId,
+            moduleId,
+            context.Request.Headers.IfMatch.FirstOrDefault() ?? string.Empty,
+            cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status400BadRequest);
+    }
+});
+
 app.MapGet("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/entry/tosrec/references", async (
     Guid teacherSectionId,
     Guid studentId,
@@ -462,7 +762,7 @@ app.MapGet("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/{
     if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
     {
         return Results.Problem(
-            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            title: "The signed-in user is not enabled for FVSD Nexus assessment access.",
             statusCode: StatusCodes.Status403Forbidden);
     }
 
@@ -504,7 +804,7 @@ app.MapPost("/api/assessments/teacher-sections/{teacherSectionId:guid}/students/
     if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
     {
         return Results.Problem(
-            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            title: "The signed-in user is not enabled for FVSD Nexus assessment access.",
             statusCode: StatusCodes.Status403Forbidden);
     }
 
@@ -553,7 +853,7 @@ app.MapPatch("/api/assessments/teacher-sections/{teacherSectionId:guid}/students
     if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
     {
         return Results.Problem(
-            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            title: "The signed-in user is not enabled for FVSD Nexus assessment access.",
             statusCode: StatusCodes.Status403Forbidden);
     }
 
@@ -601,7 +901,7 @@ app.MapDelete("/api/assessments/teacher-sections/{teacherSectionId:guid}/student
     if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
     {
         return Results.Problem(
-            title: "The signed-in user is not enabled for the FVSD Nexus assessment PoC.",
+            title: "The signed-in user is not enabled for FVSD Nexus assessment access.",
             statusCode: StatusCodes.Status403Forbidden);
     }
 

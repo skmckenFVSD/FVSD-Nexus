@@ -2,7 +2,7 @@
 
 > [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Leadership analytics
 
-**Status:** Current working PoC
+**Status:** Current deployed capability; remaining page and design work continues in Phase 1
 
 Leadership analytics is the first implemented FVSD Nexus capability. It presents governed Fabric semantic-model measures through a guided application experience rather than embedding a conventional Power BI report.
 
@@ -25,7 +25,7 @@ Help Executive and school leaders move from district-level signals to the school
 - Responsive chart layouts and contextual Executive signals.
 - Developer-only role simulation for experience and RLS testing.
 
-Current PoC endpoint:
+Current Azure endpoint:
 
 <https://app-fvsd-insights-iwmpkez4.azurewebsites.net/>
 

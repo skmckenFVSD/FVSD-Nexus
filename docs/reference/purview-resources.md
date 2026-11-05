@@ -2,9 +2,21 @@
 
 > [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Purview and governance-agent references
 
-**Reviewed:** September 1, 2026
+**Reviewed:** November 5, 2026
 
-This page indexes official Microsoft material and the existing FVSD Data Product Agent documentation used to frame the proposed Nexus Data Analyst capability. Tenant configuration, licensing, API availability, permissions, and supported integration mechanisms must be validated again before implementation.
+This page indexes official Microsoft material and the existing FVSD Data Product Agent documentation used to frame Phase 3. Tenant configuration, licensing, API availability, permissions, and supported integration mechanisms must be validated again before implementation.
+
+## Microsoft Foundry, Copilot, Work IQ, and MCP
+
+- [Ways to extend Microsoft 365 Copilot](https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/overview) - decision point between experiences inside Microsoft 365 Copilot and capabilities embedded in applications FVSD operates.
+- [Declarative agents for Microsoft 365 Copilot](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/overview-declarative-agent) - Microsoft-managed agent orchestration, knowledge, skills, actions, and distribution.
+- [MCP and API plugins for declarative agents](https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/overview-plugins) - plugin manifests, REST actions, MCP tools, discovery, and host limitations.
+- [Integrate web or native apps with the Microsoft 365 Agents SDK](https://learn.microsoft.com/en-us/microsoft-copilot-studio/publication-integrate-web-or-native-app-m365-agents-sdk) - authenticated integration of a published Copilot Studio agent into an FVSD-operated application.
+- [Microsoft Foundry Agent Service overview](https://learn.microsoft.com/en-us/azure/foundry/agents/overview) - managed agent services, tools, identity, tracing, publishing, and operational controls.
+- [Work IQ overview](https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/work-iq) - permission-aware Microsoft 365 context, chat, tools, and workspace concepts for agents.
+- [Add Work IQ to an agent in Copilot Studio](https://learn.microsoft.com/en-us/microsoft-copilot-studio/agents-experience/add-work-iq) - current harness and configuration guidance.
+- [Use Model Context Protocol tools with Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol) - Foundry MCP tool integration and authorization guidance.
+- [Manage plugins, skills, and MCP servers in Microsoft 365](https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-plugins-skills-mcp-servers) - Microsoft 365 administration boundary for these extension types.
 
 ## Microsoft Purview developer platform
 
@@ -39,7 +51,8 @@ This page indexes official Microsoft material and the existing FVSD Data Product
 
 ## Important distinctions
 
-- Purview Data Map/Unified Catalog govern metadata; their roles do not grant access to underlying source data.
+- The OneLake catalog is the primary catalogue and governance experience inside Fabric. Purview complements it with protection and compliance and may provide broader enterprise catalogue capabilities where FVSD adopts them.
+- Catalog metadata and roles do not grant access to underlying source data.
 - The Microsoft Graph policy APIs evaluate and submit application activity/content. Microsoft states this API surface does not extract Purview analytics.
 - The Fabric Documentation Agent is the existing FVSD authority for surfaced semantic-model Catalog and Lineage documentation.
 - Dataverse remains the FVSD operational record for data-product registration and governance bindings.

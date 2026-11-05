@@ -1,84 +1,80 @@
-# Proposed roadmap
+# Phased delivery plan
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Delivery](README.md) / Proposed roadmap
+> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Delivery](README.md) / Phased delivery plan
 
-**Status:** Proposed for Leadership consideration
+**Status:** Approved product direction; Phase 1 active
 
-| Period | Proposed outcome |
-|---|---|
-| September-October 2026 | Confirm scope, workflow inventory, UX patterns, security, vendor migration, and acceptance requirements. |
-| November-December 2026 | Build assessment-entry replacement and reusable operational form components. |
-| January-February 2027 | Complete core IPP workflows, representative migration, and the end-to-end full PoC. |
-| March-June 2027 | Wider front-facing parallel user testing and refinement. |
-| July-August 2027 | Remediation, migration rehearsal, security and performance testing, documentation, and training. |
-| September 2027 | Target phased production deployment, subject to readiness gates and approval. |
+The phases describe delivery order and dependency, not separate products. Dates and release gates remain evidence-based and may move as functionality, privacy, security, accessibility, and migration findings become clearer.
 
-## September-October 2026: definition
+| Phase | Scope | Current position |
+|---|---|---|
+| 1. Nexus foundation and core workflows | Finish Fabric integration and page designs; complete Class Assignments, Assessments, and the first production IEP/IPP capability. | Active build |
+| 2. Dossier transition | Extend IEP/IPP modules and related workflows to incorporate the agreed functionality and historical information now held in Dossier. | Defined direction; detailed inventory required |
+| 3. Microsoft 365 Copilot integration | Connect Nexus capabilities, the FVSD Data Product Agent, Work IQ, skills, and governed tools through the Microsoft 365 Copilot harness. Microsoft Foundry supplies the API, model, service, evaluation, agent, and MCP components. | Architecture and contract definition |
+| 4. PASI connector | Implement the FVSD-owned provincial connector, operational status handling, reconciliation, and support model. | Feasibility established; onboarding and detailed scope required |
 
-- Confirm Leadership authorization and first implementation scope.
-- Inventory Canvas assessment forms, visibility rules, lookups, and validations.
-- Inventory vendor IPP workflows and exports.
-- Confirm remaining IPP tables and relationships.
-- Define user roles, licensing, and security mapping.
-- Establish development, pilot, and production environment strategy.
-- Agree on February PoC acceptance criteria.
-- Confirm which current vendor/PowerSchool functions depend on PASI and identify Alberta Education onboarding contacts, without making the connector a dependency of the assessment-entry slice.
-- Inventory the existing FVSD Data Product Agent, Fabric Documentation Agent, Purview account and catalog structure, governance roles, policies, permissions, and integration contracts without making this a dependency of assessment entry.
+## Phase 1 — Nexus foundation and core workflows
 
-## November-December 2026: assessment vertical slice
+Phase 1 converts the existing working slices into the supported application for the next school year.
 
-- Implement delegated Dataverse access.
-- Build shared form and workflow components.
-- Implement representative assessment forms and scoring adapters.
-- Enforce current-period editing and historical read-only behaviour.
-- Add administrative correction workflow foundation.
-- Validate results against the existing Canvas App.
+- Finish Leadership Analytics pages, Fabric semantic-model integration, and role-specific designs.
+- Complete the Class Assignment experience and shared filter context.
+- Extend assessment entry, history, completion monitoring, and governed scoring beyond the TOSREC reference implementation.
+- Complete the core annual IEP/IPP experience using one master record per student and school year plus governed modular sections.
+- Finish document/export behaviour, lifecycle rules, delegated authorization, testing, accessibility, telemetry, and operational support.
+- Preserve Dataverse as the immediate operational authority and Fabric as the governed analytical layer.
 
-## January-February 2027: full PoC
+Detailed completed work, remaining work, and acceptance evidence are maintained in the [Phase 1 product build](phase-1-product-build.md).
 
-- Complete the agreed assessment scope.
-- Implement the agreed core IPP scope.
-- Exercise representative IPP historical migration.
-- Connect operational context to governed analytics.
-- Complete role, accessibility, security, audit, and performance testing appropriate to the PoC.
-- Produce pilot documentation and support procedures.
+## Phase 2 — Dossier transition
 
-## March-June 2027: wider testing
+Phase 2 expands the IEP/IPP foundation rather than creating a separate programme.
 
-- Pilot with selected schools, roles, and student cohorts.
-- Continue incumbent systems in parallel.
-- Compare records, scores, workflow outcomes, and outputs.
-- Collect structured usability and accessibility feedback.
-- Resolve critical and high-priority findings.
-- Confirm training and support requirements.
+- Inventory Dossier functions, records, documents, history, and integration dependencies.
+- Map required capabilities to existing IEP/IPP modules and define new governed modules only where needed.
+- Bring intervention planning into the annual-plan context while preserving structured, reusable records.
+- Design historical migration, reconciliation, retention, and evidence requirements.
+- Run parallel validation before retiring any incumbent workflow.
 
-## July-August 2027: production readiness
+## Phase 3 — Microsoft 365 Copilot integration
 
-- Complete production migration rehearsal.
-- Verify rollback and recovery procedures.
-- Complete security, privacy, accessibility, and operational reviews.
-- Finalize user guidance and training.
-- Confirm support ownership and escalation.
-- Obtain production readiness approval.
+Phase 3 makes governed Nexus capabilities available through the Microsoft 365 Copilot harness.
 
-## September 2027: phased launch
+- Use Microsoft Foundry for APIs, model access, agent services, evaluation, toolboxes, and MCP components.
+- Use the Microsoft 365 Copilot harness and Work IQ for permission-aware Microsoft 365 context and user interaction.
+- Provide both a Microsoft 365 Copilot experience and an authenticated Copilot experience embedded within Nexus, backed by the same governed service contracts.
+- Integrate the existing FVSD Data Product Agent and Fabric Documentation Agent through published, typed contracts.
+- Evaluate declarative agents, custom engine agents, the Microsoft 365 Agents SDK, Copilot Studio, skills, API plugins, Copilot connectors, and MCP tools against the required host, identity, licensing, and support model.
+- Expose approved skills and tools that respect the same Entra, Dataverse, Fabric, Purview, and Nexus authorization boundaries as the application.
+- Require confirmation and deterministic validation before governed writes or publication actions.
+- Apply observability, evaluation, privacy, residency, and human-review controls before broader use.
 
-Production use should be phased and reversible. A date does not override unmet readiness gates.
+Phase 3 does not move domain rules into prompts or make an agent an operational source of truth.
 
-## Dependencies
+See [Copilot and agent interoperability](../architecture/copilot-interoperability.md) for the investigation and shared-contract design.
 
-- Leadership authorization.
-- Supported named-user Power Apps licensing approach.
-- Complete vendor export and workflow inventory.
-- Final role and access model.
-- Available staff for pilot, testing, migration, training, and support.
-- Alberta Education PASI onboarding, client-certificate registration, approved non-production access, and confirmed service scope before any PASI technical spike.
-- Confirmed Purview account type, supported APIs, Entra permissions, governance ownership, and approved test content before any Purview integration spike.
+## Phase 4 — PASI connector
 
-## Parallel strategic PASI track
+Phase 4 connects governed Nexus operations with Alberta Education's Provincial Approach to Student Information.
 
-The [PASI connector](../capabilities/pasi-connector/README.md) is a proposed parallel discovery track because it may materially strengthen the executive business case. It should progress through documentation and onboarding first. Connectivity, synchronization, or write spikes require separate authorization and must use an Alberta Education-approved non-production environment.
+- Complete Alberta Education onboarding, certificate, environment, operation, and contract-version decisions.
+- Commit operational changes to Dataverse before asynchronous provincial exchange.
+- Use a durable outbox/queue, idempotency, optimistic concurrency, retry, alert, and reconciliation patterns.
+- Show provincial acceptance and exception status in the relevant Nexus workflow.
+- Establish privacy, telemetry, support, disaster-recovery, and certificate-rotation runbooks.
 
-## Parallel Purview and Data Analyst track
+## Gates applying to every phase
 
-The [Purview governance and Data Analyst workspace](../capabilities/purview-governance/README.md) is a proposed parallel discovery track. Initial work is documentation, existing-asset inventory, ownership mapping, and contract alignment. Catalog writes or Microsoft Graph policy proofs require separate authorization, least-privilege identities, approved non-production content, and explicit privacy review.
+- Named-user authorization is enforced by Nexus and each destination service.
+- Identifiable student information remains in the approved Canadian geography.
+- Operational and analytical freshness is described accurately to users.
+- Accessibility, privacy, security, audit, performance, and recovery evidence is reviewed before release.
+- Migration and replacement decisions require parallel validation and an approved rollback path.
+- Documentation and training are updated with the delivered behaviour.
+
+## Related documentation
+
+- [Phase 1 product build](phase-1-product-build.md)
+- [Adoption and engagement](adoption-and-engagement.md)
+- [Testing strategy](testing-strategy.md)
+- [Decision register](../decisions/decision-register.md)

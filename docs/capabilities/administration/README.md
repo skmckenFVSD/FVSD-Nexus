@@ -6,12 +6,12 @@
 
 Administration provides the controlled capabilities needed to operate Nexus safely without exposing technical complexity to general users.
 
-## Current PoC capabilities
+## Current capabilities
 
 - Developer-only role simulation for UX and RLS testing.
 - Compact developer-role selection and real/obfuscated student-data display controls.
 - A Settings destination showing live Fabric and Dataverse connection context.
-- Signed-in identity, effective role, school assignments, named-user policy, and PoC access context.
+- Signed-in identity, effective role, school assignments, named-user policy, and application access context.
 - Entra sign-in and sign-out.
 - Azure telemetry and health endpoint.
 - Governed server-side semantic-model queries.

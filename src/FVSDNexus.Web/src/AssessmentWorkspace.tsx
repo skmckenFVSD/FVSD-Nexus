@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateActio
 import { createPortal } from 'react-dom'
 import { AssessmentCompletion } from './AssessmentCompletion'
 import { emptyAssessmentWorkspaceSelection, type AssessmentWorkspaceSelection } from './AssessmentWorkspaceState'
+import type { IppPreviewContext } from './IppPreview'
 import {
   BookOpenCheck,
   Check,
@@ -118,6 +119,18 @@ type AssessmentHistoryRecord = {
   eTag?: string
 }
 
+type StudentPlanHistoryRecord = {
+  id: string
+  name: string
+  schoolYear: string
+  gradeAtPlan?: string
+  schoolAtPlan?: string
+  teacherAtPlan?: string
+  courseName?: string
+  curriculum?: string
+  modifiedOn?: string
+}
+
 type TosrecReferenceOption = {
   rawScore: number
   standardScore: number
@@ -183,12 +196,13 @@ class ApiRequestError extends Error {
   }
 }
 
-export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'real', completion = false, selection, setSelection }: {
+export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'real', completion = false, selection, setSelection, onOpenIpp }: {
   currentSchoolYear?: string
   studentDisplayMode?: StudentDisplayMode
   completion?: boolean
   selection: AssessmentWorkspaceSelection
   setSelection: Dispatch<SetStateAction<AssessmentWorkspaceSelection>>
+  onOpenIpp?: (context: IppPreviewContext) => void
 }) {
   const [context, setContext] = useState<WorkspaceContext | null>(null)
   const [sectionGroups, setSectionGroups] = useState<SectionGroupOption[]>([])
@@ -372,6 +386,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
 
   const selectedSection = sections.find((section) => section.id === selectedSectionId)
   const selectedStudent = students.find((student) => student.id === selection.studentId)
+  const sectionCapabilities = getSectionGroupCapabilities(selection.sectionGroup)
   const displayStudents = useMemo(() => [...students].sort((left, right) =>
     getStudentDisplayName(left, studentDisplayMode).localeCompare(getStudentDisplayName(right, studentDisplayMode))),
   [students, studentDisplayMode])
@@ -468,7 +483,7 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
         <div className="assessment-panel-heading">
           <div>
             <h2>{completion ? 'Assessment Filters' : 'Classroom Assignment Filters'}</h2>
-            <p>{completion ? 'Review current-year completion by school, section group, course, teacher and assessment type.' : 'Choose a school, section group, course and teacher to load the assigned students.'}</p>
+            <p>{completion ? 'Review current-year completion by school, section group, course, teacher and assessment type.' : 'Choose a school, section group, course and teacher to load students and open their assessment or annual-plan history.'}</p>
           </div>
         </div>
 
@@ -641,7 +656,17 @@ export function AssessmentWorkspace({ currentSchoolYear, studentDisplayMode = 'r
         ) : null}
       </section>
 
-      {selectedStudent ? (
+      {selectedStudent && sectionCapabilities.plans ? (
+        <StudentPlanPanel
+          student={selectedStudent}
+          studentDisplayMode={studentDisplayMode}
+          currentSchoolYear={currentSchoolYear}
+          teacherSectionId={selectedSectionId}
+          teacherSection={selectedSection}
+          onOpenIpp={onOpenIpp}
+        />
+      ) : null}
+      {selectedStudent && sectionCapabilities.assessments ? (
         <StudentAssessmentPanel
           student={selectedStudent}
           studentDisplayMode={studentDisplayMode}
@@ -800,6 +825,161 @@ function StudentCard({ student, studentDisplayMode, assessmentStatus, assessment
       document.body,
     ) : null}
     </>
+  )
+}
+
+function StudentPlanPanel({ student, studentDisplayMode, currentSchoolYear, teacherSectionId, teacherSection, onOpenIpp }: {
+  student: Student
+  studentDisplayMode: StudentDisplayMode
+  currentSchoolYear?: string
+  teacherSectionId: string
+  teacherSection?: TeacherSection
+  onOpenIpp?: (context: IppPreviewContext) => void
+}) {
+  const [yearView, setYearView] = useState<'current' | 'previous'>('current')
+  const [plans, setPlans] = useState<StudentPlanHistoryRecord[]>([])
+  const [loadingPlans, setLoadingPlans] = useState(false)
+  const [planError, setPlanError] = useState<string | null>(null)
+  const [plansNeedReconnect, setPlansNeedReconnect] = useState(false)
+  const studentName = getStudentDisplayName(student, studentDisplayMode)
+
+  useEffect(() => {
+    setYearView('current')
+  }, [student.id])
+
+  useEffect(() => {
+    let cancelled = false
+    setPlans([])
+    setPlanError(null)
+    setPlansNeedReconnect(false)
+    if (!teacherSectionId) return
+
+    setLoadingPlans(true)
+    getJson<StudentPlanHistoryRecord[]>(
+      `/api/class-assignments/teacher-sections/${teacherSectionId}/students/${student.id}/plans`,
+    )
+      .then((records) => {
+        if (!cancelled) setPlans(records)
+      })
+      .catch((requestError: Error) => {
+        if (!cancelled) {
+          setPlanError(requestError.message)
+          setPlansNeedReconnect(requestError instanceof ApiRequestError && requestError.status === 401)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingPlans(false)
+      })
+
+    return () => { cancelled = true }
+  }, [student.id, teacherSectionId])
+
+  const currentPlans = plans.filter((plan) => sameSchoolYear(plan.schoolYear, currentSchoolYear))
+  const visiblePlans = plans.filter((plan) => yearView === 'current'
+    ? sameSchoolYear(plan.schoolYear, currentSchoolYear)
+    : !sameSchoolYear(plan.schoolYear, currentSchoolYear))
+  const currentPlan = currentPlans[0]
+
+  const openPlan = (plan?: StudentPlanHistoryRecord) => {
+    onOpenIpp?.({
+      teacherSectionId,
+      studentId: student.id,
+      planId: plan?.id,
+      studentName,
+      studentAsn: getStudentDisplayAsn(student, studentDisplayMode),
+      grade: plan?.gradeAtPlan ?? student.grade,
+      schoolName: plan?.schoolAtPlan ?? teacherSection?.schoolName,
+      schoolYear: plan?.schoolYear ?? currentSchoolYear,
+      teacherName: plan?.teacherAtPlan ?? teacherSection?.teacherName,
+      courseName: plan?.courseName ?? teacherSection?.courseName,
+    })
+  }
+
+  return (
+    <section className="student-assessment-panel student-plan-panel card" aria-labelledby="student-plan-heading">
+      <div className="student-assessment-heading">
+        <div>
+          <h2 id="student-plan-heading">Student IEP / IPP History</h2>
+          <p>One annual plan per student and school year. Interventions are managed within the Intervention Focus module.</p>
+        </div>
+        <div className="student-assessment-actions">
+          <button
+            type="button"
+            className="assessment-add-button"
+            disabled={!onOpenIpp || loadingPlans || Boolean(planError) || currentPlans.length > 1}
+            onClick={() => openPlan(currentPlan)}
+          >
+            <GraduationCap size={14} /> {currentPlan ? 'Open current IEP / IPP' : 'Add IEP / IPP'}
+          </button>
+        </div>
+      </div>
+
+      <div className="assessment-history-toolbar">
+        <div className="assessment-year-tabs" role="tablist" aria-label="IEP and IPP school years">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={yearView === 'current'}
+            className={yearView === 'current' ? 'active' : ''}
+            onClick={() => setYearView('current')}
+          >
+            Current Year
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={yearView === 'previous'}
+            className={yearView === 'previous' ? 'active' : ''}
+            onClick={() => setYearView('previous')}
+          >
+            Previous Years
+          </button>
+        </div>
+      </div>
+
+      {currentPlans.length > 1 ? (
+        <div className="error-banner"><CircleAlert size={18} />More than one plan exists for the current school year. The records require reconciliation before another plan can be created.</div>
+      ) : null}
+
+      {loadingPlans ? (
+        <div className="assessment-history-loading">Loading IEP / IPP history from Dataverse…</div>
+      ) : plansNeedReconnect ? (
+        <div className="assessment-history-reconnect">
+          <BookOpenCheck size={24} />
+          <div>
+            <strong>Reconnect Microsoft services</strong>
+            <span>Your FVSD sign-in is valid, but the delegated Dataverse session needs to be refreshed.</span>
+          </div>
+          <a href="/api/auth/signin">Reconnect</a>
+        </div>
+      ) : planError ? (
+        <div className="error-banner"><CircleAlert size={18} />{planError}</div>
+      ) : visiblePlans.length > 0 ? (
+        <div className="assessment-history-list">
+          {visiblePlans.map((plan) => (
+            <article className="assessment-history-record student-plan-record" key={plan.id}>
+              <div><span>Plan</span><strong>IEP / IPP</strong></div>
+              <div><span>School year</span><strong>{plan.schoolYear}</strong></div>
+              <div><span>Grade</span><strong>{plan.gradeAtPlan ?? student.grade ?? 'Not recorded'}</strong></div>
+              <div><span>School</span><strong>{plan.schoolAtPlan ?? teacherSection?.schoolName ?? 'Not recorded'}</strong></div>
+              <div><span>Last updated</span><strong>{formatDate(plan.modifiedOn)}</strong></div>
+              <button
+                type="button"
+                className="assessment-edit-button"
+                aria-label={`Open ${studentName}'s ${plan.schoolYear} IEP or IPP`}
+                onClick={() => openPlan(plan)}
+              >
+                <Eye size={13} /> Open
+              </button>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <AssessmentHistoryEmpty text={yearView === 'current'
+          ? `No IEP / IPP was found for ${currentSchoolYear || 'the current school year'}.`
+          : 'No previous IEP / IPP records were found for this student.'} />
+      )}
+    </section>
   )
 }
 
@@ -1388,7 +1568,7 @@ function AssessmentEntryModal({
           ) : assessmentDetailsComplete && assessmentType === 'TOSREC' && isExempt ? (
             <div className="assessment-exempt-note"><CheckCircle2 size={18} />TOSREC scoring is not required for an exempt assessment.</div>
           ) : assessmentType && assessmentType !== 'TOSREC' ? (
-            <div className="assessment-inline-empty">The {assessmentType} scoring form will be connected in a later PoC slice.</div>
+            <div className="assessment-inline-empty">The {assessmentType} scoring form will be connected in a later Phase 1 increment.</div>
           ) : assessmentType ? (
             <div className="assessment-inline-empty">Please complete the Assessment Details before continuing to Assessment Specific Scoring</div>
           ) : null}
@@ -1630,6 +1810,20 @@ function uniqueBy<T>(values: T[], getKey: (value: T) => string) {
 
 function compareSections(left: TeacherSection, right: TeacherSection) {
   return left.sortOrder - right.sortOrder || left.courseName.localeCompare(right.courseName)
+}
+
+function getSectionGroupCapabilities(sectionGroup: string) {
+  return {
+    assessments: sectionGroup === 'Literacy' || sectionGroup === 'Numeracy' || sectionGroup === 'Foundations',
+    plans: sectionGroup === 'Foundations' || sectionGroup === 'Homeroom',
+  }
+}
+
+function sameSchoolYear(left?: string, right?: string) {
+  const normalize = (value?: string) => value?.replace(/\D/g, '') ?? ''
+  const normalizedLeft = normalize(left)
+  const normalizedRight = normalize(right)
+  return normalizedLeft.length > 0 && normalizedLeft === normalizedRight
 }
 
 function formatDate(value?: string) {

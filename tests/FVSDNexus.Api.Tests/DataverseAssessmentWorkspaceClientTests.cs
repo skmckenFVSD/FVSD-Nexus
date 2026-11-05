@@ -37,6 +37,7 @@ public sealed class DataverseAssessmentWorkspaceClientTests
 
         Assert.Contains("$select=fvsd_sectiongrouping", decoded, StringComparison.Ordinal);
         Assert.Contains($"_fvsd_school_value eq {schoolId:D}", decoded, StringComparison.Ordinal);
+        Assert.Contains("fvsd_sectiongrouping ne 4", decoded, StringComparison.Ordinal);
         Assert.Contains(
             $"fvsd_teacher/fvsd_azureadobjectid eq '{entraObjectId:D}'",
             decoded,
@@ -45,7 +46,7 @@ public sealed class DataverseAssessmentWorkspaceClientTests
     }
 
     [Fact]
-    public void Section_groups_are_distinct_and_follow_the_power_fx_order()
+    public void Section_groups_are_distinct_ordered_and_exclude_other()
     {
         using var document = JsonDocument.Parse("""
             {
@@ -81,7 +82,7 @@ public sealed class DataverseAssessmentWorkspaceClientTests
         var groups = DataverseAssessmentWorkspaceClient.ParseSectionGroups(document.RootElement);
 
         Assert.Equal(
-            ["Literacy", "Numeracy", "Foundations", "Homeroom", "Other"],
+            ["Literacy", "Numeracy", "Foundations", "Homeroom"],
             groups.Select(group => group.Label).ToArray());
     }
 
@@ -253,6 +254,209 @@ public sealed class DataverseAssessmentWorkspaceClientTests
         Assert.Equal("Fall", rows[1].Period);
         Assert.Equal("2024 / 2025", rows[2].SchoolYear);
         Assert.Equal("Unassigned", rows[2].DescriptiveTerm);
+    }
+
+    [Fact]
+    public void Student_plan_query_is_student_scoped_and_returns_annual_plan_context()
+    {
+        var studentId = Guid.Parse("50000000-0000-0000-0000-000000000001");
+
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlansQuery(studentId));
+
+        Assert.Contains("fvsd_studentipps", decoded, StringComparison.Ordinal);
+        Assert.Contains($"_fvsd_student_value eq {studentId:D}", decoded, StringComparison.Ordinal);
+        Assert.Contains("fvsd_schoolyear", decoded, StringComparison.Ordinal);
+        Assert.Contains("fvsd_gradeatipp", decoded, StringComparison.Ordinal);
+        Assert.Contains("$orderby=fvsd_schoolyear desc,modifiedon desc", decoded, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Student_plan_history_is_normalized_and_sorted_by_school_year()
+    {
+        using var document = JsonDocument.Parse("""
+            {
+              "value": [
+                {
+                  "fvsd_studentippid": "80000000-0000-0000-0000-000000000001",
+                  "fvsd_name": "Earlier plan",
+                  "fvsd_schoolyear": "2025 / 2026",
+                  "fvsd_gradeatipp": 4,
+                  "fvsd_gradeatipp@OData.Community.Display.V1.FormattedValue": "Grade 3",
+                  "fvsd_schoolatipp": "Test School",
+                  "fvsd_teacheratipp": "Teacher A",
+                  "modifiedon": "2026-06-01T19:00:00Z"
+                },
+                {
+                  "fvsd_studentippid": "80000000-0000-0000-0000-000000000002",
+                  "fvsd_name": "Current plan",
+                  "fvsd_schoolyear": "2026 / 2027",
+                  "fvsd_gradeatipp": 5,
+                  "fvsd_gradeatipp@OData.Community.Display.V1.FormattedValue": "Grade 4",
+                  "fvsd_schoolatipp": "Test School",
+                  "fvsd_teacheratipp": "Teacher B",
+                  "fvsd_coursename": "Foundations",
+                  "fvsd_curriculum": "English Language Arts and Literature",
+                  "modifiedon": "2026-11-04T18:00:00Z"
+                }
+              ]
+            }
+            """);
+
+        var plans = DataverseAssessmentWorkspaceClient.ParseStudentPlans(document.RootElement);
+
+        Assert.Equal(2, plans.Count);
+        Assert.Equal("Current plan", plans[0].Name);
+        Assert.Equal("2026 / 2027", plans[0].SchoolYear);
+        Assert.Equal("Grade 4", plans[0].GradeAtPlan);
+        Assert.Equal("Foundations", plans[0].CourseName);
+        Assert.Equal("Earlier plan", plans[1].Name);
+    }
+
+    [Fact]
+    public void Plan_screener_queries_are_student_and_school_year_scoped()
+    {
+        var studentId = Guid.Parse("12345678-1234-1234-1234-123456789012");
+        var schoolYear = "2026 / 2027";
+        var tosrec = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildPlanTosrecScreenersQuery(studentId, schoolYear));
+        var towre = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildPlanTowreScreenersQuery(studentId, schoolYear));
+        var wrat = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildPlanWratScreenersQuery(studentId, schoolYear));
+
+        Assert.Contains("fvsd_studenttosrecassessments", tosrec, StringComparison.Ordinal);
+        Assert.Contains($"_fvsd_student_value eq {studentId:D}", tosrec, StringComparison.Ordinal);
+        Assert.Contains("fvsd_schoolyear eq '2026 / 2027'", tosrec, StringComparison.Ordinal);
+        Assert.Contains("fvsd_studenttowreassessments", towre, StringComparison.Ordinal);
+        Assert.Contains("fvsd_rwstandardscore", towre, StringComparison.Ordinal);
+        Assert.Contains("fvsd_nwdescriptiveterm", towre, StringComparison.Ordinal);
+        Assert.Contains("fvsd_studentwratassessments", wrat, StringComparison.Ordinal);
+        Assert.Contains("$orderby=fvsd_assessmentdate desc,modifiedon desc", wrat, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Plan_screeners_flatten_towre_subscores_and_keep_the_latest_period_record()
+    {
+        using var tosrec = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_period": 1,
+                "fvsd_period@OData.Community.Display.V1.FormattedValue": "Fall",
+                "fvsd_assessmentdate": "2026-09-24T00:00:00Z",
+                "fvsd_standardscore": 62,
+                "fvsd_descriptiveterm": {
+                  "fvsd_name": "Very Poor",
+                  "fvsd_fillhexcode": "FF0000",
+                  "fvsd_fonthexcode": "FFFFFF"
+                }
+              },
+              {
+                "fvsd_period": 1,
+                "fvsd_period@OData.Community.Display.V1.FormattedValue": "Fall",
+                "fvsd_assessmentdate": "2026-09-01T00:00:00Z",
+                "fvsd_standardscore": 59
+              }
+            ] }
+            """);
+        using var towre = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_period": 1,
+                "fvsd_period@OData.Community.Display.V1.FormattedValue": "Fall",
+                "fvsd_assessmentdate": "2026-09-25T00:00:00Z",
+                "fvsd_standardscore": 63,
+                "fvsd_rwstandardscore": 67,
+                "fvsd_nwstandardscore": 61,
+                "fvsd_descriptiveterm": { "fvsd_name": "Very Poor", "fvsd_fillhexcode": "FF0000", "fvsd_fonthexcode": "FFFFFF" },
+                "fvsd_rwdescriptiveterm": { "fvsd_name": "Poor", "fvsd_fillhexcode": "F47B20", "fvsd_fonthexcode": "071940" },
+                "fvsd_nwdescriptiveterm": { "fvsd_name": "Very Poor", "fvsd_fillhexcode": "FF0000", "fvsd_fonthexcode": "FFFFFF" }
+              }
+            ] }
+            """);
+        using var wrat = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_period": 1,
+                "fvsd_period@OData.Community.Display.V1.FormattedValue": "Fall",
+                "fvsd_assessmentdate": "2026-09-26T00:00:00Z",
+                "fvsd_standardscore": 66,
+                "fvsd_descriptiveterm": { "fvsd_name": "Poor", "fvsd_fillhexcode": "F47B20", "fvsd_fonthexcode": "071940" }
+              }
+            ] }
+            """);
+
+        var results = DataverseAssessmentWorkspaceClient.ParseStudentPlanScreeners(
+            tosrec.RootElement,
+            towre.RootElement,
+            wrat.RootElement);
+
+        Assert.Equal(5, results.Count);
+        Assert.Equal(["TOSREC", "TOWRE", "TOWRE RW", "TOWRE NW", "WRAT-5"],
+            results.Select(result => result.AssessmentType).ToArray());
+        Assert.Equal(62, results[0].StandardScore);
+        Assert.Equal("#FF0000", results[0].DescriptiveTermFill);
+        Assert.Equal(67, results[2].StandardScore);
+        Assert.Equal("Poor", results[2].DescriptiveTerm);
+        Assert.Equal(61, results[3].StandardScore);
+        Assert.Equal(66, results[4].StandardScore);
+    }
+
+    [Fact]
+    public void Plan_intervention_query_is_student_and_school_year_scoped_without_hiding_withdrawn_records()
+    {
+        var studentId = Guid.Parse("12345678-1234-1234-1234-123456789012");
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildPlanInterventionsQuery(studentId, "2026 / 2027"));
+
+        Assert.Contains("fvsd_studentinterventions", decoded, StringComparison.Ordinal);
+        Assert.Contains($"_fvsd_student_value eq {studentId:D}", decoded, StringComparison.Ordinal);
+        Assert.Contains("fvsd_schoolyear eq '2026 / 2027'", decoded, StringComparison.Ordinal);
+        Assert.Contains("$expand=fvsd_interventiontype($select=fvsd_name)", decoded, StringComparison.Ordinal);
+        Assert.Contains("$orderby=fvsd_datestarted desc,modifiedon desc", decoded, StringComparison.Ordinal);
+        Assert.DoesNotContain("statecode eq 0", decoded, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Plan_interventions_include_formatted_context_and_sort_newest_first()
+    {
+        using var document = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_studentinterventionid": "90000000-0000-0000-0000-000000000001",
+                "fvsd_interventiontype": { "fvsd_name": "Small-group reading" },
+                "fvsd_interventionist": "Interventionist One",
+                "fvsd_teacheratintervention": "Teacher One",
+                "fvsd_schoolatintervention": "Test School",
+                "fvsd_gradeatintervention": 4,
+                "fvsd_gradeatintervention@OData.Community.Display.V1.FormattedValue": "Grade 3",
+                "fvsd_curriculum": "English Language Arts and Literature",
+                "fvsd_datestarted": "2026-09-15T00:00:00Z",
+                "fvsd_additionalinformation": "Three sessions per week."
+              },
+              {
+                "fvsd_studentinterventionid": "90000000-0000-0000-0000-000000000002",
+                "fvsd_interventiontype": { "fvsd_name": "Earlier intervention" },
+                "fvsd_teacheratintervention": "Teacher Two",
+                "fvsd_datestarted": "2026-09-01T00:00:00Z",
+                "fvsd_datewithdrawn": "2026-10-15T00:00:00Z",
+                "fvsd_withdrawnreason": 1,
+                "fvsd_withdrawnreason@OData.Community.Display.V1.FormattedValue": "Completed"
+              }
+            ] }
+            """);
+
+        var interventions = DataverseAssessmentWorkspaceClient.ParseStudentPlanInterventions(
+            document.RootElement);
+
+        Assert.Equal(2, interventions.Count);
+        Assert.Equal("Small-group reading", interventions[0].InterventionType);
+        Assert.Equal("Grade 3", interventions[0].Grade);
+        Assert.Equal("Interventionist One", interventions[0].Interventionist);
+        Assert.Equal("Three sessions per week.", interventions[0].AdditionalInformation);
+        Assert.Equal("Earlier intervention", interventions[1].InterventionType);
+        Assert.Equal("Completed", interventions[1].WithdrawnReason);
+        Assert.NotNull(interventions[1].DateWithdrawn);
     }
 
     [Fact]

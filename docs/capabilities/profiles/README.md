@@ -37,7 +37,7 @@ Profile visibility must be determined by delegated identity and destination-serv
 
 - Final role-to-profile access matrix.
 - Which demographic attributes are appropriate for each role.
-- The initial student-profile scope for the February PoC.
+- The initial student-profile scope within the phased product build.
 - Whether profile navigation starts from school, class, caseload, or search for each role.
 
 ## Related documentation

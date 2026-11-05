@@ -71,6 +71,83 @@ public sealed record AssessmentHistoryRecord(
     string? ExemptReason,
     string? ETag);
 
+public sealed record StudentPlanHistoryRecord(
+    Guid Id,
+    string Name,
+    string SchoolYear,
+    string? GradeAtPlan,
+    string? SchoolAtPlan,
+    string? TeacherAtPlan,
+    string? CourseName,
+    string? Curriculum,
+    DateTimeOffset? ModifiedOn);
+
+public sealed record StudentPlanModuleState(
+    Guid Id,
+    string Name,
+    string Group,
+    string Description,
+    string FrontFacingDescription,
+    int SortOrder,
+    bool Selected,
+    bool Available,
+    bool LocksWhenSelected,
+    bool Locked,
+    bool CanRemove,
+    string? StateReason);
+
+public sealed record StudentPlanDetails(
+    string SchoolYear,
+    string? GradeAtPlan,
+    string? SchoolAtPlan,
+    string? CourseName,
+    string? TeacherAtPlan,
+    string? PrincipalAtPlan,
+    string? ParentOrGuardianName,
+    decimal? FallAttendance,
+    decimal? WinterAttendance,
+    decimal? SpringAttendance,
+    DateTimeOffset? ModifiedOn);
+
+public sealed record StudentPlanModulesResponse(
+    Guid PlanId,
+    string ETag,
+    StudentPlanDetails Details,
+    IReadOnlyList<StudentPlanModuleState> Modules);
+
+public sealed record StudentPlanScreenerResult(
+    string AssessmentType,
+    string Period,
+    int PeriodSortOrder,
+    DateTimeOffset? AssessmentDate,
+    int? StandardScore,
+    string? DescriptiveTerm,
+    string? DescriptiveTermFill,
+    string? DescriptiveTermFont);
+
+public sealed record StudentPlanScreenersResponse(
+    Guid PlanId,
+    string SchoolYear,
+    IReadOnlyList<StudentPlanScreenerResult> Results);
+
+public sealed record StudentPlanIntervention(
+    Guid Id,
+    string InterventionType,
+    string? Interventionist,
+    string? Teacher,
+    string? School,
+    string? Grade,
+    string? Curriculum,
+    DateTimeOffset? DateStarted,
+    DateTimeOffset? DateWithdrawn,
+    string? WithdrawnReason,
+    string? AdditionalInformation);
+
+public sealed record StudentPlanInterventionsResponse(
+    Guid PlanId,
+    string SchoolYear,
+    IReadOnlyList<StudentPlanIntervention> Interventions);
+
 public sealed record TosrecReferenceOption(
     int RawScore,
     int StandardScore,
