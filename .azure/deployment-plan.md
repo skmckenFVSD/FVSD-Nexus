@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Validated - Modular IEP/IPP and Product Documentation Release
+> **Status:** Deployed - Modular IEP/IPP and Product Documentation Release
 
 Generated: 2026-08-25
 
@@ -333,6 +333,13 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
   - [x] Deploy the application-only release with `azd deploy --no-prompt`
   - [x] Confirm `azd show` reports the intended App Service endpoint
   - [x] Verify production health, exact JavaScript and CSS release fingerprints, and the Entra production callback
+  - [x] Verify the resolved Key Vault reference and live managed-identity role assignment
+- [x] Deploy the modular IEP/IPP and product documentation release on 2026-11-05
+  - [x] Publish GitHub commit `f7a3c38` on `main`
+  - [x] Deploy the application-only release with `azd deploy --no-prompt`
+  - [x] Confirm `azd show` reports the intended App Service endpoint
+  - [x] Verify production health and exact JavaScript and CSS release fingerprints
+  - [x] Verify the FVSD Entra sign-in challenge and production callback
   - [x] Verify the resolved Key Vault reference and live managed-identity role assignment
 
 ---
@@ -1153,3 +1160,17 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Release fingerprints | Local SHA-256 | JavaScript `2506A679A11EDA9FFE121A4FA31F7B7426A99FECB93EEFE910C6D3302D38D285`; CSS `20291606FC79BF378F9F537C99A8580A844F72E39E20A35D4AD1A5EFA95C0227` |
 | Azure policy | `az policy assignment list` at subscription scope | Passed; only the existing Microsoft Defender for Cloud default assignment is active |
 | Static RBAC | `infra/resources.bicep` role-assignment review | Passed; the App Service system identity retains only vault-scoped `Key Vault Secrets User`, matching its secret-read operation |
+
+#### Deployment Proof — 2026-11-05T21:49:41Z
+
+| Check | Result |
+|-------|--------|
+| GitHub release | Commit `f7a3c38` is published on `main` and matched `origin/main` at deployment time |
+| Azure deployment | `azd deploy --no-prompt` completed successfully against the existing Canada Central App Service in 3 minutes 58 seconds |
+| Production endpoint | `azd show` reports `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/` |
+| Production health | `GET /health` returned HTTP 200 with `{"status":"healthy","service":"FVSD Nexus"}` |
+| Exact frontend release | Production serves `assets/index-DGcLepVL.js` and `assets/index-CpbAQtVV.css`, exactly matching the validated local bundle |
+| Release fingerprints | JavaScript SHA-256 `2506A679A11EDA9FFE121A4FA31F7B7426A99FECB93EEFE910C6D3302D38D285`; CSS SHA-256 `20291606FC79BF378F9F537C99A8580A844F72E39E20A35D4AD1A5EFA95C0227` |
+| Entra sign-in | `GET /api/auth/signin` returned HTTP 302 to the FVSD tenant with `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/signin-oidc` as the callback and delegated Dataverse scope |
+| Key Vault reference | `AzureAd__ClientSecret` reports `Resolved` through the App Service system-assigned identity |
+| Live RBAC | App Service identity `3ac2acd7-3412-4161-b4bf-af96c4051a85` retains role definition `4633458b-17de-408a-b874-0445c86b69e6` (`Key Vault Secrets User`) scoped only to `kv-fvsdi-iwmpkez4` |
