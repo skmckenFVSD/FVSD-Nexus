@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Validated - IEP/IPP Module Functionality and Intervention Focus Release
+> **Status:** Deployed - IEP/IPP Module Functionality and Intervention Focus Release
 
 Generated: 2026-08-25
 
@@ -355,6 +355,13 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
   - [x] Verify production health and exact JavaScript and CSS release fingerprints
   - [x] Verify the FVSD Entra sign-in challenge and production callback
   - [x] Verify the resolved Key Vault reference and live managed-identity role assignment
+- [x] Deploy the IEP/IPP module functionality and Intervention Focus release on 2026-11-06
+  - [x] Publish GitHub commit `4b3123d` on `main`
+  - [x] Deploy the application-only release with `azd deploy --no-prompt`
+  - [x] Confirm `azd show` reports the intended App Service endpoint
+  - [x] Verify production health and exact JavaScript and CSS release fingerprints
+  - [x] Verify the FVSD Entra sign-in challenge and production callback
+  - [x] Verify the resolved Key Vault reference and live managed-identity role assignment
 
 ---
 
@@ -378,6 +385,21 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
 | Provisioning preview | `azd provision --preview --no-prompt` | Passed; no resource creation or deletion, only reconciliation of existing App Service and monitoring properties |
 | Package validation | `azd package --no-prompt` | Passed; the React and ASP.NET Core application was published and packaged successfully after the local preview processes were stopped |
 | Release fingerprints | Packaged asset SHA-256 | JavaScript `AF3464F384BD7AA0A34C2B725E5DF80379C2A05AC00C11C2FDBBD8F6644D80B1`; CSS `7D21FCFD077FF220443E74546D827BA7CEE85C7BC3FFDE9377762B9048DC2EBC` |
+
+### IEP / IPP Module Functionality and Intervention Focus Deployment — 2026-11-06T21:06:33Z
+
+| Check | Command | Result |
+|-------|---------|--------|
+| GitHub release | `git push origin main` | Passed; application release commit `4b3123d` is published on `main` |
+| Infrastructure boundary | `azd provision --preview --no-prompt` | Passed; no creates or deletes. Full provisioning was intentionally not performed because the interactive user cannot read the deployed Entra secret and it is not persisted in the AZD environment; no infrastructure changes are part of this release |
+| Application deployment | `azd deploy --no-prompt` | Passed; the validated App Service package deployed successfully in 3 minutes 58 seconds |
+| Endpoint inventory | `azd show` | Passed; `web` resolves to `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/` |
+| Production health | `GET /health` | HTTP 200 with `{"status":"healthy","service":"FVSD Nexus"}` |
+| Exact frontend release | Production HTML asset inspection and SHA-256 comparison | Passed; production serves `assets/index-DcwLCoAi.js` and `assets/index-D_ReelRm.css`, exactly matching the validated package |
+| Release fingerprints | Production SHA-256 | JavaScript `AF3464F384BD7AA0A34C2B725E5DF80379C2A05AC00C11C2FDBBD8F6644D80B1`; CSS `7D21FCFD077FF220443E74546D827BA7CEE85C7BC3FFDE9377762B9048DC2EBC` |
+| Entra sign-in challenge | `GET /api/auth/signin` without following redirects | HTTP 302 to the FVSD tenant with the production callback and delegated Dataverse scope |
+| Key Vault reference | App Service configuration-reference API | `AzureAd__ClientSecret` reports `Resolved` through the system-assigned identity |
+| Live RBAC | App Service identity and vault-scoped role query | `Key Vault Secrets User` remains assigned to principal `3ac2acd7-3412-4161-b4bf-af96c4051a85` at the application vault only |
 
 ### Responsive Role-Aware Sidebar Navigation UX Revalidation - 2026-09-03T15:15:33-06:00
 
