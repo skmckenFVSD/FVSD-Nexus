@@ -91,6 +91,111 @@ public interface IDataverseAssessmentWorkspaceClient
         Guid planId,
         CancellationToken cancellationToken = default);
 
+    Task<StudentPlanInterventionOptionsResponse> GetStudentPlanInterventionOptionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanInterventionsResponse> CreateStudentPlanInterventionAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanInterventionCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanInterventionsResponse> UpdateStudentPlanInterventionAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid interventionId,
+        string currentSchoolYear,
+        StudentPlanInterventionCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanInterventionsResponse> DeleteStudentPlanInterventionAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid interventionId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanCodingResponse> GetStudentPlanCodingAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanCodingResponse> UpdateStudentPlanCodingAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        StudentPlanCodingCommand command,
+        string eTag,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<StudentPlanDocument>> GetStudentPlanDocumentsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanDocumentContent> GetStudentPlanDocumentContentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid documentId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanModulesResponse> UpdateStudentPlanAttendanceAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        StudentPlanAttendanceCommand command,
+        string eTag,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanModulesResponse> UpdateStudentPlanSignatureDetailsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        StudentPlanSignatureDetailsCommand command,
+        string eTag,
+        CancellationToken cancellationToken = default);
+
     Task<StudentPlanModulesResponse> AddStudentPlanModuleAsync(
         DataverseAccessContext accessContext,
         string? developmentRole,

@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 
@@ -342,13 +343,460 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
 
         var schoolYear = ReadString(planRows[0], "fvsd_schoolyear")
             ?? throw new InvalidOperationException("The selected plan does not have a school year.");
-        using var interventionsDocument = await GetJsonAsync(
-            BuildPlanInterventionsQuery(studentId, schoolYear),
+        return await LoadStudentPlanInterventionsAsync(planId, studentId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanInterventionOptionsResponse> GetStudentPlanInterventionOptionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
             cancellationToken);
-        return new StudentPlanInterventionsResponse(
-            planId,
+        await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanInterventionOptionsAsync(subject, cancellationToken);
+    }
+
+    public async Task<StudentPlanInterventionsResponse> CreateStudentPlanInterventionAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanInterventionCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        ValidateInterventionCommand(command);
+
+        var options = await LoadStudentPlanInterventionOptionsAsync(subject, cancellationToken);
+        var type = options.InterventionTypes.FirstOrDefault(option => option.Id == command.InterventionTypeId)
+            ?? throw new ArgumentException("Select a valid Intervention Type.");
+        var source = ResolveInterventionSource(subject, options, type, command.SourceTeacherSectionId);
+        ValidateInterventionist(command.Interventionist, options.Interventionists, null);
+
+        var schoolYearStart = GetSchoolYearStart(schoolYear);
+        if (schoolYearStart == int.MinValue)
+        {
+            throw new ArgumentException("The plan school year is not valid.");
+        }
+
+        var payload = BuildStudentPlanInterventionPayload(
+            subject,
             schoolYear,
-            ParseStudentPlanInterventions(interventionsDocument.RootElement));
+            type,
+            source,
+            command,
+            $"{schoolYearStart}|{subject.StudentAsn}|{command.DateStarted:MMddyyyy}|{type.Alias}",
+            includeContext: true);
+        await SendJsonAsync(
+            HttpMethod.Post,
+            "fvsd_studentinterventions",
+            payload,
+            null,
+            cancellationToken);
+
+        return await LoadStudentPlanInterventionsAsync(planId, subject.StudentId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanInterventionsResponse> UpdateStudentPlanInterventionAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid interventionId,
+        string currentSchoolYear,
+        StudentPlanInterventionCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        ValidateInterventionCommand(command);
+        if (string.IsNullOrWhiteSpace(command.ETag))
+        {
+            throw new ArgumentException("Reload the intervention before saving your changes.");
+        }
+
+        using var existingDocument = await GetJsonAsync(
+            BuildStudentPlanInterventionValidationQuery(subject.StudentId, schoolYear, interventionId),
+            cancellationToken);
+        var rows = existingDocument.RootElement.GetProperty("value");
+        if (rows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected intervention is not available for this student and annual plan.");
+        }
+
+        var existing = rows[0];
+        var existingTypeId = ReadGuid(existing, "_fvsd_interventiontype_value");
+        if (existingTypeId is null || existingTypeId.Value != command.InterventionTypeId)
+        {
+            throw new ArgumentException("The Intervention Type cannot be changed after the intervention is created.");
+        }
+
+        var options = await LoadStudentPlanInterventionOptionsAsync(subject, cancellationToken);
+        ValidateInterventionist(
+            command.Interventionist,
+            options.Interventionists,
+            ReadString(existing, "fvsd_interventionist"));
+        var type = options.InterventionTypes.FirstOrDefault(option => option.Id == existingTypeId.Value)
+            ?? new StudentPlanInterventionTypeOption(
+                existingTypeId.Value,
+                ReadFormattedString(existing, "_fvsd_interventiontype_value") ?? "Intervention",
+                string.Empty,
+                ReadString(existing, "fvsd_curriculum"));
+        var source = new InterventionSource(
+            ReadString(existing, "fvsd_curriculum") ?? type.Curriculum ?? string.Empty,
+            ReadString(existing, "fvsd_courseno") ?? string.Empty,
+            ReadString(existing, "fvsd_coursename") ?? string.Empty,
+            ReadString(existing, "fvsd_teacheratintervention") ?? string.Empty);
+        var payload = BuildStudentPlanInterventionPayload(
+            subject,
+            schoolYear,
+            type,
+            source,
+            command,
+            null,
+            includeContext: false);
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_studentinterventions({interventionId:D})",
+            payload,
+            command.ETag,
+            cancellationToken);
+
+        return await LoadStudentPlanInterventionsAsync(planId, subject.StudentId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanInterventionsResponse> DeleteStudentPlanInterventionAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid interventionId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        if (string.IsNullOrWhiteSpace(eTag))
+        {
+            throw new ArgumentException("Reload the intervention before deleting it.");
+        }
+
+        using var existingDocument = await GetJsonAsync(
+            BuildStudentPlanInterventionValidationQuery(subject.StudentId, schoolYear, interventionId),
+            cancellationToken);
+        if (existingDocument.RootElement.GetProperty("value").GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected intervention is not available for this student and annual plan.");
+        }
+
+        await SendJsonAsync(
+            HttpMethod.Delete,
+            $"fvsd_studentinterventions({interventionId:D})",
+            null,
+            eTag,
+            cancellationToken);
+        return await LoadStudentPlanInterventionsAsync(planId, subject.StudentId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanCodingResponse> GetStudentPlanCodingAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        await ValidateStudentPlanAccessAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            planId,
+            cancellationToken);
+        return await LoadStudentPlanCodingAsync(studentId, planId, cancellationToken);
+    }
+
+    public async Task<StudentPlanCodingResponse> UpdateStudentPlanCodingAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        StudentPlanCodingCommand command,
+        string eTag,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(eTag))
+        {
+            throw new ArgumentException("Reload the coding and conditions section before saving changes.");
+        }
+
+        await ValidateStudentPlanAccessAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            planId,
+            cancellationToken);
+        var current = await LoadStudentPlanCodingAsync(studentId, planId, cancellationToken);
+        var additionalOne = NormalizeCodingGroupCommand(command.AdditionalOne);
+        var additionalTwo = NormalizeCodingGroupCommand(command.AdditionalTwo);
+        var additionalThree = NormalizeCodingGroupCommand(command.AdditionalThree);
+        if (additionalTwo.CategoryId is not null && additionalOne.CategoryId is null)
+        {
+            throw new ArgumentException("Select the first additional category before selecting the second.");
+        }
+        if (additionalThree.CategoryId is not null && additionalTwo.CategoryId is null)
+        {
+            throw new ArgumentException("Select the second additional category before selecting the third.");
+        }
+
+        var primaryConditions = ValidateCodingConditions(
+            NormalizeConditionNames(command.PrimaryConditions),
+            current.Primary.CategoryId,
+            current.Primary.CategoryName,
+            current.Primary.Conditions,
+            current.ConditionOptions);
+        var one = ValidateCodingGroup(additionalOne, current.AdditionalGroups[0], current);
+        var two = ValidateCodingGroup(additionalTwo, current.AdditionalGroups[1], current);
+        var three = ValidateCodingGroup(additionalThree, current.AdditionalGroups[2], current);
+
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_studentdetails({studentId:D})",
+            new Dictionary<string, object?>
+            {
+                ["fvsd_spedconditions"] = SerializeConditionNames(primaryConditions),
+                ["fvsd_additionalspedcategoryone@odata.bind"] = CodingCategoryBind(one.CategoryId),
+                ["fvsd_additionalspedconditionsone"] = SerializeConditionNames(one.Conditions),
+                ["fvsd_additionalspedobservationsone"] = one.Observations,
+                ["fvsd_additionalspedcategorytwo@odata.bind"] = CodingCategoryBind(two.CategoryId),
+                ["fvsd_additionalspedconditionstwo"] = SerializeConditionNames(two.Conditions),
+                ["fvsd_additionalspedobservationstwo"] = two.Observations,
+                ["fvsd_additionalspedcategorythree@odata.bind"] = CodingCategoryBind(three.CategoryId),
+                ["fvsd_additionalspedconditionsthree"] = SerializeConditionNames(three.Conditions),
+                ["fvsd_additionalspedobservationsthree"] = three.Observations
+            },
+            eTag,
+            cancellationToken);
+        return await LoadStudentPlanCodingAsync(studentId, planId, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<StudentPlanDocument>> GetStudentPlanDocumentsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        await ValidateStudentPlanAccessAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            planId,
+            cancellationToken);
+        using var document = await GetJsonAsync(BuildStudentPlanDocumentsQuery(planId), cancellationToken);
+        return ParseStudentPlanDocuments(document.RootElement);
+    }
+
+    public async Task<StudentPlanDocumentContent> GetStudentPlanDocumentContentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid documentId,
+        CancellationToken cancellationToken = default)
+    {
+        await ValidateStudentPlanAccessAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            planId,
+            cancellationToken);
+        using var document = await GetJsonAsync(
+            BuildStudentPlanDocumentContentQuery(planId, documentId),
+            cancellationToken);
+        var rows = document.RootElement.GetProperty("value");
+        if (rows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected compiled document is not available for this plan.");
+        }
+
+        var row = rows[0];
+        var mimeType = ReadString(row, "mimetype") ?? "application/octet-stream";
+        var fileName = ReadString(row, "filename") ?? "compiled-iep.pdf";
+        var encodedContent = ReadString(row, "documentbody");
+        if (string.IsNullOrWhiteSpace(encodedContent))
+        {
+            throw new InvalidOperationException("The selected compiled document does not contain a file.");
+        }
+
+        try
+        {
+            return new StudentPlanDocumentContent(
+                ReadGuid(row, "annotationid") ?? documentId,
+                fileName,
+                mimeType,
+                Convert.FromBase64String(encodedContent));
+        }
+        catch (FormatException exception)
+        {
+            throw new InvalidOperationException(
+                "The selected compiled document contains an invalid file payload.",
+                exception);
+        }
+    }
+
+    public async Task<StudentPlanModulesResponse> UpdateStudentPlanAttendanceAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        StudentPlanAttendanceCommand command,
+        string eTag,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateAttendancePercentage(command.FallAttendance, "Fall");
+        ValidateAttendancePercentage(command.WinterAttendance, "Winter");
+        ValidateAttendancePercentage(command.SpringAttendance, "Spring");
+        if (string.IsNullOrWhiteSpace(eTag))
+        {
+            throw new ArgumentException("Reload the plan before updating attendance.");
+        }
+
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId),
+            cancellationToken);
+        if (planDocument.RootElement.GetProperty("value").GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_studentipps({planId:D})",
+            new Dictionary<string, object?>
+            {
+                ["fvsd_fallattendance"] = command.FallAttendance,
+                ["fvsd_winterattendance"] = command.WinterAttendance,
+                ["fvsd_springattendance"] = command.SpringAttendance
+            },
+            eTag,
+            cancellationToken);
+        return await LoadStudentPlanModulesAsync(subject, planId, cancellationToken);
+    }
+
+    public async Task<StudentPlanModulesResponse> UpdateStudentPlanSignatureDetailsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        StudentPlanSignatureDetailsCommand command,
+        string eTag,
+        CancellationToken cancellationToken = default)
+    {
+        var parentOrGuardianName = NormalizeOptionalText(command.ParentOrGuardianName);
+        var parentOrGuardianEmail = NormalizeOptionalText(command.ParentOrGuardianEmail);
+        ValidateParentOrGuardianEmail(parentOrGuardianEmail);
+        if (string.IsNullOrWhiteSpace(eTag))
+        {
+            throw new ArgumentException("Reload the plan before updating signature details.");
+        }
+
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId),
+            cancellationToken);
+        if (planDocument.RootElement.GetProperty("value").GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_studentipps({planId:D})",
+            new Dictionary<string, object?>
+            {
+                ["fvsd_parentorguardianname"] = parentOrGuardianName,
+                ["fvsd_parentorguardianemail"] = parentOrGuardianEmail
+            },
+            eTag,
+            cancellationToken);
+        return await LoadStudentPlanModulesAsync(subject, planId, cancellationToken);
     }
 
     public async Task<StudentPlanModulesResponse> AddStudentPlanModuleAsync(
@@ -684,16 +1132,51 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         "fvsd_studentipps?" +
         "$select=fvsd_studentippid,fvsd_name,fvsd_schoolyear,fvsd_gradeatipp," +
         "fvsd_schoolatipp,fvsd_teacheratipp,fvsd_coursename,fvsd_curriculum,modifiedon&" +
-        $"$filter={Uri.EscapeDataString($"statecode eq 0 and _fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&" +
+        $"$filter={Uri.EscapeDataString($"_fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&" +
         "$orderby=modifiedon desc&$top=2";
 
     private static string BuildStudentPlanValidationQuery(Guid studentId, Guid planId) =>
         "fvsd_studentipps?" +
         "$select=fvsd_studentippid,fvsd_ippsections,fvsd_schoolyear,fvsd_gradeatipp," +
         "fvsd_schoolatipp,fvsd_coursename,fvsd_teacheratipp,fvsd_principalatipp," +
-        "fvsd_parentorguardianname,fvsd_fallattendance,fvsd_winterattendance," +
+        "fvsd_parentorguardianname,fvsd_parentorguardianemail,fvsd_fallattendance,fvsd_winterattendance," +
         "fvsd_springattendance,modifiedon&" +
         $"$filter={Uri.EscapeDataString($"statecode eq 0 and fvsd_studentippid eq {planId:D} and _fvsd_student_value eq {studentId:D}")}&$top=1";
+
+    internal static string BuildStudentPlanCodingQuery(Guid studentId) =>
+        "fvsd_studentdetails?" +
+        "$select=fvsd_studentdetailid,fvsd_spedseriesname,fvsd_spedconditions," +
+        "_fvsd_additionalspedcategoryone_value,fvsd_additionalspedconditionsone,fvsd_additionalspedobservationsone," +
+        "_fvsd_additionalspedcategorytwo_value,fvsd_additionalspedconditionstwo,fvsd_additionalspedobservationstwo," +
+        "_fvsd_additionalspedcategorythree_value,fvsd_additionalspedconditionsthree,fvsd_additionalspedobservationsthree&" +
+        $"$filter={Uri.EscapeDataString($"statecode eq 0 and fvsd_studentdetailid eq {studentId:D}")}&" +
+        "$expand=fvsd_additionalspedcategoryone($select=fvsd_powerschoolcodemappingid,fvsd_name)," +
+        "fvsd_additionalspedcategorytwo($select=fvsd_powerschoolcodemappingid,fvsd_name)," +
+        "fvsd_additionalspedcategorythree($select=fvsd_powerschoolcodemappingid,fvsd_name)&$top=1";
+
+    internal static string BuildSpedCategoryOptionsQuery() =>
+        "fvsd_powerschoolcodemappings?" +
+        "$select=fvsd_powerschoolcodemappingid,fvsd_code,fvsd_name&" +
+        $"$filter={Uri.EscapeDataString("statecode eq 0 and fvsd_mappingtype eq 1")}&" +
+        "$orderby=fvsd_code asc,fvsd_name asc&$top=5000";
+
+    internal static string BuildSpedConditionOptionsQuery() =>
+        "fvsd_spedconditions?" +
+        "$select=fvsd_spedconditionid,fvsd_name,fvsd_conditiondetails,_fvsd_spedcategory_value&" +
+        "$filter=statecode eq 0&" +
+        "$expand=fvsd_spedcategory($select=fvsd_powerschoolcodemappingid,fvsd_name)&" +
+        "$orderby=fvsd_name asc&$top=5000";
+
+    internal static string BuildStudentPlanDocumentsQuery(Guid planId) =>
+        "annotations?" +
+        "$select=annotationid,subject,notetext,filename,mimetype,filesize,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"isdocument eq true and _objectid_value eq {planId:D}")}&" +
+        "$orderby=modifiedon desc&$top=5000";
+
+    internal static string BuildStudentPlanDocumentContentQuery(Guid planId, Guid documentId) =>
+        "annotations?" +
+        "$select=annotationid,filename,mimetype,documentbody&" +
+        $"$filter={Uri.EscapeDataString($"isdocument eq true and annotationid eq {documentId:D} and _objectid_value eq {planId:D}")}&$top=1";
 
     private static string BuildIppSectionsQuery() =>
         "fvsd_ippsections?" +
@@ -737,11 +1220,43 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         "fvsd_studentinterventions?" +
         "$select=fvsd_studentinterventionid,fvsd_curriculum,fvsd_schoolatintervention," +
         "fvsd_teacheratintervention,fvsd_interventionist,fvsd_gradeatintervention," +
+        "fvsd_courseno,fvsd_coursename,_fvsd_interventiontype_value," +
         "fvsd_datestarted,fvsd_datewithdrawn,fvsd_withdrawnreason," +
         "fvsd_additionalinformation,modifiedon&" +
         $"$filter={Uri.EscapeDataString($"_fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&" +
         "$expand=fvsd_interventiontype($select=fvsd_name)&" +
         "$orderby=fvsd_datestarted desc,modifiedon desc&$top=5000";
+
+    internal static string BuildInterventionReferencesQuery() =>
+        "fvsd_interventionreferences?" +
+        "$select=fvsd_interventionreferenceid,fvsd_name,fvsd_alias&" +
+        "$filter=statecode eq 0&" +
+        "$expand=fvsd_curriculum($select=fvsd_name)&" +
+        "$orderby=fvsd_name asc&$top=5000";
+
+    internal static string BuildInterventionistsQuery(Guid schoolId) =>
+        "fvsd_userroles?" +
+        "$select=fvsd_userroleid,fvsd_role,_fvsd_systemuser_value&" +
+        $"$filter={Uri.EscapeDataString($"statecode eq 0 and (_fvsd_assignmentone_value eq {schoolId:D} or _fvsd_assignmenttwo_value eq {schoolId:D})")}&" +
+        "$expand=fvsd_systemuser($select=fullname)&$top=5000";
+
+    internal static string BuildStudentInterventionSectionsQuery(Guid studentId, Guid schoolId) =>
+        "fvsd_studentsections?" +
+        "$select=fvsd_studentsectionid,_fvsd_teachersection_value&" +
+        $"$filter={Uri.EscapeDataString($"statecode eq 0 and _fvsd_student_value eq {studentId:D} and _fvsd_school_value eq {schoolId:D}")}&" +
+        "$expand=fvsd_teachersection(" +
+        "$select=fvsd_teachersectionid,fvsd_coursename,fvsd_courseno,fvsd_sectiongrouping;" +
+        "$expand=fvsd_teacher($select=fvsd_name))&$top=5000";
+
+    internal static string BuildStudentPlanInterventionValidationQuery(
+        Guid studentId,
+        string schoolYear,
+        Guid interventionId) =>
+        "fvsd_studentinterventions?" +
+        "$select=fvsd_studentinterventionid,fvsd_schoolyear,fvsd_interventionist," +
+        "fvsd_curriculum,fvsd_courseno,fvsd_coursename,fvsd_teacheratintervention," +
+        "_fvsd_interventiontype_value&" +
+        $"$filter={Uri.EscapeDataString($"fvsd_studentinterventionid eq {interventionId:D} and _fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&$top=1";
 
     internal static string BuildTosrecReferencesQuery(int grade, int period) =>
         "fvsd_tosrecreferences?" +
@@ -1061,20 +1576,143 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
                     : null;
             interventions.Add(new StudentPlanIntervention(
                 id.Value,
+                ReadGuid(row, "_fvsd_interventiontype_value"),
                 typeName ?? "Intervention type not recorded",
                 ReadString(row, "fvsd_interventionist"),
                 ReadString(row, "fvsd_teacheratintervention"),
                 ReadString(row, "fvsd_schoolatintervention"),
                 ReadFormattedString(row, "fvsd_gradeatintervention"),
                 ReadString(row, "fvsd_curriculum"),
+                ReadString(row, "fvsd_courseno"),
+                ReadString(row, "fvsd_coursename"),
                 ReadDateTimeOffset(row, "fvsd_datestarted"),
                 ReadDateTimeOffset(row, "fvsd_datewithdrawn"),
                 ReadFormattedString(row, "fvsd_withdrawnreason"),
-                ReadString(row, "fvsd_additionalinformation")));
+                ReadString(row, "fvsd_additionalinformation"),
+                ReadString(row, "@odata.etag")));
         }
 
         return interventions
             .OrderByDescending(intervention => intervention.DateStarted)
+            .ToArray();
+    }
+
+    internal static IReadOnlyList<StudentPlanInterventionTypeOption> ParseStudentPlanInterventionTypes(
+        JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var id = ReadGuid(row, "fvsd_interventionreferenceid");
+                var name = ReadString(row, "fvsd_name");
+                if (id is null || string.IsNullOrWhiteSpace(name))
+                {
+                    return null;
+                }
+
+                return new StudentPlanInterventionTypeOption(
+                    id.Value,
+                    name,
+                    ReadString(row, "fvsd_alias") ?? name,
+                    ReadString(row, "fvsd_curriculum", "fvsd_name"));
+            })
+            .Where(option => option is not null)
+            .Cast<StudentPlanInterventionTypeOption>()
+            .OrderBy(option => option.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    internal static IReadOnlyList<StudentPlanInterventionistOption> ParseStudentPlanInterventionists(
+        JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var name = ReadString(row, "fvsd_systemuser", "fullname");
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    return null;
+                }
+
+                var role = ReadFormattedString(row, "fvsd_role") ?? "Role not recorded";
+                return new StudentPlanInterventionistOption(name, role, $"{name} - {role}");
+            })
+            .Where(option => option is not null)
+            .Cast<StudentPlanInterventionistOption>()
+            .DistinctBy(option => option.Display, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(option => option.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(option => option.Role, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    internal static IReadOnlyList<StudentPlanInterventionSectionOption> ParseStudentInterventionSections(
+        JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                if (!row.TryGetProperty("fvsd_teachersection", out var section)
+                    || section.ValueKind != JsonValueKind.Object)
+                {
+                    return null;
+                }
+
+                var sectionId = ReadGuid(section, "fvsd_teachersectionid");
+                var sectionGroup = ReadFormattedString(section, "fvsd_sectiongrouping")
+                    ?? GetSectionGroupLabel(ReadInteger(section, "fvsd_sectiongrouping"));
+                var curriculum = sectionGroup switch
+                {
+                    "Literacy" => "English Language Arts and Literature",
+                    "Numeracy" => "Mathematics",
+                    _ => null
+                };
+                if (sectionId is null || curriculum is null || sectionGroup is null)
+                {
+                    return null;
+                }
+
+                return new StudentPlanInterventionSectionOption(
+                    sectionId.Value,
+                    curriculum,
+                    sectionGroup,
+                    ReadString(section, "fvsd_courseno") ?? string.Empty,
+                    ReadString(section, "fvsd_coursename") ?? "Course name not recorded",
+                    ReadString(section, "fvsd_teacher", "fvsd_name") ?? "Teacher not recorded");
+            })
+            .Where(option => option is not null)
+            .Cast<StudentPlanInterventionSectionOption>()
+            .DistinctBy(option => option.TeacherSectionId)
+            .OrderBy(option => option.Curriculum, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(option => option.CourseName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(option => option.TeacherName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    internal static IReadOnlyList<StudentPlanDocument> ParseStudentPlanDocuments(JsonElement root)
+    {
+        var documents = new List<StudentPlanDocument>();
+        foreach (var row in root.GetProperty("value").EnumerateArray())
+        {
+            var id = ReadGuid(row, "annotationid");
+            var fileName = ReadString(row, "filename");
+            var mimeType = ReadString(row, "mimetype") ?? "application/octet-stream";
+            if (id is null || string.IsNullOrWhiteSpace(fileName))
+            {
+                continue;
+            }
+
+            if (!string.Equals(mimeType, "application/pdf", StringComparison.OrdinalIgnoreCase)
+                && !fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            documents.Add(new StudentPlanDocument(
+                id.Value,
+                ReadString(row, "subject") ?? fileName,
+                ReadString(row, "notetext"),
+                fileName,
+                mimeType,
+                ReadInteger(row, "filesize"),
+                ReadDateTimeOffset(row, "modifiedon")));
+        }
+
+        return documents
+            .OrderByDescending(document => document.ModifiedOn)
             .ToArray();
     }
 
@@ -1134,6 +1772,209 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             sectionGroup);
     }
 
+    private async Task<string> GetPlanSchoolYearAsync(
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken)
+    {
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(studentId, planId),
+            cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        return ReadString(planRows[0], "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+    }
+
+    private async Task<StudentPlanInterventionsResponse> LoadStudentPlanInterventionsAsync(
+        Guid planId,
+        Guid studentId,
+        string schoolYear,
+        CancellationToken cancellationToken)
+    {
+        using var interventionsDocument = await GetJsonAsync(
+            BuildPlanInterventionsQuery(studentId, schoolYear),
+            cancellationToken);
+        return new StudentPlanInterventionsResponse(
+            planId,
+            schoolYear,
+            ParseStudentPlanInterventions(interventionsDocument.RootElement));
+    }
+
+    private async Task<StudentPlanInterventionOptionsResponse> LoadStudentPlanInterventionOptionsAsync(
+        PlanSubject subject,
+        CancellationToken cancellationToken)
+    {
+        var referencesTask = GetJsonAsync(BuildInterventionReferencesQuery(), cancellationToken);
+        var interventionistsTask = GetJsonAsync(BuildInterventionistsQuery(subject.SchoolId), cancellationToken);
+        Task<JsonDocument>? sectionsTask = string.Equals(
+            subject.SectionGroup,
+            "Homeroom",
+            StringComparison.OrdinalIgnoreCase)
+                ? GetJsonAsync(
+                    BuildStudentInterventionSectionsQuery(subject.StudentId, subject.SchoolId),
+                    cancellationToken)
+                : null;
+
+        await Task.WhenAll(sectionsTask is null
+            ? [referencesTask, interventionistsTask]
+            : [referencesTask, interventionistsTask, sectionsTask]);
+        using var referencesDocument = await referencesTask;
+        using var interventionistsDocument = await interventionistsTask;
+        using var sectionsDocument = sectionsTask is null ? null : await sectionsTask;
+        var sections = sectionsDocument is null
+            ? Array.Empty<StudentPlanInterventionSectionOption>()
+            : ParseStudentInterventionSections(sectionsDocument.RootElement);
+        var curricula = sections
+            .Select(section => section.Curriculum)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(curriculum => curriculum, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return new StudentPlanInterventionOptionsResponse(
+            subject.SectionGroup,
+            string.Equals(subject.SectionGroup, "Homeroom", StringComparison.OrdinalIgnoreCase),
+            curricula,
+            sections,
+            ParseStudentPlanInterventionTypes(referencesDocument.RootElement),
+            ParseStudentPlanInterventionists(interventionistsDocument.RootElement));
+    }
+
+    private static InterventionSource ResolveInterventionSource(
+        PlanSubject subject,
+        StudentPlanInterventionOptionsResponse options,
+        StudentPlanInterventionTypeOption type,
+        Guid? sourceTeacherSectionId)
+    {
+        if (!options.RequiresSourceSection)
+        {
+            if (string.IsNullOrWhiteSpace(type.Curriculum))
+            {
+                throw new ArgumentException(
+                    "The selected Intervention Type does not have a configured Curriculum.");
+            }
+
+            return new InterventionSource(
+                type.Curriculum,
+                subject.CourseNumber,
+                subject.CourseName,
+                subject.TeacherName);
+        }
+
+        if (sourceTeacherSectionId is null)
+        {
+            throw new ArgumentException("Select the student's Curriculum and Student Section.");
+        }
+
+        var selectedSection = options.StudentSections.FirstOrDefault(
+            section => section.TeacherSectionId == sourceTeacherSectionId.Value)
+            ?? throw new ArgumentException(
+                "Select a valid Student Section for this student and school.");
+        if (!string.Equals(
+            type.Curriculum,
+            selectedSection.Curriculum,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                "The Intervention Type must match the selected Student Section curriculum.");
+        }
+
+        return new InterventionSource(
+            selectedSection.Curriculum,
+            selectedSection.CourseNumber,
+            selectedSection.CourseName,
+            selectedSection.TeacherName);
+    }
+
+    private static IReadOnlyDictionary<string, object?> BuildStudentPlanInterventionPayload(
+        PlanSubject subject,
+        string schoolYear,
+        StudentPlanInterventionTypeOption type,
+        InterventionSource source,
+        StudentPlanInterventionCommand command,
+        string? recordName,
+        bool includeContext)
+    {
+        var payload = new Dictionary<string, object?>
+        {
+            ["fvsd_datestarted"] = command.DateStarted.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            ["fvsd_interventionist"] = NormalizeOptionalText(command.Interventionist),
+            ["fvsd_datewithdrawn"] = command.DateWithdrawn?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            ["fvsd_withdrawnreason"] = command.WithdrawnReason,
+            ["fvsd_additionalinformation"] = NormalizeOptionalText(command.AdditionalInformation)
+        };
+        if (!includeContext)
+        {
+            return payload;
+        }
+
+        payload["fvsd_name"] = recordName;
+        payload["fvsd_student@odata.bind"] = $"/fvsd_studentdetails({subject.StudentId:D})";
+        payload["fvsd_schoolatintervention"] = subject.SchoolName;
+        payload["fvsd_gradeatintervention"] = subject.StudentGradeValue;
+        payload["fvsd_schoolyear"] = schoolYear;
+        payload["fvsd_curriculum"] = source.Curriculum;
+        payload["fvsd_courseno"] = source.CourseNumber;
+        payload["fvsd_coursename"] = source.CourseName;
+        payload["fvsd_teacheratintervention"] = source.TeacherName;
+        payload["fvsd_interventiontype@odata.bind"] =
+            $"/fvsd_interventionreferences({type.Id:D})";
+        return payload;
+    }
+
+    internal static void ValidateInterventionCommand(StudentPlanInterventionCommand command)
+    {
+        if (command.InterventionTypeId == Guid.Empty)
+        {
+            throw new ArgumentException("Select an Intervention Type.");
+        }
+
+        if (command.DateWithdrawn is not null && command.DateWithdrawn < command.DateStarted)
+        {
+            throw new ArgumentException("Date Withdrawn cannot be before Date Started.");
+        }
+
+        if (command.DateWithdrawn is not null && command.WithdrawnReason is not (1 or 2))
+        {
+            throw new ArgumentException("Select Completed or Incomplete when a Date Withdrawn is entered.");
+        }
+
+        if (command.DateWithdrawn is null && command.WithdrawnReason is not null)
+        {
+            throw new ArgumentException("Enter a Date Withdrawn before selecting a Withdrawn Reason.");
+        }
+    }
+
+    private static void ValidateInterventionist(
+        string? interventionist,
+        IReadOnlyList<StudentPlanInterventionistOption> options,
+        string? existingInterventionist)
+    {
+        var normalized = NormalizeOptionalText(interventionist);
+        if (normalized is null
+            || string.Equals(normalized, existingInterventionist, StringComparison.OrdinalIgnoreCase)
+            || options.Any(option => string.Equals(option.Name, normalized, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        throw new ArgumentException("Select an Interventionist assigned to this school.");
+    }
+
+    private static void EnsureCurrentPlan(string schoolYear, string currentSchoolYear)
+    {
+        if (!string.Equals(schoolYear, currentSchoolYear, StringComparison.Ordinal))
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "Only the current school-year IEP / IPP interventions can be changed.");
+        }
+    }
+
     private async Task<StudentPlanModulesResponse> LoadStudentPlanModulesAsync(
         PlanSubject subject,
         Guid planId,
@@ -1184,6 +2025,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             ReadString(plan, "fvsd_teacheratipp"),
             ReadString(plan, "fvsd_principalatipp"),
             ReadString(plan, "fvsd_parentorguardianname"),
+            ReadString(plan, "fvsd_parentorguardianemail"),
             ReadDecimal(plan, "fvsd_fallattendance"),
             ReadDecimal(plan, "fvsd_winterattendance"),
             ReadDecimal(plan, "fvsd_springattendance"),
@@ -1216,6 +2058,213 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             new Dictionary<string, object?> { ["fvsd_ippsections"] = selectedText },
             eTag,
             cancellationToken);
+    }
+
+    private async Task<StudentPlanCodingResponse> LoadStudentPlanCodingAsync(
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken)
+    {
+        var documents = await Task.WhenAll(
+            GetJsonAsync(BuildStudentPlanCodingQuery(studentId), cancellationToken),
+            GetJsonAsync(BuildSpedCategoryOptionsQuery(), cancellationToken),
+            GetJsonAsync(BuildSpedConditionOptionsQuery(), cancellationToken));
+        using var studentDocument = documents[0];
+        using var categoriesDocument = documents[1];
+        using var conditionsDocument = documents[2];
+        var studentRows = studentDocument.RootElement.GetProperty("value");
+        if (studentRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException("The selected student details are not available.");
+        }
+
+        var student = studentRows[0];
+        var categories = ParseSpedCategoryOptions(categoriesDocument.RootElement);
+        var conditionOptions = ParseSpedConditionOptions(conditionsDocument.RootElement);
+        var primaryCategoryName = ReadString(student, "fvsd_spedseriesname");
+        var primaryCategoryId = categories.FirstOrDefault(category =>
+            string.Equals(category.Name, primaryCategoryName, StringComparison.OrdinalIgnoreCase))?.Id;
+        var primary = new StudentPlanCodingGroup(
+            "Primary",
+            "Primary SPED",
+            primaryCategoryId,
+            primaryCategoryName,
+            ParseConditionNames(ReadString(student, "fvsd_spedconditions")),
+            null);
+        var additionalGroups = new[]
+        {
+            CreateCodingGroup(
+                student,
+                "One",
+                "First Additional",
+                "fvsd_additionalspedcategoryone",
+                "fvsd_additionalspedconditionsone",
+                "fvsd_additionalspedobservationsone"),
+            CreateCodingGroup(
+                student,
+                "Two",
+                "Second Additional",
+                "fvsd_additionalspedcategorytwo",
+                "fvsd_additionalspedconditionstwo",
+                "fvsd_additionalspedobservationstwo"),
+            CreateCodingGroup(
+                student,
+                "Three",
+                "Third Additional",
+                "fvsd_additionalspedcategorythree",
+                "fvsd_additionalspedconditionsthree",
+                "fvsd_additionalspedobservationsthree")
+        };
+        var eTag = ReadString(student, "@odata.etag")
+            ?? throw new InvalidOperationException("Dataverse did not return a concurrency token for the student details record.");
+        return new StudentPlanCodingResponse(
+            planId,
+            eTag,
+            primary,
+            additionalGroups,
+            categories,
+            conditionOptions);
+    }
+
+    private static IReadOnlyList<StudentPlanCodingCategoryOption> ParseSpedCategoryOptions(JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row => new StudentPlanCodingCategoryOption(
+                ReadGuid(row, "fvsd_powerschoolcodemappingid") ?? Guid.Empty,
+                ReadString(row, "fvsd_code") ?? string.Empty,
+                ReadString(row, "fvsd_name") ?? string.Empty))
+            .Where(category => category.Id != Guid.Empty && !string.IsNullOrWhiteSpace(category.Name))
+            .OrderBy(category => category.Code, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(category => category.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    private static IReadOnlyList<StudentPlanCodingConditionOption> ParseSpedConditionOptions(JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row => new StudentPlanCodingConditionOption(
+                ReadGuid(row, "fvsd_spedconditionid") ?? Guid.Empty,
+                ReadGuid(row, "_fvsd_spedcategory_value")
+                    ?? ReadGuid(row, "fvsd_spedcategory", "fvsd_powerschoolcodemappingid"),
+                ReadString(row, "fvsd_spedcategory", "fvsd_name")
+                    ?? ReadFormattedString(row, "_fvsd_spedcategory_value")
+                    ?? string.Empty,
+                ReadString(row, "fvsd_name") ?? string.Empty,
+                ReadString(row, "fvsd_conditiondetails")))
+            .Where(condition => condition.Id != Guid.Empty && !string.IsNullOrWhiteSpace(condition.Name))
+            .OrderBy(condition => condition.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    private static StudentPlanCodingGroup CreateCodingGroup(
+        JsonElement student,
+        string key,
+        string title,
+        string categoryProperty,
+        string conditionsProperty,
+        string observationsProperty) =>
+        new(
+            key,
+            title,
+            ReadGuid(student, categoryProperty, "fvsd_powerschoolcodemappingid")
+                ?? ReadGuid(student, $"_{categoryProperty}_value"),
+            ReadString(student, categoryProperty, "fvsd_name")
+                ?? ReadFormattedString(student, $"_{categoryProperty}_value"),
+            ParseConditionNames(ReadString(student, conditionsProperty)),
+            ReadString(student, observationsProperty));
+
+    private static NormalizedCodingGroup NormalizeCodingGroupCommand(StudentPlanCodingGroupCommand? command) =>
+        command?.CategoryId is Guid categoryId
+            ? new NormalizedCodingGroup(
+                categoryId,
+                NormalizeConditionNames(command.Conditions),
+                NormalizeOptionalText(command.Observations))
+            : new NormalizedCodingGroup(null, [], null);
+
+    private static NormalizedCodingGroup ValidateCodingGroup(
+        NormalizedCodingGroup requested,
+        StudentPlanCodingGroup current,
+        StudentPlanCodingResponse response)
+    {
+        if (requested.CategoryId is not Guid categoryId)
+        {
+            return requested;
+        }
+
+        var category = response.Categories.FirstOrDefault(item => item.Id == categoryId)
+            ?? throw new ArgumentException("Select a valid additional SPED category.");
+        var retainedNames = current.CategoryId == categoryId ? current.Conditions : [];
+        return requested with
+        {
+            Conditions = ValidateCodingConditions(
+                requested.Conditions,
+                category.Id,
+                category.Name,
+                retainedNames,
+                response.ConditionOptions)
+        };
+    }
+
+    private static IReadOnlyList<string> ValidateCodingConditions(
+        IReadOnlyList<string> requested,
+        Guid? categoryId,
+        string? categoryName,
+        IReadOnlyList<string> retainedNames,
+        IReadOnlyList<StudentPlanCodingConditionOption> options)
+    {
+        var available = options
+            .Where(option => categoryId is Guid id
+                ? option.CategoryId == id
+                : string.Equals(option.CategoryName, categoryName, StringComparison.OrdinalIgnoreCase))
+            .Select(option => option.Name)
+            .Concat(retainedNames)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(name => name, name => name, StringComparer.OrdinalIgnoreCase);
+        var invalid = requested.FirstOrDefault(name => !available.ContainsKey(name));
+        if (invalid is not null)
+        {
+            throw new ArgumentException($"The condition '{invalid}' is not available for the selected SPED category.");
+        }
+
+        return requested.Select(name => available[name]).ToArray();
+    }
+
+    internal static IReadOnlyList<string> ParseConditionNames(string? value) =>
+        NormalizeConditionNames(value?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
+    private static IReadOnlyList<string> NormalizeConditionNames(IEnumerable<string>? values) =>
+        (values ?? [])
+            .Select(value => value.Trim())
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    private static string? SerializeConditionNames(IReadOnlyList<string> values) =>
+        values.Count == 0 ? null : string.Join(", ", values);
+
+    private static string? CodingCategoryBind(Guid? categoryId) =>
+        categoryId is Guid id ? $"/fvsd_powerschoolcodemappings({id:D})" : null;
+
+    private async Task ValidateStudentPlanAccessAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId),
+            cancellationToken);
+        if (planDocument.RootElement.GetProperty("value").GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
     }
 
     private async Task<PlanSchoolContext> GetPlanSchoolContextAsync(
@@ -1760,6 +2809,28 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         }
     }
 
+    internal static void ValidateAttendancePercentage(int? value, string period)
+    {
+        if (value is < 0 or > 100)
+        {
+            throw new ArgumentException($"{period} Attendance must be a whole number from 0 to 100.");
+        }
+    }
+
+    internal static void ValidateParentOrGuardianEmail(string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value) && !ParentOrGuardianEmailRegex().IsMatch(value))
+        {
+            throw new ArgumentException("Enter a valid Parent or Guardian Email address.");
+        }
+    }
+
+    private static string? NormalizeOptionalText(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.CultureInvariant)]
+    private static partial Regex ParentOrGuardianEmailRegex();
+
     internal static int? GetAssessmentPeriod(DateOnly assessmentDate)
     {
         if (assessmentDate.Month is >= 9 and <= 12)
@@ -1875,6 +2946,12 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
     private static Guid? ReadGuid(JsonElement row, string propertyName) =>
         Guid.TryParse(ReadString(row, propertyName), out var value) ? value : null;
 
+    private static Guid? ReadGuid(JsonElement row, string objectName, string propertyName) =>
+        row.TryGetProperty(objectName, out var nested)
+        && nested.ValueKind == JsonValueKind.Object
+            ? ReadGuid(nested, propertyName)
+            : null;
+
     private static int? ReadInteger(JsonElement row, string propertyName) =>
         row.TryGetProperty(propertyName, out var property)
         && property.ValueKind == JsonValueKind.Number
@@ -1933,9 +3010,20 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         string TeacherName,
         string SectionGroup);
 
+    private sealed record InterventionSource(
+        string Curriculum,
+        string CourseNumber,
+        string CourseName,
+        string TeacherName);
+
     private sealed record PlanSchoolContext(
         string Alias,
         string? PrincipalName);
+
+    private sealed record NormalizedCodingGroup(
+        Guid? CategoryId,
+        IReadOnlyList<string> Conditions,
+        string? Observations);
 
     private sealed record IppSectionDefinition(
         Guid Id,

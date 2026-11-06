@@ -878,7 +878,6 @@ function StudentPlanPanel({ student, studentDisplayMode, currentSchoolYear, teac
   const visiblePlans = plans.filter((plan) => yearView === 'current'
     ? sameSchoolYear(plan.schoolYear, currentSchoolYear)
     : !sameSchoolYear(plan.schoolYear, currentSchoolYear))
-  const currentPlan = currentPlans[0]
 
   const openPlan = (plan?: StudentPlanHistoryRecord) => {
     onOpenIpp?.({
@@ -902,16 +901,18 @@ function StudentPlanPanel({ student, studentDisplayMode, currentSchoolYear, teac
           <h2 id="student-plan-heading">Student IEP / IPP History</h2>
           <p>One annual plan per student and school year. Interventions are managed within the Intervention Focus module.</p>
         </div>
-        <div className="student-assessment-actions">
-          <button
-            type="button"
-            className="assessment-add-button"
-            disabled={!onOpenIpp || loadingPlans || Boolean(planError) || currentPlans.length > 1}
-            onClick={() => openPlan(currentPlan)}
-          >
-            <GraduationCap size={14} /> {currentPlan ? 'Open current IEP / IPP' : 'Add IEP / IPP'}
-          </button>
-        </div>
+        {!loadingPlans && !planError && currentPlans.length === 0 ? (
+          <div className="student-assessment-actions">
+            <button
+              type="button"
+              className="assessment-add-button"
+              disabled={!onOpenIpp}
+              onClick={() => openPlan()}
+            >
+              <GraduationCap size={14} /> Add IEP / IPP
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="assessment-history-toolbar">

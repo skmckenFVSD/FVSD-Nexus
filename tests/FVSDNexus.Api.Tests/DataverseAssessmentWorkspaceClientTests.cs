@@ -5,6 +5,51 @@ namespace FVSDNexus.Api.Tests;
 
 public sealed class DataverseAssessmentWorkspaceClientTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(67)]
+    [InlineData(100)]
+    public void Attendance_percentage_accepts_blank_and_whole_values_in_range(int? value)
+    {
+        DataverseAssessmentWorkspaceClient.ValidateAttendancePercentage(value, "Fall");
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(101)]
+    public void Attendance_percentage_rejects_values_outside_percentage_range(int value)
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            DataverseAssessmentWorkspaceClient.ValidateAttendancePercentage(value, "Winter"));
+
+        Assert.Equal("Winter Attendance must be a whole number from 0 to 100.", exception.Message);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("parent@example.ca")]
+    [InlineData("parent.guardian+iep@school.example.org")]
+    public void Parent_or_guardian_email_accepts_blank_and_valid_addresses(string? value)
+    {
+        DataverseAssessmentWorkspaceClient.ValidateParentOrGuardianEmail(value);
+    }
+
+    [Theory]
+    [InlineData("parent")]
+    [InlineData("parent@")]
+    [InlineData("@example.ca")]
+    [InlineData("parent@example")]
+    [InlineData("parent @example.ca")]
+    public void Parent_or_guardian_email_rejects_invalid_addresses(string value)
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            DataverseAssessmentWorkspaceClient.ValidateParentOrGuardianEmail(value));
+
+        Assert.Equal("Enter a valid Parent or Guardian Email address.", exception.Message);
+    }
+
     [Fact]
     public void Teacher_section_query_scopes_school_and_signed_in_teacher()
     {
@@ -314,6 +359,107 @@ public sealed class DataverseAssessmentWorkspaceClientTests
     }
 
     [Fact]
+    public void Student_plan_document_queries_are_plan_and_document_scoped()
+    {
+        var planId = Guid.Parse("80000000-0000-0000-0000-000000000001");
+        var documentId = Guid.Parse("81000000-0000-0000-0000-000000000001");
+
+        var gallery = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanDocumentsQuery(planId));
+        var content = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanDocumentContentQuery(planId, documentId));
+
+        Assert.Contains("annotations", gallery, StringComparison.Ordinal);
+        Assert.Contains($"_objectid_value eq {planId:D}", gallery, StringComparison.Ordinal);
+        Assert.Contains("isdocument eq true", gallery, StringComparison.Ordinal);
+        Assert.DoesNotContain("documentbody", gallery, StringComparison.Ordinal);
+        Assert.Contains("$orderby=modifiedon desc", gallery, StringComparison.Ordinal);
+        Assert.Contains($"annotationid eq {documentId:D}", content, StringComparison.Ordinal);
+        Assert.Contains($"_objectid_value eq {planId:D}", content, StringComparison.Ordinal);
+        Assert.Contains("documentbody", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Student_plan_coding_queries_use_the_existing_student_and_governed_reference_tables()
+    {
+        var studentId = Guid.Parse("50000000-0000-0000-0000-000000000001");
+
+        var student = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanCodingQuery(studentId));
+        var categories = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildSpedCategoryOptionsQuery());
+        var conditions = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildSpedConditionOptionsQuery());
+
+        Assert.Contains("fvsd_studentdetails", student, StringComparison.Ordinal);
+        Assert.Contains($"fvsd_studentdetailid eq {studentId:D}", student, StringComparison.Ordinal);
+        Assert.Contains("fvsd_spedseriesname", student, StringComparison.Ordinal);
+        Assert.Contains("fvsd_additionalspedcategoryone", student, StringComparison.Ordinal);
+        Assert.Contains("fvsd_additionalspedobservationsthree", student, StringComparison.Ordinal);
+        Assert.Contains("fvsd_powerschoolcodemappings", categories, StringComparison.Ordinal);
+        Assert.Contains("fvsd_mappingtype eq 1", categories, StringComparison.Ordinal);
+        Assert.Contains("fvsd_spedconditions", conditions, StringComparison.Ordinal);
+        Assert.Contains("fvsd_conditiondetails", conditions, StringComparison.Ordinal);
+        Assert.Contains("$expand=fvsd_spedcategory", conditions, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Saved_sped_condition_names_are_trimmed_and_deduplicated()
+    {
+        var conditions = DataverseAssessmentWorkspaceClient.ParseConditionNames(
+            " Dyslexia, ADHD, dyslexia, ,  Visual impairment ");
+
+        Assert.Equal(3, conditions.Count);
+        Assert.Equal("Dyslexia", conditions[0]);
+        Assert.Equal("ADHD", conditions[1]);
+        Assert.Equal("Visual impairment", conditions[2]);
+    }
+
+    [Fact]
+    public void Student_plan_documents_include_only_pdf_notes_and_sort_newest_first()
+    {
+        using var document = JsonDocument.Parse("""
+            {
+              "value": [
+                {
+                  "annotationid": "81000000-0000-0000-0000-000000000001",
+                  "subject": "Earlier IEP export",
+                  "notetext": "Requested by Test User",
+                  "filename": "earlier.pdf",
+                  "mimetype": "application/pdf",
+                  "filesize": 1200,
+                  "modifiedon": "2026-11-05T17:00:00Z"
+                },
+                {
+                  "annotationid": "81000000-0000-0000-0000-000000000002",
+                  "subject": "Current IEP export",
+                  "notetext": "Requested by Test User",
+                  "filename": "current.pdf",
+                  "mimetype": "application/pdf",
+                  "filesize": 2400,
+                  "modifiedon": "2026-11-06T17:00:00Z"
+                },
+                {
+                  "annotationid": "81000000-0000-0000-0000-000000000003",
+                  "subject": "Supporting note",
+                  "filename": "note.txt",
+                  "mimetype": "text/plain",
+                  "modifiedon": "2026-11-06T18:00:00Z"
+                }
+              ]
+            }
+            """);
+
+        var documents = DataverseAssessmentWorkspaceClient.ParseStudentPlanDocuments(document.RootElement);
+
+        Assert.Equal(2, documents.Count);
+        Assert.Equal("current.pdf", documents[0].FileName);
+        Assert.Equal("Current IEP export", documents[0].Title);
+        Assert.Equal(2400, documents[0].FileSize);
+        Assert.Equal("earlier.pdf", documents[1].FileName);
+    }
+
+    [Fact]
     public void Plan_screener_queries_are_student_and_school_year_scoped()
     {
         var studentId = Guid.Parse("12345678-1234-1234-1234-123456789012");
@@ -457,6 +603,100 @@ public sealed class DataverseAssessmentWorkspaceClientTests
         Assert.Equal("Earlier intervention", interventions[1].InterventionType);
         Assert.Equal("Completed", interventions[1].WithdrawnReason);
         Assert.NotNull(interventions[1].DateWithdrawn);
+    }
+
+    [Fact]
+    public void Homeroom_intervention_sections_are_scoped_to_student_and_school()
+    {
+        var studentId = Guid.Parse("12345678-1234-1234-1234-123456789012");
+        var schoolId = Guid.Parse("87654321-4321-4321-4321-210987654321");
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentInterventionSectionsQuery(studentId, schoolId));
+
+        Assert.Contains($"_fvsd_student_value eq {studentId:D}", decoded, StringComparison.Ordinal);
+        Assert.Contains($"_fvsd_school_value eq {schoolId:D}", decoded, StringComparison.Ordinal);
+        Assert.Contains("$expand=fvsd_teachersection", decoded, StringComparison.Ordinal);
+        Assert.Contains("$expand=fvsd_teacher($select=fvsd_name)", decoded, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Homeroom_intervention_sections_include_only_literacy_and_numeracy_curricula()
+    {
+        using var document = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_teachersection": {
+                  "fvsd_teachersectionid": "91000000-0000-0000-0000-000000000001",
+                  "fvsd_courseno": "ELA3",
+                  "fvsd_coursename": "English Language Arts 3",
+                  "fvsd_sectiongrouping": 1,
+                  "fvsd_sectiongrouping@OData.Community.Display.V1.FormattedValue": "Literacy",
+                  "fvsd_teacher": { "fvsd_name": "Teacher One" }
+                }
+              },
+              {
+                "fvsd_teachersection": {
+                  "fvsd_teachersectionid": "91000000-0000-0000-0000-000000000002",
+                  "fvsd_courseno": "MAT3",
+                  "fvsd_coursename": "Mathematics 3",
+                  "fvsd_sectiongrouping": 2,
+                  "fvsd_teacher": { "fvsd_name": "Teacher Two" }
+                }
+              },
+              {
+                "fvsd_teachersection": {
+                  "fvsd_teachersectionid": "91000000-0000-0000-0000-000000000003",
+                  "fvsd_coursename": "Homeroom",
+                  "fvsd_sectiongrouping": 3
+                }
+              }
+            ] }
+            """);
+
+        var sections = DataverseAssessmentWorkspaceClient.ParseStudentInterventionSections(document.RootElement);
+
+        Assert.Equal(2, sections.Count);
+        Assert.Equal("English Language Arts and Literature", sections[0].Curriculum);
+        Assert.Equal("Mathematics", sections[1].Curriculum);
+        Assert.Equal("Teacher One", sections[0].TeacherName);
+    }
+
+    [Fact]
+    public void Intervention_closure_requires_matching_date_and_reason()
+    {
+        var command = new StudentPlanInterventionCommand(
+            Guid.NewGuid(),
+            new DateOnly(2026, 9, 1),
+            null,
+            new DateOnly(2026, 10, 1),
+            null,
+            null,
+            null,
+            null);
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            DataverseAssessmentWorkspaceClient.ValidateInterventionCommand(command));
+
+        Assert.Equal("Select Completed or Incomplete when a Date Withdrawn is entered.", exception.Message);
+    }
+
+    [Fact]
+    public void Intervention_closure_rejects_withdrawal_before_start()
+    {
+        var command = new StudentPlanInterventionCommand(
+            Guid.NewGuid(),
+            new DateOnly(2026, 10, 1),
+            null,
+            new DateOnly(2026, 9, 30),
+            1,
+            null,
+            null,
+            null);
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            DataverseAssessmentWorkspaceClient.ValidateInterventionCommand(command));
+
+        Assert.Equal("Date Withdrawn cannot be before Date Started.", exception.Message);
     }
 
     [Fact]

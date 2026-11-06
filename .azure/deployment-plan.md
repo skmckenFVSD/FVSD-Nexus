@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Deployed - Modular IEP/IPP and Product Documentation Release
+> **Status:** Validated - IEP/IPP Module Functionality and Intervention Focus Release
 
 Generated: 2026-08-25
 
@@ -194,6 +194,20 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
 
 ### Phase 3: Validation
 
+- [x] Validate the IEP / IPP module functionality and Intervention Focus release — 2026-11-06
+  - [x] 1. AZD Installation
+  - [x] 2. Schema Validation
+  - [x] 3. Environment Setup
+  - [x] 4. Authentication Check
+  - [x] 5. Subscription/Location Check
+  - [x] 6. Aspire Pre-Provisioning Checks — not applicable; the solution is not .NET Aspire
+  - [x] 7. Provision Preview
+  - [x] 8. Build Verification
+  - [x] 9. Docker Build Context Validation — not applicable; the service has no Dockerfile
+  - [x] 10. Package Validation
+  - [x] 11. Azure Policy Validation
+  - [x] 12. Aspire Post-Provisioning Checks — not applicable; the solution is not .NET Aspire
+
 - [x] Invoke azure-validate skill
 - [x] All validation checks pass
   - [x] Revalidate the responsive role-aware sidebar navigation UX release
@@ -345,6 +359,25 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
 ---
 
 ## 8. Validation Proof
+
+### IEP / IPP Module Functionality and Intervention Focus Release Revalidation — 2026-11-06T20:58:35Z
+
+> **Release boundary:** This release completes the current IEP / IPP workspace work, including governed module selection, compiled-document viewing, student details and signature updates, Student Conditions and Coding, and the Intervention Focus create/edit workflow with Homeroom and Foundations context handling. It preserves the existing Azure App Service, Entra, Dataverse, Key Vault, and Application Insights architecture.
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Azure context | `azd version`, `azd auth login --check-status`, `azd env list`, and `az account show` | Passed; FVSD identity, existing `fvsd-insights-dev` environment, Pay-As-You-Go subscription, and Canada Central |
+| Existing target | Resource-group and `azd-service-name` inventory | Passed; healthy existing resource group and exactly one `web` target, `app-fvsd-insights-iwmpkez4` |
+| Project schema and specialization | `azure.yaml` inspection plus Aspire and Dockerfile scan | Passed; the App Service service definition remains valid, and the solution is neither Aspire nor container based |
+| Bicep compile/lint | `az bicep build --file infra/main.bicep --stdout` and `az bicep lint --file infra/main.bicep` | Passed without errors; only the optional Bicep CLI update notice was reported |
+| React build and dependency audit | `npm run build` and `npm audit --audit-level=high` | Passed; TypeScript and Vite production bundle generated with zero vulnerabilities |
+| ASP.NET Core tests | `dotnet test FVSDNexus.sln --configuration Release --no-restore` | Passed; 111 tests, zero failures, zero skipped |
+| .NET dependency audit | `dotnet list ... package --vulnerable --include-transitive` | Passed; no vulnerable packages reported for the application or test project |
+| Static RBAC review | `infra/resources.bicep` role-assignment inspection | Passed; the App Service system identity retains only Key Vault Secrets User on the application vault |
+| Azure policy review | `az policy assignment list` at subscription scope | Passed; only the existing Microsoft Defender for Cloud default assignment is present |
+| Provisioning preview | `azd provision --preview --no-prompt` | Passed; no resource creation or deletion, only reconciliation of existing App Service and monitoring properties |
+| Package validation | `azd package --no-prompt` | Passed; the React and ASP.NET Core application was published and packaged successfully after the local preview processes were stopped |
+| Release fingerprints | Packaged asset SHA-256 | JavaScript `AF3464F384BD7AA0A34C2B725E5DF80379C2A05AC00C11C2FDBBD8F6644D80B1`; CSS `7D21FCFD077FF220443E74546D827BA7CEE85C7BC3FFDE9377762B9048DC2EBC` |
 
 ### Responsive Role-Aware Sidebar Navigation UX Revalidation - 2026-09-03T15:15:33-06:00
 
