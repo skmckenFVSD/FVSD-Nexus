@@ -82,6 +82,215 @@ public interface IDataverseAssessmentWorkspaceClient
         Guid planId,
         CancellationToken cancellationToken = default);
 
+    Task<StudentPlanOralReadingFluencyResponse> GetStudentPlanOralReadingFluencyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanOralReadingFluencyOptionsResponse> GetStudentPlanOralReadingFluencyOptionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanOralReadingFluencyResponse> CreateStudentPlanOralReadingFluencyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanOralReadingFluencyCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanOralReadingFluencyResponse> UpdateStudentPlanOralReadingFluencyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid resultId,
+        string currentSchoolYear,
+        StudentPlanOralReadingFluencyCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanOralReadingFluencyResponse> DeleteStudentPlanOralReadingFluencyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid resultId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanWordStudyResponse> GetStudentPlanWordStudyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanWordStudyOptionsResponse> GetStudentPlanWordStudyOptionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanWordStudyResponse> CreateStudentPlanWordStudyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanWordStudyCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanWordStudyResponse> UpdateStudentPlanWordStudyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid recordId,
+        string currentSchoolYear,
+        StudentPlanWordStudyCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanWordStudyResponse> DeleteStudentPlanWordStudyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid recordId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanWritingSnapshotsResponse> GetStudentPlanWritingSnapshotsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanWritingSnapshotsResponse> CreateStudentPlanWritingSnapshotAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanWritingSnapshotCommand command,
+        StudentPlanWritingSnapshotUpload? writingSampleFile,
+        StudentPlanWritingSnapshotUpload? writingSampleImage,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanWritingSnapshotsResponse> UpdateStudentPlanWritingSnapshotAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid snapshotId,
+        string currentSchoolYear,
+        StudentPlanWritingSnapshotCommand command,
+        StudentPlanWritingSnapshotUpload? writingSampleFile,
+        StudentPlanWritingSnapshotUpload? writingSampleImage,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanWritingSnapshotsResponse> DeleteStudentPlanWritingSnapshotAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid snapshotId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanWritingSnapshotContent> GetStudentPlanWritingSnapshotContentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid snapshotId,
+        bool image,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanTeacherCommentsResponse> GetStudentPlanTeacherCommentsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanTeacherCommentsResponse> CreateStudentPlanTeacherCommentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanTeacherCommentCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanTeacherCommentsResponse> UpdateStudentPlanTeacherCommentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid commentId,
+        string currentSchoolYear,
+        StudentPlanTeacherCommentCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanTeacherCommentsResponse> DeleteStudentPlanTeacherCommentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid commentId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default);
+
     Task<StudentPlanInterventionsResponse> GetStudentPlanInterventionsAsync(
         DataverseAccessContext accessContext,
         string? developmentRole,
@@ -131,6 +340,70 @@ public interface IDataverseAssessmentWorkspaceClient
         Guid studentId,
         Guid planId,
         Guid interventionId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanSignaturesResponse> GetStudentPlanSignaturesAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanSignatureOptionsResponse> GetStudentPlanSignatureOptionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanSignaturesResponse> CreateStudentPlanSignatureAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanSignatureCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanSignaturesResponse> UpdateStudentPlanSignatureAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid signatureId,
+        string currentSchoolYear,
+        StudentPlanSignatureCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanSignaturesResponse> ReorderStudentPlanSignaturesAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanSignatureOrderCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanSignaturesResponse> DeleteStudentPlanSignatureAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid signatureId,
         string currentSchoolYear,
         string? eTag,
         CancellationToken cancellationToken = default);

@@ -613,6 +613,657 @@ app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/stud
     }
 });
 
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/oral-reading-fluency", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanOralReadingFluencyAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+});
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/oral-reading-fluency/options", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanOralReadingFluencyOptionsAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+});
+
+app.MapPost("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/oral-reading-fluency", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    StudentPlanOralReadingFluencyCommand command,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.CreateStudentPlanOralReadingFluencyAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
+            schoolYears.GetCurrentSchoolYear(context.User), command, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+});
+
+app.MapPatch("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/oral-reading-fluency/{resultId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid resultId,
+    StudentPlanOralReadingFluencyCommand command,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        var commandWithETag = command with { ETag = context.Request.Headers.IfMatch.FirstOrDefault() };
+        return Results.Ok(await assessments.UpdateStudentPlanOralReadingFluencyAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, resultId,
+            schoolYears.GetCurrentSchoolYear(context.User), commandWithETag, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapDelete("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/oral-reading-fluency/{resultId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid resultId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.DeleteStudentPlanOralReadingFluencyAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, resultId,
+            schoolYears.GetCurrentSchoolYear(context.User),
+            context.Request.Headers.IfMatch.FirstOrDefault(), cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/word-study", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanWordStudyAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+});
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/word-study/options", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanWordStudyOptionsAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+});
+
+app.MapPost("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/word-study", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    StudentPlanWordStudyCommand command,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.CreateStudentPlanWordStudyAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
+            schoolYears.GetCurrentSchoolYear(context.User), command, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+});
+
+app.MapPatch("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/word-study/{recordId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid recordId,
+    StudentPlanWordStudyCommand command,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        var commandWithETag = command with { ETag = context.Request.Headers.IfMatch.FirstOrDefault() };
+        return Results.Ok(await assessments.UpdateStudentPlanWordStudyAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, recordId,
+            schoolYears.GetCurrentSchoolYear(context.User), commandWithETag, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapDelete("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/word-study/{recordId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid recordId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.DeleteStudentPlanWordStudyAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, recordId,
+            schoolYears.GetCurrentSchoolYear(context.User),
+            context.Request.Headers.IfMatch.FirstOrDefault(), cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/writing-snapshots", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanWritingSnapshotsAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+});
+
+app.MapPost("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/writing-snapshots", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var form = await ReadWritingSnapshotFormAsync(context.Request, null, cancellationToken);
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.CreateStudentPlanWritingSnapshotAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
+            schoolYears.GetCurrentSchoolYear(context.User), form.Command, form.File, form.Image, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+});
+
+app.MapPatch("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/writing-snapshots/{snapshotId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid snapshotId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var form = await ReadWritingSnapshotFormAsync(
+            context.Request, context.Request.Headers.IfMatch.FirstOrDefault(), cancellationToken);
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.UpdateStudentPlanWritingSnapshotAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, snapshotId,
+            schoolYears.GetCurrentSchoolYear(context.User), form.Command, form.File, form.Image, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapDelete("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/writing-snapshots/{snapshotId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid snapshotId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.DeleteStudentPlanWritingSnapshotAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, snapshotId,
+            schoolYears.GetCurrentSchoolYear(context.User), context.Request.Headers.IfMatch.FirstOrDefault(), cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/writing-snapshots/{snapshotId:guid}/{contentKind}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid snapshotId,
+    string contentKind,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    if (contentKind is not ("file" or "image"))
+        return Results.NotFound();
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        var content = await assessments.GetStudentPlanWritingSnapshotContentAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, snapshotId,
+            string.Equals(contentKind, "image", StringComparison.OrdinalIgnoreCase), cancellationToken);
+        context.Response.Headers.CacheControl = "private, max-age=300";
+        return string.Equals(contentKind, "image", StringComparison.OrdinalIgnoreCase)
+            ? Results.File(content.Content, content.ContentType, enableRangeProcessing: false)
+            : Results.File(content.Content, content.ContentType, content.FileName, enableRangeProcessing: false);
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (HttpRequestException exception) when (exception.StatusCode == System.Net.HttpStatusCode.NotFound)
+    {
+        return Results.NotFound();
+    }
+});
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/teacher-comments", async (
+    Guid teacherSectionId, Guid studentId, Guid planId, HttpContext context,
+    IDataverseAccessContextClient accessContextClient, IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles, CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanTeacherCommentsAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+});
+
+app.MapPost("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/teacher-comments", async (
+    Guid teacherSectionId, Guid studentId, Guid planId, StudentPlanTeacherCommentCommand command,
+    HttpContext context, IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments, IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears, CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.CreateStudentPlanTeacherCommentAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
+            schoolYears.GetCurrentSchoolYear(context.User), command, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapPatch("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/teacher-comments/{commentId:guid}", async (
+    Guid teacherSectionId, Guid studentId, Guid planId, Guid commentId,
+    StudentPlanTeacherCommentCommand command, HttpContext context,
+    IDataverseAccessContextClient accessContextClient, IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles, SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.UpdateStudentPlanTeacherCommentAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, commentId,
+            schoolYears.GetCurrentSchoolYear(context.User),
+            command with { ETag = context.Request.Headers.IfMatch.FirstOrDefault() }, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapDelete("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/teacher-comments/{commentId:guid}", async (
+    Guid teacherSectionId, Guid studentId, Guid planId, Guid commentId, HttpContext context,
+    IDataverseAccessContextClient accessContextClient, IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles, SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.DeleteStudentPlanTeacherCommentAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId, commentId,
+            schoolYears.GetCurrentSchoolYear(context.User), context.Request.Headers.IfMatch.FirstOrDefault(), cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+
 app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/interventions", async (
     Guid teacherSectionId,
     Guid studentId,
@@ -793,6 +1444,211 @@ app.MapDelete("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/s
         return Results.Ok(await assessments.DeleteStudentPlanInterventionAsync(
             accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
             interventionId, schoolYears.GetCurrentSchoolYear(context.User),
+            context.Request.Headers.IfMatch.FirstOrDefault(), cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/signatures", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanSignaturesAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
+            cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (InvalidOperationException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+});
+
+app.MapGet("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/signatures/options", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentPlanSignatureOptionsAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
+            cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+});
+
+app.MapPost("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/signatures", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    StudentPlanSignatureCommand command,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.CreateStudentPlanSignatureAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
+            schoolYears.GetCurrentSchoolYear(context.User), command, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapPatch("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/signatures/order", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    StudentPlanSignatureOrderCommand command,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.ReorderStudentPlanSignaturesAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
+            schoolYears.GetCurrentSchoolYear(context.User), command, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapPatch("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/signatures/{signatureId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid signatureId,
+    StudentPlanSignatureCommand command,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        var commandWithETag = command with { ETag = context.Request.Headers.IfMatch.FirstOrDefault() };
+        return Results.Ok(await assessments.UpdateStudentPlanSignatureAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
+            signatureId, schoolYears.GetCurrentSchoolYear(context.User), commandWithETag, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (AssessmentWorkspaceConflictException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 409);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message, title = exception.Message });
+    }
+});
+
+app.MapDelete("/api/class-assignments/teacher-sections/{teacherSectionId:guid}/students/{studentId:guid}/plans/{planId:guid}/signatures/{signatureId:guid}", async (
+    Guid teacherSectionId,
+    Guid studentId,
+    Guid planId,
+    Guid signatureId,
+    HttpContext context,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Class Assignment access is not enabled for this user.", statusCode: 403);
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.DeleteStudentPlanSignatureAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, teacherSectionId, studentId, planId,
+            signatureId, schoolYears.GetCurrentSchoolYear(context.User),
             context.Request.Headers.IfMatch.FirstOrDefault(), cancellationToken));
     }
     catch (AssessmentWorkspaceAccessException exception)
@@ -1579,6 +2435,66 @@ static async Task<DataverseAccessContext?> GetDataverseAccessContextAsync(
         email,
         GetEntraObjectId(context.User),
         cancellationToken);
+}
+
+static async Task<(
+    StudentPlanWritingSnapshotCommand Command,
+    StudentPlanWritingSnapshotUpload? File,
+    StudentPlanWritingSnapshotUpload? Image)> ReadWritingSnapshotFormAsync(
+        HttpRequest request,
+        string? eTag,
+        CancellationToken cancellationToken)
+{
+    if (!request.HasFormContentType)
+    {
+        throw new ArgumentException("Writing Snapshot details must be submitted as form data.");
+    }
+
+    var form = await request.ReadFormAsync(cancellationToken);
+    if (!DateOnly.TryParseExact(
+        form["commentDate"].FirstOrDefault(),
+        "yyyy-MM-dd",
+        System.Globalization.CultureInfo.InvariantCulture,
+        System.Globalization.DateTimeStyles.None,
+        out var commentDate))
+    {
+        throw new ArgumentException("Enter a valid Date of Comment.");
+    }
+
+    var description = form["evidenceOfDevelopment"].FirstOrDefault() ?? string.Empty;
+    var includeInExport = bool.TryParse(
+        form["includeInExport"].FirstOrDefault(), out var include) && include;
+    var file = await ReadWritingSnapshotUploadAsync(
+        form.Files.GetFile("writingSampleFile"), 20 * 1024 * 1024, cancellationToken);
+    var image = await ReadWritingSnapshotUploadAsync(
+        form.Files.GetFile("writingSampleImage"), 8 * 1024 * 1024, cancellationToken);
+    return (
+        new StudentPlanWritingSnapshotCommand(commentDate, description, includeInExport, eTag),
+        file,
+        image);
+}
+
+static async Task<StudentPlanWritingSnapshotUpload?> ReadWritingSnapshotUploadAsync(
+    IFormFile? file,
+    long maximumBytes,
+    CancellationToken cancellationToken)
+{
+    if (file is null)
+    {
+        return null;
+    }
+    if (file.Length <= 0 || file.Length > maximumBytes)
+    {
+        throw new ArgumentException(
+            $"{file.FileName} must be larger than zero and no more than {maximumBytes / 1024 / 1024} MB.");
+    }
+
+    await using var stream = new MemoryStream((int)file.Length);
+    await file.CopyToAsync(stream, cancellationToken);
+    return new StudentPlanWritingSnapshotUpload(
+        Path.GetFileName(file.FileName),
+        string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
+        stream.ToArray());
 }
 
 public partial class Program;

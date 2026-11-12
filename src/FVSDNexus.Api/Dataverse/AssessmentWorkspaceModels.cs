@@ -125,6 +125,55 @@ public sealed record StudentPlanSignatureDetailsCommand(
     string? ParentOrGuardianName,
     string? ParentOrGuardianEmail);
 
+public sealed record StudentPlanSignature(
+    Guid Id,
+    string Name,
+    int RecipientType,
+    string RecipientTypeLabel,
+    int SignatoryRole,
+    string SignatoryRoleLabel,
+    string SignatoryName,
+    string SignatoryEmail,
+    int SignatoryOrder,
+    int SignatoryAddedOrder,
+    bool AllowComments,
+    DateTimeOffset? DateRequested,
+    string? DateSigned,
+    int StateCode,
+    string StateLabel,
+    int StatusCode,
+    string StatusLabel,
+    string? ETag);
+
+public sealed record StudentPlanSignaturesResponse(
+    Guid PlanId,
+    string SchoolYear,
+    IReadOnlyList<StudentPlanSignature> Signatures);
+
+public sealed record StudentPlanSignatureChoiceOption(
+    int Value,
+    string Label);
+
+public sealed record StudentPlanSignatureOptionsResponse(
+    IReadOnlyList<StudentPlanSignatureChoiceOption> RecipientTypes,
+    IReadOnlyList<StudentPlanSignatureChoiceOption> SignatoryRoles);
+
+public sealed record StudentPlanSignatureCommand(
+    int RecipientType,
+    int SignatoryRole,
+    string SignatoryName,
+    string SignatoryEmail,
+    int SignatoryOrder,
+    bool AllowComments,
+    string? ETag = null);
+
+public sealed record StudentPlanSignatureOrderItem(
+    Guid Id,
+    string? ETag);
+
+public sealed record StudentPlanSignatureOrderCommand(
+    IReadOnlyList<StudentPlanSignatureOrderItem> Signatures);
+
 public sealed record StudentPlanScreenerResult(
     string AssessmentType,
     string Period,
@@ -139,6 +188,130 @@ public sealed record StudentPlanScreenersResponse(
     Guid PlanId,
     string SchoolYear,
     IReadOnlyList<StudentPlanScreenerResult> Results);
+
+public sealed record StudentPlanOralReadingFluencyResult(
+    Guid Id,
+    string Name,
+    DateTimeOffset? AssessmentDate,
+    int LevelOfReading,
+    string LevelOfReadingLabel,
+    int WordsPerMinute,
+    string? ETag);
+
+public sealed record StudentPlanOralReadingFluencyResponse(
+    Guid PlanId,
+    string SchoolYear,
+    IReadOnlyList<StudentPlanOralReadingFluencyResult> Results);
+
+public sealed record StudentPlanOralReadingFluencyOption(
+    int Value,
+    string Label);
+
+public sealed record StudentPlanOralReadingFluencyOptionsResponse(
+    IReadOnlyList<StudentPlanOralReadingFluencyOption> LevelsOfReading);
+
+public sealed record StudentPlanOralReadingFluencyCommand(
+    DateOnly AssessmentDate,
+    int LevelOfReading,
+    int WordsPerMinute,
+    string? ETag = null);
+
+public sealed record StudentPlanWordStudyRecord(
+    Guid Id,
+    string Name,
+    DateTimeOffset? TermStartDate,
+    DateTimeOffset? TermEndDate,
+    Guid StartingLevelId,
+    string StartingLevelName,
+    string? StartingStageReference,
+    string? StartingExpectedGrade,
+    Guid? FinishingLevelId,
+    string? FinishingLevelName,
+    string? FinishingStageReference,
+    string? FinishingExpectedGrade,
+    string? ETag);
+
+public sealed record StudentPlanWordStudyResponse(
+    Guid PlanId,
+    string SchoolYear,
+    IReadOnlyList<StudentPlanWordStudyRecord> Records);
+
+public sealed record StudentPlanWordStudyStageOption(
+    Guid Id,
+    string Name,
+    string? Section,
+    string? ExpectedGrade,
+    int SortOrder,
+    string Display);
+
+public sealed record StudentPlanWordStudyOptionsResponse(
+    IReadOnlyList<StudentPlanWordStudyStageOption> Stages);
+
+public sealed record StudentPlanWordStudyCommand(
+    DateOnly TermStartDate,
+    Guid StartingLevelId,
+    DateOnly? TermEndDate,
+    Guid? FinishingLevelId,
+    string? ETag = null);
+
+public sealed record StudentPlanWritingSnapshotRecord(
+    Guid Id,
+    string Subject,
+    string Description,
+    bool IncludeInExport,
+    DateTimeOffset? CommentDate,
+    string AddedBy,
+    DateTimeOffset? CreatedOn,
+    bool HasWritingSampleFile,
+    string? WritingSampleFileName,
+    bool HasWritingSampleImage,
+    string? ETag);
+
+public sealed record StudentPlanWritingSnapshotsResponse(
+    Guid PlanId,
+    string SchoolYear,
+    IReadOnlyList<StudentPlanWritingSnapshotRecord> Snapshots);
+
+public sealed record StudentPlanWritingSnapshotCommand(
+    DateOnly CommentDate,
+    string EvidenceOfDevelopment,
+    bool IncludeInExport,
+    string? ETag = null);
+
+public sealed record StudentPlanWritingSnapshotUpload(
+    string FileName,
+    string ContentType,
+    byte[] Content);
+
+public sealed record StudentPlanWritingSnapshotContent(
+    byte[] Content,
+    string ContentType,
+    string FileName);
+
+public sealed record StudentPlanTeacherCommentRecord(
+    Guid Id,
+    Guid SectionId,
+    string SectionName,
+    string CommentsAndNextSteps,
+    string? AdditionalObservations,
+    bool IncludeInExport,
+    DateTimeOffset? CommentDate,
+    string AddedBy,
+    DateTimeOffset? CreatedOn,
+    string? ETag);
+
+public sealed record StudentPlanTeacherCommentsResponse(
+    Guid PlanId,
+    string SchoolYear,
+    IReadOnlyList<StudentPlanTeacherCommentRecord> Comments);
+
+public sealed record StudentPlanTeacherCommentCommand(
+    Guid SectionId,
+    DateOnly CommentDate,
+    string CommentsAndNextSteps,
+    string? AdditionalObservations,
+    bool IncludeInExport,
+    string? ETag = null);
 
 public sealed record StudentPlanIntervention(
     Guid Id,

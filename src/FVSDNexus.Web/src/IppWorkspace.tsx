@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { DragEvent, FormEvent } from 'react'
 import {
   Accessibility,
   ArrowLeft,
+  BookOpen,
   ChartNoAxesCombined,
   Check,
   ChevronDown,
@@ -10,16 +11,21 @@ import {
   CircleAlert,
   Download,
   FileCheck2,
+  FileText,
   Files,
   FilePlus2,
   FileX2,
+  GripVertical,
+  ImageIcon,
   LockKeyhole,
   PanelsTopLeft,
+  Paperclip,
   PencilLine,
   Plus,
   RefreshCw,
   Save,
   Signature,
+  Star,
   StickyNoteCheck,
   StickyNoteOff,
   Target,
@@ -78,9 +84,50 @@ type StudentPlanAttendanceCommand = {
   springAttendance: number | null
 }
 
-type StudentPlanSignatureDetailsCommand = {
-  parentOrGuardianName: string | null
-  parentOrGuardianEmail: string | null
+type StudentPlanSignatureRecord = {
+  id: string
+  name: string
+  recipientType: number
+  recipientTypeLabel: string
+  signatoryRole: number
+  signatoryRoleLabel: string
+  signatoryName: string
+  signatoryEmail: string
+  signatoryOrder: number
+  signatoryAddedOrder: number
+  allowComments: boolean
+  dateRequested?: string | null
+  dateSigned?: string | null
+  stateCode: number
+  stateLabel: string
+  statusCode: number
+  statusLabel: string
+  eTag?: string | null
+}
+
+type StudentPlanSignaturesResponse = {
+  planId: string
+  schoolYear: string
+  signatures: StudentPlanSignatureRecord[]
+}
+
+type StudentPlanSignatureChoiceOption = {
+  value: number
+  label: string
+}
+
+type StudentPlanSignatureOptionsResponse = {
+  recipientTypes: StudentPlanSignatureChoiceOption[]
+  signatoryRoles: StudentPlanSignatureChoiceOption[]
+}
+
+type StudentPlanSignatureCommand = {
+  recipientType: number
+  signatoryRole: number
+  signatoryName: string
+  signatoryEmail: string
+  signatoryOrder: number
+  allowComments: boolean
 }
 
 type StudentPlanScreenerResult = {
@@ -98,6 +145,133 @@ type StudentPlanScreenersResponse = {
   planId: string
   schoolYear: string
   results: StudentPlanScreenerResult[]
+}
+
+type StudentPlanOralReadingFluencyResult = {
+  id: string
+  assessmentDate?: string | null
+  levelOfReading: number
+  levelOfReadingLabel: string
+  wordsPerMinute: number
+  eTag?: string | null
+}
+
+type StudentPlanOralReadingFluencyResponse = {
+  planId: string
+  schoolYear: string
+  results: StudentPlanOralReadingFluencyResult[]
+}
+
+type StudentPlanOralReadingFluencyOption = {
+  value: number
+  label: string
+}
+
+type StudentPlanOralReadingFluencyOptionsResponse = {
+  levelsOfReading: StudentPlanOralReadingFluencyOption[]
+}
+
+type StudentPlanOralReadingFluencyCommand = {
+  assessmentDate: string
+  levelOfReading: number
+  wordsPerMinute: number
+}
+
+type StudentPlanWordStudyRecord = {
+  id: string
+  name: string
+  termStartDate?: string | null
+  termEndDate?: string | null
+  startingLevelId: string
+  startingLevelName: string
+  startingStageReference?: string | null
+  startingExpectedGrade?: string | null
+  finishingLevelId?: string | null
+  finishingLevelName?: string | null
+  finishingStageReference?: string | null
+  finishingExpectedGrade?: string | null
+  eTag?: string | null
+}
+
+type StudentPlanWordStudyResponse = {
+  planId: string
+  schoolYear: string
+  records: StudentPlanWordStudyRecord[]
+}
+
+type StudentPlanWordStudyStageOption = {
+  id: string
+  name: string
+  section?: string | null
+  expectedGrade?: string | null
+  sortOrder: number
+  display: string
+}
+
+type StudentPlanWordStudyOptionsResponse = {
+  stages: StudentPlanWordStudyStageOption[]
+}
+
+type StudentPlanWordStudyCommand = {
+  termStartDate: string
+  startingLevelId: string
+  termEndDate: string | null
+  finishingLevelId: string | null
+}
+
+type StudentPlanWritingSnapshotRecord = {
+  id: string
+  subject: string
+  description: string
+  includeInExport: boolean
+  commentDate?: string | null
+  addedBy: string
+  createdOn?: string | null
+  hasWritingSampleFile: boolean
+  writingSampleFileName?: string | null
+  hasWritingSampleImage: boolean
+  eTag?: string | null
+}
+
+type StudentPlanWritingSnapshotsResponse = {
+  planId: string
+  schoolYear: string
+  snapshots: StudentPlanWritingSnapshotRecord[]
+}
+
+type StudentPlanWritingSnapshotCommand = {
+  commentDate: string
+  evidenceOfDevelopment: string
+  includeInExport: boolean
+  writingSampleFile: File | null
+  writingSampleImage: File | null
+}
+
+type StudentPlanTeacherCommentRecord = {
+  id: string
+  sectionId: string
+  sectionName: string
+  commentsAndNextSteps: string
+  additionalObservations?: string | null
+  includeInExport: boolean
+  commentDate?: string | null
+  addedBy: string
+  createdOn?: string | null
+  eTag?: string | null
+}
+
+type StudentPlanTeacherCommentsResponse = {
+  planId: string
+  schoolYear: string
+  comments: StudentPlanTeacherCommentRecord[]
+}
+
+type StudentPlanTeacherCommentCommand = {
+  sectionId: string
+  commentDate: string
+  commentsAndNextSteps: string
+  additionalObservations: string | null
+  includeInExport: boolean
 }
 
 type StudentPlanIntervention = {
@@ -291,6 +465,32 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
   const [screeners, setScreeners] = useState<StudentPlanScreenersResponse | null>(null)
   const [screenersLoading, setScreenersLoading] = useState(false)
   const [screenersError, setScreenersError] = useState<string | null>(null)
+  const [oralReadingFluency, setOralReadingFluency] = useState<StudentPlanOralReadingFluencyResponse | null>(null)
+  const [oralReadingFluencyLoading, setOralReadingFluencyLoading] = useState(false)
+  const [oralReadingFluencyError, setOralReadingFluencyError] = useState<string | null>(null)
+  const [oralReadingFluencyOptions, setOralReadingFluencyOptions] = useState<StudentPlanOralReadingFluencyOptionsResponse | null>(null)
+  const [oralReadingFluencyOptionsLoading, setOralReadingFluencyOptionsLoading] = useState(false)
+  const [oralReadingFluencyOptionsError, setOralReadingFluencyOptionsError] = useState<string | null>(null)
+  const [oralReadingFluencyDialogOpen, setOralReadingFluencyDialogOpen] = useState(false)
+  const [editingOralReadingFluency, setEditingOralReadingFluency] = useState<StudentPlanOralReadingFluencyResult | null>(null)
+  const [wordStudy, setWordStudy] = useState<StudentPlanWordStudyResponse | null>(null)
+  const [wordStudyLoading, setWordStudyLoading] = useState(false)
+  const [wordStudyError, setWordStudyError] = useState<string | null>(null)
+  const [wordStudyOptions, setWordStudyOptions] = useState<StudentPlanWordStudyOptionsResponse | null>(null)
+  const [wordStudyOptionsLoading, setWordStudyOptionsLoading] = useState(false)
+  const [wordStudyOptionsError, setWordStudyOptionsError] = useState<string | null>(null)
+  const [wordStudyDialogOpen, setWordStudyDialogOpen] = useState(false)
+  const [editingWordStudy, setEditingWordStudy] = useState<StudentPlanWordStudyRecord | null>(null)
+  const [writingSnapshots, setWritingSnapshots] = useState<StudentPlanWritingSnapshotsResponse | null>(null)
+  const [writingSnapshotsLoading, setWritingSnapshotsLoading] = useState(false)
+  const [writingSnapshotsError, setWritingSnapshotsError] = useState<string | null>(null)
+  const [writingSnapshotDialogOpen, setWritingSnapshotDialogOpen] = useState(false)
+  const [editingWritingSnapshot, setEditingWritingSnapshot] = useState<StudentPlanWritingSnapshotRecord | null>(null)
+  const [teacherComments, setTeacherComments] = useState<StudentPlanTeacherCommentsResponse | null>(null)
+  const [teacherCommentsLoading, setTeacherCommentsLoading] = useState(false)
+  const [teacherCommentsError, setTeacherCommentsError] = useState<string | null>(null)
+  const [teacherCommentDialogOpen, setTeacherCommentDialogOpen] = useState(false)
+  const [editingTeacherComment, setEditingTeacherComment] = useState<StudentPlanTeacherCommentRecord | null>(null)
   const [interventions, setInterventions] = useState<StudentPlanInterventionsResponse | null>(null)
   const [interventionsLoading, setInterventionsLoading] = useState(false)
   const [interventionsError, setInterventionsError] = useState<string | null>(null)
@@ -304,7 +504,14 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
   const [codingError, setCodingError] = useState<string | null>(null)
   const [codingDialogOpen, setCodingDialogOpen] = useState(false)
   const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false)
-  const [signatureDetailsDialogOpen, setSignatureDetailsDialogOpen] = useState(false)
+  const [signatures, setSignatures] = useState<StudentPlanSignaturesResponse | null>(null)
+  const [signaturesLoading, setSignaturesLoading] = useState(false)
+  const [signaturesError, setSignaturesError] = useState<string | null>(null)
+  const [signatureOptions, setSignatureOptions] = useState<StudentPlanSignatureOptionsResponse | null>(null)
+  const [signatureOptionsLoading, setSignatureOptionsLoading] = useState(false)
+  const [signatureOptionsError, setSignatureOptionsError] = useState<string | null>(null)
+  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false)
+  const [editingSignature, setEditingSignature] = useState<StudentPlanSignatureRecord | null>(null)
   const [excludedExportModuleIds, setExcludedExportModuleIds] = useState<Set<string>>(() => new Set())
   const [notesAfterSectionModuleIds, setNotesAfterSectionModuleIds] = useState<Set<string>>(() => new Set())
   const [documentsOpen, setDocumentsOpen] = useState(false)
@@ -344,6 +551,26 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
     setNotice(null)
     setScreeners(null)
     setScreenersError(null)
+    setOralReadingFluency(null)
+    setOralReadingFluencyError(null)
+    setOralReadingFluencyOptions(null)
+    setOralReadingFluencyOptionsError(null)
+    setOralReadingFluencyDialogOpen(false)
+    setEditingOralReadingFluency(null)
+    setWordStudy(null)
+    setWordStudyError(null)
+    setWordStudyOptions(null)
+    setWordStudyOptionsError(null)
+    setWordStudyDialogOpen(false)
+    setEditingWordStudy(null)
+    setWritingSnapshots(null)
+    setWritingSnapshotsError(null)
+    setWritingSnapshotDialogOpen(false)
+    setEditingWritingSnapshot(null)
+    setTeacherComments(null)
+    setTeacherCommentsError(null)
+    setTeacherCommentDialogOpen(false)
+    setEditingTeacherComment(null)
     setInterventions(null)
     setInterventionsError(null)
     setInterventionOptions(null)
@@ -354,7 +581,12 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
     setCodingError(null)
     setCodingDialogOpen(false)
     setAttendanceDialogOpen(false)
-    setSignatureDetailsDialogOpen(false)
+    setSignatures(null)
+    setSignaturesError(null)
+    setSignatureOptions(null)
+    setSignatureOptionsError(null)
+    setSignatureDialogOpen(false)
+    setEditingSignature(null)
     setExcludedExportModuleIds(new Set())
     setNotesAfterSectionModuleIds(new Set())
     setDocumentsOpen(false)
@@ -381,6 +613,13 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
   const activeModuleDescription = activeModule
     ? normalizePlanDescription(activeModule.frontFacingDescription || activeModule.description)
     : ''
+  const teacherCommentSectionOptions = selectedModules.filter((module) => !new Set([
+    'Student Details',
+    'Student Conditions and Coding',
+    'Writing Snapshot',
+    'Teacher Comment and Next Steps',
+    'Signatures',
+  ]).has(module.name))
 
   useEffect(() => {
     if (!planId || activeModule?.name !== 'Screener Results' || screeners?.planId === planId) return
@@ -401,6 +640,84 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
   }, [activeModule?.name, context.studentId, context.teacherSectionId, planId, screeners?.planId])
 
   useEffect(() => {
+    if (!planId || activeModule?.name !== 'Oral Reading Fluency (ORF)' || oralReadingFluency?.planId === planId) return
+    const controller = new AbortController()
+    setOralReadingFluencyLoading(true)
+    setOralReadingFluencyError(null)
+    void fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/oral-reading-fluency`,
+      { credentials: 'include', signal: controller.signal },
+    ).then(async (response) => {
+      if (!response.ok) throw new Error(await readError(response))
+      setOralReadingFluency(await response.json() as StudentPlanOralReadingFluencyResponse)
+    }).catch((requestError) => {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return
+      setOralReadingFluencyError(requestError instanceof Error
+        ? requestError.message
+        : 'Oral reading fluency results could not be loaded.')
+    }).finally(() => setOralReadingFluencyLoading(false))
+    return () => controller.abort()
+  }, [activeModule?.name, context.studentId, context.teacherSectionId, oralReadingFluency?.planId, planId])
+
+  useEffect(() => {
+    if (!planId || activeModule?.name !== 'Word Study' || wordStudy?.planId === planId) return
+    const controller = new AbortController()
+    setWordStudyLoading(true)
+    setWordStudyError(null)
+    void fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/word-study`,
+      { credentials: 'include', signal: controller.signal },
+    ).then(async (response) => {
+      if (!response.ok) throw new Error(await readError(response))
+      setWordStudy(await response.json() as StudentPlanWordStudyResponse)
+    }).catch((requestError) => {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return
+      setWordStudyError(requestError instanceof Error ? requestError.message : 'Word Study records could not be loaded.')
+    }).finally(() => setWordStudyLoading(false))
+    return () => controller.abort()
+  }, [activeModule?.name, context.studentId, context.teacherSectionId, planId, wordStudy?.planId])
+
+  useEffect(() => {
+    if (!planId || activeModule?.name !== 'Writing Snapshot' || writingSnapshots?.planId === planId) return
+    const controller = new AbortController()
+    setWritingSnapshotsLoading(true)
+    setWritingSnapshotsError(null)
+    void fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/writing-snapshots`,
+      { credentials: 'include', signal: controller.signal },
+    ).then(async (response) => {
+      if (!response.ok) throw new Error(await readError(response))
+      setWritingSnapshots(await response.json() as StudentPlanWritingSnapshotsResponse)
+    }).catch((requestError) => {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return
+      setWritingSnapshotsError(requestError instanceof Error
+        ? requestError.message
+        : 'Writing Snapshot records could not be loaded.')
+    }).finally(() => setWritingSnapshotsLoading(false))
+    return () => controller.abort()
+  }, [activeModule?.name, context.studentId, context.teacherSectionId, planId, writingSnapshots?.planId])
+
+  useEffect(() => {
+    if (!planId || activeModule?.name !== 'Teacher Comment and Next Steps' || teacherComments?.planId === planId) return
+    const controller = new AbortController()
+    setTeacherCommentsLoading(true)
+    setTeacherCommentsError(null)
+    void fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/teacher-comments`,
+      { credentials: 'include', signal: controller.signal },
+    ).then(async (response) => {
+      if (!response.ok) throw new Error(await readError(response))
+      setTeacherComments(await response.json() as StudentPlanTeacherCommentsResponse)
+    }).catch((requestError) => {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return
+      setTeacherCommentsError(requestError instanceof Error
+        ? requestError.message
+        : 'Teacher Comments could not be loaded.')
+    }).finally(() => setTeacherCommentsLoading(false))
+    return () => controller.abort()
+  }, [activeModule?.name, context.studentId, context.teacherSectionId, planId, teacherComments?.planId])
+
+  useEffect(() => {
     if (!planId || activeModule?.name !== 'Intervention Focus' || interventions?.planId === planId) return
     const controller = new AbortController()
     setInterventionsLoading(true)
@@ -417,6 +734,24 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
     }).finally(() => setInterventionsLoading(false))
     return () => controller.abort()
   }, [activeModule?.name, context.studentId, context.teacherSectionId, interventions?.planId, planId])
+
+  useEffect(() => {
+    if (!planId || activeModule?.name !== 'Signatures' || signatures?.planId === planId) return
+    const controller = new AbortController()
+    setSignaturesLoading(true)
+    setSignaturesError(null)
+    void fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/signatures`,
+      { credentials: 'include', signal: controller.signal },
+    ).then(async (response) => {
+      if (!response.ok) throw new Error(await readError(response))
+      setSignatures(await response.json() as StudentPlanSignaturesResponse)
+    }).catch((requestError) => {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return
+      setSignaturesError(requestError instanceof Error ? requestError.message : 'Signatures could not be loaded.')
+    }).finally(() => setSignaturesLoading(false))
+    return () => controller.abort()
+  }, [activeModule?.name, context.studentId, context.teacherSectionId, planId, signatures?.planId])
 
   useEffect(() => {
     if (!planId || activeModule?.name !== 'Student Conditions and Coding' || coding?.planId === planId) return
@@ -609,33 +944,377 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
     setError(null)
   }
 
-  const saveSignatureDetails = async (command: StudentPlanSignatureDetailsCommand) => {
-    if (!planId || !moduleState) throw new Error('Reload the plan before updating signature details.')
+  const loadSignatureOptions = async () => {
+    if (!planId) throw new Error('Open the annual plan before changing signatures.')
+    setSignatureOptionsLoading(true)
+    setSignatureOptionsError(null)
+    try {
+      const response = await fetch(
+        `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/signatures/options`,
+        { credentials: 'include' },
+      )
+      if (!response.ok) throw new Error(await readError(response))
+      const next = await response.json() as StudentPlanSignatureOptionsResponse
+      setSignatureOptions(next)
+      return next
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : 'Signature choices could not be loaded.'
+      setSignatureOptionsError(message)
+      throw new Error(message)
+    } finally {
+      setSignatureOptionsLoading(false)
+    }
+  }
+
+  const openSignatureDialog = (signature: StudentPlanSignatureRecord | null) => {
+    setEditingSignature(signature)
+    setSignatureDialogOpen(true)
+    if (!signatureOptions) void loadSignatureOptions().catch(() => undefined)
+  }
+
+  const saveSignature = async (
+    command: StudentPlanSignatureCommand,
+    signature: StudentPlanSignatureRecord | null,
+  ) => {
+    if (!planId) throw new Error('Reload the annual plan before saving this signature.')
+    const url = `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/signatures${signature ? `/${signature.id}` : ''}`
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (signature) {
+      if (!signature.eTag) throw new Error('Reload the signature before saving your changes.')
+      headers['If-Match'] = signature.eTag
+    }
+
+    const response = await fetch(url, {
+      method: signature ? 'PATCH' : 'POST',
+      credentials: 'include',
+      headers,
+      body: JSON.stringify(command),
+    })
+    if (!response.ok) {
+      const message = await readError(response)
+      if (response.status === 409) setSignatures(null)
+      throw new Error(message)
+    }
+
+    setSignatures(await response.json() as StudentPlanSignaturesResponse)
+    setSignaturesError(null)
+    setNotice(signature ? 'The signature assignment was updated.' : 'The signature was added to the annual plan.')
+    setError(null)
+  }
+
+  const deleteSignature = async (signature: StudentPlanSignatureRecord) => {
+    if (!planId || !signature.eTag) throw new Error('Reload the signature before deleting it.')
+    const response = await fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/signatures/${signature.id}`,
+      {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'If-Match': signature.eTag },
+      },
+    )
+    if (!response.ok) {
+      const message = await readError(response)
+      if (response.status === 409) setSignatures(null)
+      throw new Error(message)
+    }
+
+    setSignatures(await response.json() as StudentPlanSignaturesResponse)
+    setSignaturesError(null)
+    setNotice('The signature was removed from the annual plan.')
+    setError(null)
+  }
+
+  const reorderSignatures = async (ordered: StudentPlanSignatureRecord[]) => {
+    if (!planId) throw new Error('Reload the annual plan before changing the signature order.')
+    if (ordered.some((signature) => !signature.eTag)) {
+      throw new Error('Reload the signatures before changing their order.')
+    }
 
     const response = await fetch(
-      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/signature-details`,
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/signatures/order`,
       {
         method: 'PATCH',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'If-Match': moduleState.eTag,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          signatures: ordered.map((signature) => ({ id: signature.id, eTag: signature.eTag })),
+        }),
+      },
+    )
+    if (!response.ok) {
+      const message = await readError(response)
+      if (response.status === 409) setSignatures(null)
+      throw new Error(message)
+    }
+
+    const next = await response.json() as StudentPlanSignaturesResponse
+    setSignatures(next)
+    setSignaturesError(null)
+    setNotice('The signature routing order was updated.')
+    setError(null)
+    return next
+  }
+
+  const loadOralReadingFluencyOptions = async () => {
+    if (!planId) throw new Error('Open the annual plan before changing oral reading fluency results.')
+    setOralReadingFluencyOptionsLoading(true)
+    setOralReadingFluencyOptionsError(null)
+    try {
+      const response = await fetch(
+        `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/oral-reading-fluency/options`,
+        { credentials: 'include' },
+      )
+      if (!response.ok) throw new Error(await readError(response))
+      const next = await response.json() as StudentPlanOralReadingFluencyOptionsResponse
+      setOralReadingFluencyOptions(next)
+      return next
+    } catch (requestError) {
+      const message = requestError instanceof Error
+        ? requestError.message
+        : 'Level of Reading choices could not be loaded.'
+      setOralReadingFluencyOptionsError(message)
+      throw new Error(message)
+    } finally {
+      setOralReadingFluencyOptionsLoading(false)
+    }
+  }
+
+  const openOralReadingFluencyDialog = (result: StudentPlanOralReadingFluencyResult | null) => {
+    setEditingOralReadingFluency(result)
+    setOralReadingFluencyDialogOpen(true)
+    if (!oralReadingFluencyOptions) void loadOralReadingFluencyOptions().catch(() => undefined)
+  }
+
+  const saveOralReadingFluency = async (
+    command: StudentPlanOralReadingFluencyCommand,
+    result: StudentPlanOralReadingFluencyResult | null,
+  ) => {
+    if (!planId) throw new Error('Reload the annual plan before saving this result.')
+    const url = `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/oral-reading-fluency${result ? `/${result.id}` : ''}`
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (result) {
+      if (!result.eTag) throw new Error('Reload the result before saving your changes.')
+      headers['If-Match'] = result.eTag
+    }
+    const response = await fetch(url, {
+      method: result ? 'PATCH' : 'POST',
+      credentials: 'include',
+      headers,
+      body: JSON.stringify(command),
+    })
+    if (!response.ok) {
+      const message = await readError(response)
+      if (response.status === 409) setOralReadingFluency(null)
+      throw new Error(message)
+    }
+    setOralReadingFluency(await response.json() as StudentPlanOralReadingFluencyResponse)
+    setOralReadingFluencyError(null)
+    setNotice(result ? 'The oral reading fluency result was updated.' : 'The oral reading fluency result was added.')
+    setError(null)
+  }
+
+  const deleteOralReadingFluency = async (result: StudentPlanOralReadingFluencyResult) => {
+    if (!planId || !result.eTag) throw new Error('Reload the result before deleting it.')
+    const response = await fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/oral-reading-fluency/${result.id}`,
+      { method: 'DELETE', credentials: 'include', headers: { 'If-Match': result.eTag } },
+    )
+    if (!response.ok) {
+      const message = await readError(response)
+      if (response.status === 409) setOralReadingFluency(null)
+      throw new Error(message)
+    }
+    setOralReadingFluency(await response.json() as StudentPlanOralReadingFluencyResponse)
+    setOralReadingFluencyError(null)
+    setNotice('The oral reading fluency result was deleted.')
+    setError(null)
+  }
+
+  const loadWordStudyOptions = async () => {
+    if (!planId) throw new Error('Open the annual plan before changing Word Study records.')
+    setWordStudyOptionsLoading(true)
+    setWordStudyOptionsError(null)
+    try {
+      const response = await fetch(
+        `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/word-study/options`,
+        { credentials: 'include' },
+      )
+      if (!response.ok) throw new Error(await readError(response))
+      const next = await response.json() as StudentPlanWordStudyOptionsResponse
+      setWordStudyOptions(next)
+      return next
+    } catch (requestError) {
+      const message = requestError instanceof Error
+        ? requestError.message
+        : 'Words Their Way stages could not be loaded.'
+      setWordStudyOptionsError(message)
+      throw new Error(message)
+    } finally {
+      setWordStudyOptionsLoading(false)
+    }
+  }
+
+  const openWordStudyDialog = (record: StudentPlanWordStudyRecord | null) => {
+    setEditingWordStudy(record)
+    setWordStudyDialogOpen(true)
+    if (!wordStudyOptions) void loadWordStudyOptions().catch(() => undefined)
+  }
+
+  const saveWordStudy = async (
+    command: StudentPlanWordStudyCommand,
+    record: StudentPlanWordStudyRecord | null,
+  ) => {
+    if (!planId) throw new Error('Reload the annual plan before saving this Word Study record.')
+    const url = `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/word-study${record ? `/${record.id}` : ''}`
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (record) {
+      if (!record.eTag) throw new Error('Reload the Word Study record before saving your changes.')
+      headers['If-Match'] = record.eTag
+    }
+    const response = await fetch(url, {
+      method: record ? 'PATCH' : 'POST',
+      credentials: 'include',
+      headers,
+      body: JSON.stringify(command),
+    })
+    if (!response.ok) {
+      const message = await readError(response)
+      if (response.status === 409) setWordStudy(null)
+      throw new Error(message)
+    }
+    setWordStudy(await response.json() as StudentPlanWordStudyResponse)
+    setWordStudyError(null)
+    setNotice(record ? 'The Word Study record was updated.' : 'The Word Study record was added.')
+    setError(null)
+  }
+
+  const deleteWordStudy = async (record: StudentPlanWordStudyRecord) => {
+    if (!planId || !record.eTag) throw new Error('Reload the Word Study record before deleting it.')
+    const response = await fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/word-study/${record.id}`,
+      { method: 'DELETE', credentials: 'include', headers: { 'If-Match': record.eTag } },
+    )
+    if (!response.ok) {
+      const message = await readError(response)
+      if (response.status === 409) setWordStudy(null)
+      throw new Error(message)
+    }
+    setWordStudy(await response.json() as StudentPlanWordStudyResponse)
+    setWordStudyError(null)
+    setNotice('The Word Study record was deleted.')
+    setError(null)
+  }
+
+  const openWritingSnapshotDialog = (snapshot: StudentPlanWritingSnapshotRecord | null) => {
+    setEditingWritingSnapshot(snapshot)
+    setWritingSnapshotDialogOpen(true)
+  }
+
+  const saveWritingSnapshot = async (
+    command: StudentPlanWritingSnapshotCommand,
+    snapshot: StudentPlanWritingSnapshotRecord | null,
+  ) => {
+    if (!planId) throw new Error('Reload the annual plan before saving this Writing Snapshot.')
+    const form = new FormData()
+    form.append('commentDate', command.commentDate)
+    form.append('evidenceOfDevelopment', command.evidenceOfDevelopment)
+    form.append('includeInExport', String(command.includeInExport))
+    if (command.writingSampleFile) form.append('writingSampleFile', command.writingSampleFile)
+    if (command.writingSampleImage) form.append('writingSampleImage', command.writingSampleImage)
+    const headers: Record<string, string> = {}
+    if (snapshot) {
+      if (!snapshot.eTag) throw new Error('Reload the Writing Snapshot before saving your changes.')
+      headers['If-Match'] = snapshot.eTag
+    }
+    const response = await fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/writing-snapshots${snapshot ? `/${snapshot.id}` : ''}`,
+      {
+        method: snapshot ? 'PATCH' : 'POST',
+        credentials: 'include',
+        headers,
+        body: form,
+      },
+    )
+    if (!response.ok) {
+      const message = await readError(response)
+      if (response.status === 409) setWritingSnapshots(null)
+      throw new Error(message)
+    }
+    setWritingSnapshots(await response.json() as StudentPlanWritingSnapshotsResponse)
+    setWritingSnapshotsError(null)
+    setNotice(snapshot ? 'The Writing Snapshot was updated.' : 'The Writing Snapshot was added.')
+    setError(null)
+  }
+
+  const deleteWritingSnapshot = async (snapshot: StudentPlanWritingSnapshotRecord) => {
+    if (!planId || !snapshot.eTag) throw new Error('Reload the Writing Snapshot before deleting it.')
+    const response = await fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/writing-snapshots/${snapshot.id}`,
+      { method: 'DELETE', credentials: 'include', headers: { 'If-Match': snapshot.eTag } },
+    )
+    if (!response.ok) {
+      const message = await readError(response)
+      if (response.status === 409) setWritingSnapshots(null)
+      throw new Error(message)
+    }
+    setWritingSnapshots(await response.json() as StudentPlanWritingSnapshotsResponse)
+    setWritingSnapshotsError(null)
+    setNotice('The Writing Snapshot was deleted.')
+    setError(null)
+  }
+
+  const writingSnapshotContentUrl = (snapshotId: string, kind: 'file' | 'image') =>
+    `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/writing-snapshots/${snapshotId}/${kind}`
+
+  const openTeacherCommentDialog = (comment: StudentPlanTeacherCommentRecord | null) => {
+    setEditingTeacherComment(comment)
+    setTeacherCommentDialogOpen(true)
+  }
+
+  const saveTeacherComment = async (
+    command: StudentPlanTeacherCommentCommand,
+    comment: StudentPlanTeacherCommentRecord | null,
+  ) => {
+    if (!planId) throw new Error('Reload the annual plan before saving this Teacher Comment.')
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (comment) {
+      if (!comment.eTag) throw new Error('Reload the Teacher Comment before saving your changes.')
+      headers['If-Match'] = comment.eTag
+    }
+    const response = await fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/teacher-comments${comment ? `/${comment.id}` : ''}`,
+      {
+        method: comment ? 'PATCH' : 'POST',
+        credentials: 'include',
+        headers,
         body: JSON.stringify(command),
       },
     )
     if (!response.ok) {
       const message = await readError(response)
-      if (response.status === 409) {
-        await loadModules(planId)
-        throw new Error(`${message} The current signature details have been reloaded.`)
-      }
+      if (response.status === 409) setTeacherComments(null)
       throw new Error(message)
     }
+    setTeacherComments(await response.json() as StudentPlanTeacherCommentsResponse)
+    setTeacherCommentsError(null)
+    setNotice(comment ? 'The Teacher Comment was updated.' : 'The Teacher Comment was added.')
+    setError(null)
+  }
 
-    const next = await response.json() as StudentPlanModulesResponse
-    setModuleState(next)
-    setNotice('Parent or guardian signature details were updated.')
+  const deleteTeacherComment = async (comment: StudentPlanTeacherCommentRecord) => {
+    if (!planId || !comment.eTag) throw new Error('Reload the Teacher Comment before deleting it.')
+    const response = await fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/teacher-comments/${comment.id}`,
+      { method: 'DELETE', credentials: 'include', headers: { 'If-Match': comment.eTag } },
+    )
+    if (!response.ok) {
+      const message = await readError(response)
+      if (response.status === 409) setTeacherComments(null)
+      throw new Error(message)
+    }
+    setTeacherComments(await response.json() as StudentPlanTeacherCommentsResponse)
+    setTeacherCommentsError(null)
+    setNotice('The Teacher Comment was deleted.')
     setError(null)
   }
 
@@ -951,6 +1630,14 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
             <div className="ipp-active-module-icon">
               {activeModule.name === 'Screener Results'
                 ? <ChartNoAxesCombined size={20} />
+                : activeModule.name === 'Oral Reading Fluency (ORF)'
+                  ? <BookOpen size={20} />
+                : activeModule.name === 'Word Study'
+                  ? <FileCheck2 size={20} />
+                : activeModule.name === 'Writing Snapshot'
+                  ? <Star size={20} />
+                : activeModule.name === 'Teacher Comment and Next Steps'
+                  ? <StickyNoteCheck size={20} />
                 : activeModule.name === 'Intervention Focus'
                   ? <Target size={20} />
                 : activeModule.name === 'Student Conditions and Coding'
@@ -978,6 +1665,44 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
               loading={screenersLoading}
               error={screenersError}
             />
+          ) : activeModule.name === 'Oral Reading Fluency (ORF)' ? (
+            <OralReadingFluencyDocument
+              description={activeModuleDescription}
+              response={oralReadingFluency}
+              loading={oralReadingFluencyLoading}
+              error={oralReadingFluencyError}
+              onAdd={() => openOralReadingFluencyDialog(null)}
+              onEdit={openOralReadingFluencyDialog}
+            />
+          ) : activeModule.name === 'Word Study' ? (
+            <WordStudyDocument
+              description={activeModuleDescription}
+              response={wordStudy}
+              loading={wordStudyLoading}
+              error={wordStudyError}
+              onAdd={() => openWordStudyDialog(null)}
+              onEdit={openWordStudyDialog}
+            />
+          ) : activeModule.name === 'Writing Snapshot' ? (
+            <WritingSnapshotDocument
+              description={activeModuleDescription}
+              response={writingSnapshots}
+              loading={writingSnapshotsLoading}
+              error={writingSnapshotsError}
+              onAdd={() => openWritingSnapshotDialog(null)}
+              onEdit={openWritingSnapshotDialog}
+              contentUrl={writingSnapshotContentUrl}
+            />
+          ) : activeModule.name === 'Teacher Comment and Next Steps' ? (
+            <TeacherCommentsDocument
+              description={activeModuleDescription}
+              response={teacherComments}
+              loading={teacherCommentsLoading}
+              error={teacherCommentsError}
+              sections={teacherCommentSectionOptions}
+              onAdd={() => openTeacherCommentDialog(null)}
+              onEdit={openTeacherCommentDialog}
+            />
           ) : activeModule.name === 'Student Conditions and Coding' ? (
             <CodingConditionsDocument
               description={activeModuleDescription}
@@ -989,8 +1714,12 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
           ) : activeModule.name === 'Signatures' ? (
             <SignaturesDocument
               description={activeModuleDescription}
-              details={moduleState?.details}
-              onUpdateSignatureDetails={() => setSignatureDetailsDialogOpen(true)}
+              response={signatures}
+              loading={signaturesLoading}
+              error={signaturesError}
+              onAdd={() => openSignatureDialog(null)}
+              onEdit={(signature) => openSignatureDialog(signature)}
+              onReorder={reorderSignatures}
             />
           ) : activeModule.name === 'Intervention Focus' ? (
             <InterventionFocusDocument
@@ -1040,11 +1769,76 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
         />
       ) : null}
 
-      {signatureDetailsDialogOpen && moduleState ? (
-        <SignatureDetailsDialog
-          details={moduleState.details}
-          onClose={() => setSignatureDetailsDialogOpen(false)}
-          onSave={saveSignatureDetails}
+      {signatureDialogOpen ? (
+        <SignatureDialog
+          signature={editingSignature}
+          options={signatureOptions}
+          optionsLoading={signatureOptionsLoading}
+          optionsError={signatureOptionsError}
+          onRetryOptions={() => void loadSignatureOptions().catch(() => undefined)}
+          onClose={() => {
+            setSignatureDialogOpen(false)
+            setEditingSignature(null)
+          }}
+          onSave={saveSignature}
+          onDelete={deleteSignature}
+        />
+      ) : null}
+
+      {oralReadingFluencyDialogOpen ? (
+        <OralReadingFluencyDialog
+          result={editingOralReadingFluency}
+          options={oralReadingFluencyOptions}
+          optionsLoading={oralReadingFluencyOptionsLoading}
+          optionsError={oralReadingFluencyOptionsError}
+          onRetryOptions={() => void loadOralReadingFluencyOptions().catch(() => undefined)}
+          onClose={() => {
+            setOralReadingFluencyDialogOpen(false)
+            setEditingOralReadingFluency(null)
+          }}
+          onSave={saveOralReadingFluency}
+          onDelete={deleteOralReadingFluency}
+        />
+      ) : null}
+
+      {wordStudyDialogOpen ? (
+        <WordStudyDialog
+          record={editingWordStudy}
+          options={wordStudyOptions}
+          optionsLoading={wordStudyOptionsLoading}
+          optionsError={wordStudyOptionsError}
+          onRetryOptions={() => void loadWordStudyOptions().catch(() => undefined)}
+          onClose={() => {
+            setWordStudyDialogOpen(false)
+            setEditingWordStudy(null)
+          }}
+          onSave={saveWordStudy}
+          onDelete={deleteWordStudy}
+        />
+      ) : null}
+
+      {writingSnapshotDialogOpen ? (
+        <WritingSnapshotDialog
+          snapshot={editingWritingSnapshot}
+          onClose={() => {
+            setWritingSnapshotDialogOpen(false)
+            setEditingWritingSnapshot(null)
+          }}
+          onSave={saveWritingSnapshot}
+          onDelete={deleteWritingSnapshot}
+        />
+      ) : null}
+
+      {teacherCommentDialogOpen ? (
+        <TeacherCommentDialog
+          comment={editingTeacherComment}
+          sections={teacherCommentSectionOptions}
+          onClose={() => {
+            setTeacherCommentDialogOpen(false)
+            setEditingTeacherComment(null)
+          }}
+          onSave={saveTeacherComment}
+          onDelete={deleteTeacherComment}
         />
       ) : null}
 
@@ -1903,15 +2697,25 @@ function AttendanceDialog({ details, onClose, onSave }: {
   )
 }
 
-function SignatureDetailsDialog({ details, onClose, onSave }: {
-  details: StudentPlanDetails
+function SignatureDialog({ signature, options, optionsLoading, optionsError, onRetryOptions, onClose, onSave, onDelete }: {
+  signature: StudentPlanSignatureRecord | null
+  options: StudentPlanSignatureOptionsResponse | null
+  optionsLoading: boolean
+  optionsError: string | null
+  onRetryOptions: () => void
   onClose: () => void
-  onSave: (command: StudentPlanSignatureDetailsCommand) => Promise<void>
+  onSave: (command: StudentPlanSignatureCommand, signature: StudentPlanSignatureRecord | null) => Promise<void>
+  onDelete: (signature: StudentPlanSignatureRecord) => Promise<void>
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const [parentOrGuardianName, setParentOrGuardianName] = useState(details.parentOrGuardianName ?? '')
-  const [parentOrGuardianEmail, setParentOrGuardianEmail] = useState(details.parentOrGuardianEmail ?? '')
+  const [recipientType, setRecipientType] = useState(signature?.recipientType ?? 1)
+  const [signatoryRole, setSignatoryRole] = useState(signature?.signatoryRole ?? 1)
+  const [signatoryName, setSignatoryName] = useState(signature?.signatoryName ?? '')
+  const [signatoryEmail, setSignatoryEmail] = useState(signature?.signatoryEmail ?? '')
+  const [signatoryOrder, setSignatoryOrder] = useState(String(signature?.signatoryOrder ?? 1))
+  const [allowComments, setAllowComments] = useState(signature?.allowComments ?? true)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [dialogError, setDialogError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -1922,30 +2726,58 @@ function SignatureDetailsDialog({ details, onClose, onSave }: {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setDialogError(null)
-    const normalizedName = parentOrGuardianName.trim() || null
-    const normalizedEmail = parentOrGuardianEmail.trim() || null
-    if (normalizedEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
-      setDialogError('Enter a valid Parent or Guardian Email address.')
+    const normalizedName = signatoryName.trim()
+    const normalizedEmail = signatoryEmail.trim()
+    const normalizedOrder = Number(signatoryOrder)
+    if (!normalizedName) {
+      setDialogError('Enter the Signatory Name.')
+      return
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
+      setDialogError('Enter a valid Signatory Email address.')
+      return
+    }
+    if (!Number.isInteger(normalizedOrder) || normalizedOrder < 1) {
+      setDialogError('Signatory Order must be a whole number greater than zero.')
       return
     }
 
     try {
       setSaving(true)
       await onSave({
-        parentOrGuardianName: normalizedName,
-        parentOrGuardianEmail: normalizedEmail,
-      })
+        recipientType,
+        signatoryRole,
+        signatoryName: normalizedName,
+        signatoryEmail: normalizedEmail,
+        signatoryOrder: normalizedOrder,
+        allowComments,
+      }, signature)
       dialogRef.current?.close()
       onClose()
     } catch (requestError) {
-      setDialogError(requestError instanceof Error ? requestError.message : 'Signature details could not be updated.')
+      setDialogError(requestError instanceof Error ? requestError.message : 'The signature could not be saved.')
     } finally {
       setSaving(false)
     }
   }
 
+  const remove = async () => {
+    if (!signature || !window.confirm(`Remove ${signature.signatoryName} from this annual plan?`)) return
+    setDialogError(null)
+    try {
+      setDeleting(true)
+      await onDelete(signature)
+      dialogRef.current?.close()
+      onClose()
+    } catch (requestError) {
+      setDialogError(requestError instanceof Error ? requestError.message : 'The signature could not be removed.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const close = () => {
-    if (saving) return
+    if (saving || deleting) return
     dialogRef.current?.close()
     onClose()
   }
@@ -1953,7 +2785,7 @@ function SignatureDetailsDialog({ details, onClose, onSave }: {
   return (
     <dialog
       ref={dialogRef}
-      className="ipp-attendance-dialog ipp-signature-dialog"
+      className="ipp-attendance-dialog ipp-signature-dialog ipp-signature-record-dialog"
       aria-labelledby="ipp-signature-dialog-title"
       onCancel={(event) => {
         event.preventDefault()
@@ -1964,45 +2796,92 @@ function SignatureDetailsDialog({ details, onClose, onSave }: {
         <header>
           <div>
             <span>Signatures</span>
-            <h2 id="ipp-signature-dialog-title">Update Parent or Guardian Information</h2>
+            <h2 id="ipp-signature-dialog-title">{signature ? 'Update Signature' : 'Add Signature'}</h2>
           </div>
-          <button type="button" aria-label="Close signature details form" onClick={close} disabled={saving}>
+          <button type="button" aria-label="Close signature form" onClick={close} disabled={saving || deleting}>
             <X size={18} />
           </button>
         </header>
         <div className="ipp-attendance-dialog-body">
-          <p>These details identify the parent or guardian who will review and sign the annual plan.</p>
+          <p>Assign a recipient and routing order for the annual plan. DocuSign status and dates will be updated by automation.</p>
           {dialogError ? <div className="error-banner" role="alert"><CircleAlert size={18} />{dialogError}</div> : null}
+          {optionsError ? (
+            <div className="error-banner" role="alert">
+              <CircleAlert size={18} /><span>{optionsError}</span>
+              <button type="button" onClick={onRetryOptions}>Retry</button>
+            </div>
+          ) : null}
           <div className="ipp-signature-fields">
             <label>
-              <span>Parent or Guardian Name</span>
+              <span>Recipient Type</span>
+              <select value={recipientType} onChange={(event) => setRecipientType(Number(event.target.value))} disabled={saving || deleting || optionsLoading || !options}>
+                {options?.recipientTypes.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Signatory Role</span>
+              <select value={signatoryRole} onChange={(event) => setSignatoryRole(Number(event.target.value))} disabled={saving || deleting || optionsLoading || !options}>
+                {options?.signatoryRoles.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Signatory Name</span>
               <input
                 type="text"
                 autoComplete="name"
-                value={parentOrGuardianName}
-                onChange={(event) => setParentOrGuardianName(event.target.value)}
-                disabled={saving}
+                value={signatoryName}
+                onChange={(event) => setSignatoryName(event.target.value)}
+                disabled={saving || deleting}
+                required
               />
             </label>
             <label>
-              <span>Parent or Guardian Email</span>
+              <span>Signatory Email</span>
               <input
                 type="email"
                 inputMode="email"
                 autoComplete="email"
                 pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
-                value={parentOrGuardianEmail}
-                onChange={(event) => setParentOrGuardianEmail(event.target.value)}
-                disabled={saving}
+                value={signatoryEmail}
+                onChange={(event) => setSignatoryEmail(event.target.value)}
+                disabled={saving || deleting}
+                required
               />
             </label>
+            <label>
+              <span>Signatory Order</span>
+              <input type="number" min="1" step="1" value={signatoryOrder} onChange={(event) => setSignatoryOrder(event.target.value)} disabled={saving || deleting} required />
+              <small>Controls the DocuSign routing order.</small>
+            </label>
+            <label className="ipp-signature-checkbox">
+              <input type="checkbox" checked={allowComments} onChange={(event) => setAllowComments(event.target.checked)} disabled={saving || deleting} />
+              <span>
+                Allow Comments
+                <small>Adds a comment area to the rendered document and the future DocuSign payload.</small>
+              </span>
+            </label>
+            {signature ? (
+              <div className="ipp-signature-record-meta">
+                <span>Added order <strong>{signature.signatoryAddedOrder}</strong></span>
+                <span>Status <strong>{signature.statusLabel}</strong></span>
+                {signature.dateRequested ? <span>Requested <strong>{formatPlanDate(signature.dateRequested)}</strong></span> : null}
+                {signature.dateSigned ? <span>Signed <strong>{formatPlanDate(signature.dateSigned)}</strong></span> : null}
+              </div>
+            ) : null}
           </div>
         </div>
         <footer>
-          <button type="button" className="outline-button" onClick={close} disabled={saving}>Cancel</button>
-          <button type="submit" className="primary-button" disabled={saving}>
+          {signature ? (
+            <button type="button" className="ipp-danger-button" onClick={() => void remove()} disabled={saving || deleting}>
+              {deleting ? <RefreshCw className="spin" size={16} /> : <Trash2 size={16} />}
+              {deleting ? 'Removing…' : 'Remove'}
+            </button>
+          ) : null}
+          <span className="ipp-dialog-footer-spacer" />
+          <button type="button" className="outline-button" onClick={close} disabled={saving || deleting}>Cancel</button>
+          <button type="submit" className="primary-button" disabled={saving || deleting || optionsLoading || !options}>
             {saving ? <RefreshCw className="spin" size={16} /> : <Save size={16} />}
-            {saving ? 'Saving…' : 'Save signature details'}
+            {saving ? 'Saving…' : signature ? 'Save signature' : 'Add signature'}
           </button>
         </footer>
       </form>
@@ -2077,47 +2956,1180 @@ function ScreenerResultsDocument({ description, response, loading, error }: {
   )
 }
 
-function SignaturesDocument({ description, details, onUpdateSignatureDetails }: {
+function OralReadingFluencyDocument({ description, response, loading, error, onAdd, onEdit }: {
   description: string
-  details?: StudentPlanDetails
-  onUpdateSignatureDetails: () => void
+  response: StudentPlanOralReadingFluencyResponse | null
+  loading: boolean
+  error: string | null
+  onAdd: () => void
+  onEdit: (result: StudentPlanOralReadingFluencyResult) => void
 }) {
-  const signerRows = [
-    { role: 'Parent or Guardian', name: details?.parentOrGuardianName, email: details?.parentOrGuardianEmail },
-    { role: 'Principal', name: details?.principalAtPlan, email: null },
-  ]
+  const results = response?.results ?? []
 
   return (
-    <div className="ipp-module-document-body ipp-signature-document">
-      {description ? <p className="ipp-module-front-description">{description}</p> : null}
-      <section className="ipp-parent-comment" aria-labelledby="ipp-parent-comment-title">
-        <div className="ipp-parent-comment-heading">
-          <h4 id="ipp-parent-comment-title">Parent or Guardian Comments</h4>
-          <button type="button" className="ipp-no-print" onClick={onUpdateSignatureDetails}>
-            <PencilLine size={13} /> Update signature details
+    <div className="ipp-module-document-body ipp-orf-document">
+      <div className="ipp-intervention-intro">
+        {description ? <p className="ipp-module-front-description">{description}</p> : <span />}
+        <button type="button" className="ipp-module-action-button primary ipp-inline-edit ipp-no-print" onClick={onAdd}>
+          <Plus size={14} /> Add ORF result
+        </button>
+      </div>
+      {loading && !response ? (
+        <div className="ipp-module-loading"><RefreshCw className="spin" size={18} />Loading oral reading fluency results…</div>
+      ) : error ? (
+        <div className="error-banner"><CircleAlert size={18} />{error}</div>
+      ) : results.length === 0 ? (
+        <div className="ipp-intervention-empty">No oral reading fluency assessments have been recorded.</div>
+      ) : (
+        <>
+          <div className="ipp-orf-table-wrap">
+            <table className="ipp-orf-table">
+              <thead>
+                <tr>
+                  <th scope="col">Assessment Date</th>
+                  <th scope="col">Level of Reading</th>
+                  <th scope="col">Words per Minute</th>
+                  <th scope="col">WPM Change</th>
+                  <th scope="col" className="ipp-no-print">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((result, index) => {
+                  const currentDate = result.assessmentDate ? new Date(result.assessmentDate).getTime() : Number.NaN
+                  const previous = results.slice(index + 1).find((candidate) => {
+                    if (!candidate.assessmentDate || Number.isNaN(currentDate)) return false
+                    return new Date(candidate.assessmentDate).getTime() < currentDate
+                  })
+                  const change = previous ? result.wordsPerMinute - previous.wordsPerMinute : null
+                  const readingLevelChanged = previous
+                    ? previous.levelOfReading !== result.levelOfReading
+                    : false
+                  const changeLabel = change === null
+                    ? null
+                    : (change > 0 ? '↑ +' + change : change < 0 ? '↓ ' + change : '→ 0') + ' WPM'
+                  return (
+                    <tr key={result.id}>
+                      <td>{formatPlanDate(result.assessmentDate)}</td>
+                      <td>{result.levelOfReadingLabel}</td>
+                      <td><strong className="ipp-orf-score">{result.wordsPerMinute}</strong></td>
+                      <td>
+                        {changeLabel === null ? (
+                          <span className="ipp-orf-first">First result</span>
+                        ) : (
+                          <div className="ipp-orf-change">
+                            <strong>{changeLabel}</strong>
+                            {readingLevelChanged ? <small>Reading level changed</small> : null}
+                          </div>
+                        )}
+                      </td>
+                      <td className="ipp-no-print">
+                        <button type="button" className="ipp-module-action-button" onClick={() => onEdit(result)}>
+                          <PencilLine size={13} /> Edit
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="ipp-orf-note">Arrows show the change in words per minute from the previous earlier-dated result with a recorded score. Reading levels may differ between assessments.</p>
+        </>
+      )}
+    </div>
+  )
+}
+
+function OralReadingFluencyDialog({
+  result,
+  options,
+  optionsLoading,
+  optionsError,
+  onRetryOptions,
+  onClose,
+  onSave,
+  onDelete,
+}: {
+  result: StudentPlanOralReadingFluencyResult | null
+  options: StudentPlanOralReadingFluencyOptionsResponse | null
+  optionsLoading: boolean
+  optionsError: string | null
+  onRetryOptions: () => void
+  onClose: () => void
+  onSave: (
+    command: StudentPlanOralReadingFluencyCommand,
+    result: StudentPlanOralReadingFluencyResult | null,
+  ) => Promise<void>
+  onDelete: (result: StudentPlanOralReadingFluencyResult) => Promise<void>
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const [assessmentDate, setAssessmentDate] = useState(
+    toPlanDateInput(result?.assessmentDate),
+  )
+  const [levelOfReading, setLevelOfReading] = useState(result ? String(result.levelOfReading) : '')
+  const [wordsPerMinute, setWordsPerMinute] = useState(result ? String(result.wordsPerMinute) : '')
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [dialogError, setDialogError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (dialog && !dialog.open) dialog.showModal()
+  }, [])
+
+  const close = () => {
+    if (saving || deleting) return
+    dialogRef.current?.close()
+    onClose()
+  }
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setDialogError(null)
+    const level = Number(levelOfReading)
+    const wpm = Number(wordsPerMinute)
+    if (!assessmentDate) {
+      setDialogError('Enter an Assessment Date.')
+      return
+    }
+    if (!Number.isInteger(level) || !options?.levelsOfReading.some((option) => option.value === level)) {
+      setDialogError('Select a valid Level of Reading.')
+      return
+    }
+    if (!Number.isInteger(wpm) || wpm < 0) {
+      setDialogError('Words per Minute must be a whole number of zero or greater.')
+      return
+    }
+
+    try {
+      setSaving(true)
+      await onSave({ assessmentDate, levelOfReading: level, wordsPerMinute: wpm }, result)
+      dialogRef.current?.close()
+      onClose()
+    } catch (requestError) {
+      setDialogError(requestError instanceof Error
+        ? requestError.message
+        : 'The oral reading fluency result could not be saved.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const remove = async () => {
+    if (!result || !window.confirm('Delete the oral reading fluency result from ' + formatPlanDate(result.assessmentDate) + '?')) return
+    setDialogError(null)
+    try {
+      setDeleting(true)
+      await onDelete(result)
+      dialogRef.current?.close()
+      onClose()
+    } catch (requestError) {
+      setDialogError(requestError instanceof Error
+        ? requestError.message
+        : 'The oral reading fluency result could not be deleted.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="ipp-attendance-dialog ipp-intervention-dialog ipp-orf-dialog"
+      aria-labelledby="ipp-orf-dialog-title"
+      onCancel={(event) => { event.preventDefault(); close() }}
+    >
+      <form method="dialog" onSubmit={(event) => void submit(event)}>
+        <header>
+          <div>
+            <span>Oral Reading Fluency (ORF)</span>
+            <h2 id="ipp-orf-dialog-title">{result ? 'Update ORF Result' : 'Add ORF Result'}</h2>
+          </div>
+          <button type="button" aria-label="Close oral reading fluency form" onClick={close} disabled={saving || deleting}>
+            <X size={18} />
+          </button>
+        </header>
+        <div className="ipp-attendance-dialog-body ipp-intervention-dialog-body">
+          <p>Record the student’s reading level and the number of words read correctly in one minute.</p>
+          {optionsLoading && !options ? (
+            <div className="ipp-module-loading"><RefreshCw className="spin" size={18} />Loading reading levels…</div>
+          ) : optionsError && !options ? (
+            <div className="error-banner" role="alert">
+              <CircleAlert size={18} />
+              <span>{optionsError}</span>
+              <button type="button" className="outline-button" onClick={onRetryOptions}>Try again</button>
+            </div>
+          ) : null}
+          {dialogError ? <div className="error-banner" role="alert"><CircleAlert size={18} />{dialogError}</div> : null}
+          {options ? (
+            <div className="ipp-intervention-fields ipp-orf-fields">
+              <label>
+                <span>Assessment Date</span>
+                <input type="date" value={assessmentDate} required onChange={(event) => setAssessmentDate(event.target.value)} />
+              </label>
+              <label>
+                <span>Level of Reading</span>
+                <select value={levelOfReading} required onChange={(event) => setLevelOfReading(event.target.value)}>
+                  <option value="">Select level of reading</option>
+                  {options.levelsOfReading.map((option) => (
+                    <option value={option.value} key={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Words per Minute</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  value={wordsPerMinute}
+                  required
+                  onChange={(event) => setWordsPerMinute(event.target.value)}
+                />
+              </label>
+            </div>
+          ) : null}
+        </div>
+        <footer>
+          {result ? (
+            <button type="button" className="ipp-danger-button" onClick={() => void remove()} disabled={saving || deleting}>
+              {deleting ? <RefreshCw className="spin" size={16} /> : <Trash2 size={16} />}
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+          ) : null}
+          <span className="ipp-dialog-footer-spacer" />
+          <button type="button" className="outline-button" onClick={close} disabled={saving || deleting}>Cancel</button>
+          <button type="submit" className="primary-button" disabled={saving || deleting || !options}>
+            {saving ? <RefreshCw className="spin" size={16} /> : <Save size={16} />}
+            {saving ? 'Saving…' : result ? 'Save result' : 'Add result'}
+          </button>
+        </footer>
+      </form>
+    </dialog>
+  )
+}
+
+function WordStudyDocument({ description, response, loading, error, onAdd, onEdit }: {
+  description: string
+  response: StudentPlanWordStudyResponse | null
+  loading: boolean
+  error: string | null
+  onAdd: () => void
+  onEdit: (record: StudentPlanWordStudyRecord) => void
+}) {
+  const records = response?.records ?? []
+
+  return (
+    <div className="ipp-module-document-body ipp-word-study-document">
+      <div className="ipp-intervention-intro">
+        {description ? <p className="ipp-module-front-description">{description}</p> : <span />}
+        <button type="button" className="ipp-module-action-button primary ipp-inline-edit ipp-no-print" onClick={onAdd}>
+          <Plus size={14} /> Add Word Study record
+        </button>
+      </div>
+      {loading && !response ? (
+        <div className="ipp-module-loading"><RefreshCw className="spin" size={18} />Loading Word Study records…</div>
+      ) : error ? (
+        <div className="error-banner"><CircleAlert size={18} />{error}</div>
+      ) : records.length === 0 ? (
+        <div className="ipp-intervention-empty">No Word Study term records have been recorded.</div>
+      ) : (
+        <div className="ipp-word-study-table-wrap">
+          <table className="ipp-word-study-table">
+            <thead>
+              <tr>
+                <th scope="col">Start Date</th>
+                <th scope="col">End Date</th>
+                <th scope="col">Starting Stage and Skill</th>
+                <th scope="col">Finishing Stage and Skill</th>
+                <th scope="col" className="ipp-no-print"><span className="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {records.map((record) => (
+                <tr key={record.id}>
+                  <td>{formatPlanDate(record.termStartDate)}</td>
+                  <td>{formatPlanDate(record.termEndDate)}</td>
+                  <td>
+                    <WordStudyStageDetail
+                      name={record.startingLevelName}
+                      section={record.startingStageReference}
+                      expectedGrade={record.startingExpectedGrade}
+                    />
+                  </td>
+                  <td>
+                    {record.finishingLevelName ? (
+                      <WordStudyStageDetail
+                        name={record.finishingLevelName}
+                        section={record.finishingStageReference}
+                        expectedGrade={record.finishingExpectedGrade}
+                      />
+                    ) : <span className="ipp-intervention-dash">—</span>}
+                  </td>
+                  <td className="ipp-no-print">
+                    <button type="button" className="ipp-module-action-button" onClick={() => onEdit(record)}>
+                      <PencilLine size={13} /> Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function WordStudyStageDetail({ name, section, expectedGrade }: {
+  name: string
+  section?: string | null
+  expectedGrade?: string | null
+}) {
+  return (
+    <div className="ipp-word-study-stage">
+      <strong>{name}</strong>
+      {section ? <span>Stage Reference: {section}</span> : null}
+      {expectedGrade ? <span>Expected Grade: {expectedGrade}</span> : null}
+    </div>
+  )
+}
+
+function WordStudyDialog({
+  record,
+  options,
+  optionsLoading,
+  optionsError,
+  onRetryOptions,
+  onClose,
+  onSave,
+  onDelete,
+}: {
+  record: StudentPlanWordStudyRecord | null
+  options: StudentPlanWordStudyOptionsResponse | null
+  optionsLoading: boolean
+  optionsError: string | null
+  onRetryOptions: () => void
+  onClose: () => void
+  onSave: (command: StudentPlanWordStudyCommand, record: StudentPlanWordStudyRecord | null) => Promise<void>
+  onDelete: (record: StudentPlanWordStudyRecord) => Promise<void>
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const [termStartDate, setTermStartDate] = useState(toPlanDateInput(record?.termStartDate))
+  const [startingLevelId, setStartingLevelId] = useState(record?.startingLevelId ?? '')
+  const [termEndDate, setTermEndDate] = useState(toPlanDateInput(record?.termEndDate))
+  const [finishingLevelId, setFinishingLevelId] = useState(record?.finishingLevelId ?? '')
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [dialogError, setDialogError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (dialog && !dialog.open) dialog.showModal()
+  }, [])
+
+  const close = () => {
+    if (saving || deleting) return
+    dialogRef.current?.close()
+    onClose()
+  }
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setDialogError(null)
+    if (!termStartDate) {
+      setDialogError('Enter a Term Starting Date.')
+      return
+    }
+    if (!options?.stages.some((stage) => stage.id === startingLevelId)) {
+      setDialogError('Select a valid WTW Starting Level.')
+      return
+    }
+    if (Boolean(termEndDate) !== Boolean(finishingLevelId)) {
+      setDialogError('Enter both the Term Ending Date and WTW Ending Level, or leave both blank.')
+      return
+    }
+    if (termEndDate && termEndDate < termStartDate) {
+      setDialogError('Term Ending Date cannot be before Term Starting Date.')
+      return
+    }
+    if (finishingLevelId && !options.stages.some((stage) => stage.id === finishingLevelId)) {
+      setDialogError('Select a valid WTW Ending Level.')
+      return
+    }
+
+    try {
+      setSaving(true)
+      await onSave({
+        termStartDate,
+        startingLevelId,
+        termEndDate: termEndDate || null,
+        finishingLevelId: finishingLevelId || null,
+      }, record)
+      dialogRef.current?.close()
+      onClose()
+    } catch (requestError) {
+      setDialogError(requestError instanceof Error
+        ? requestError.message
+        : 'The Word Study record could not be saved.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const remove = async () => {
+    if (!record || !window.confirm('Delete the Word Study record starting ' + formatPlanDate(record.termStartDate) + '?')) return
+    setDialogError(null)
+    try {
+      setDeleting(true)
+      await onDelete(record)
+      dialogRef.current?.close()
+      onClose()
+    } catch (requestError) {
+      setDialogError(requestError instanceof Error
+        ? requestError.message
+        : 'The Word Study record could not be deleted.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const stageOption = (stage: StudentPlanWordStudyStageOption) => (
+    <option value={stage.id} key={stage.id}>{stage.display}</option>
+  )
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="ipp-attendance-dialog ipp-intervention-dialog ipp-word-study-dialog"
+      aria-labelledby="ipp-word-study-dialog-title"
+      onCancel={(event) => { event.preventDefault(); close() }}
+    >
+      <form method="dialog" onSubmit={(event) => void submit(event)}>
+        <header>
+          <div>
+            <span>Word Study</span>
+            <h2 id="ipp-word-study-dialog-title">{record ? 'Update Word Study Record' : 'Add Word Study Record'}</h2>
+          </div>
+          <button type="button" aria-label="Close Word Study form" onClick={close} disabled={saving || deleting}>
+            <X size={18} />
+          </button>
+        </header>
+        <div className="ipp-attendance-dialog-body ipp-intervention-dialog-body">
+          <p>Record the student’s Words Their Way stage at the beginning and, when available, the end of the term.</p>
+          {optionsLoading && !options ? (
+            <div className="ipp-module-loading"><RefreshCw className="spin" size={18} />Loading Words Their Way stages…</div>
+          ) : optionsError && !options ? (
+            <div className="error-banner" role="alert">
+              <CircleAlert size={18} />
+              <span>{optionsError}</span>
+              <button type="button" className="outline-button" onClick={onRetryOptions}>Try again</button>
+            </div>
+          ) : null}
+          {dialogError ? <div className="error-banner" role="alert"><CircleAlert size={18} />{dialogError}</div> : null}
+          {options ? (
+            <div className="ipp-intervention-fields ipp-word-study-fields">
+              <label>
+                <span>Term Starting Date</span>
+                <input type="date" value={termStartDate} required onChange={(event) => setTermStartDate(event.target.value)} />
+              </label>
+              <label>
+                <span>WTW Starting Level</span>
+                <select value={startingLevelId} required onChange={(event) => setStartingLevelId(event.target.value)}>
+                  <option value="">Select starting stage and skill</option>
+                  {options.stages.map(stageOption)}
+                </select>
+              </label>
+              <label>
+                <span>Term Ending Date</span>
+                <input type="date" min={termStartDate || undefined} value={termEndDate} onChange={(event) => setTermEndDate(event.target.value)} />
+                <small>Optional until the term is complete.</small>
+              </label>
+              <label>
+                <span>WTW Ending Level</span>
+                <select value={finishingLevelId} onChange={(event) => setFinishingLevelId(event.target.value)}>
+                  <option value="">Select finishing stage and skill</option>
+                  {options.stages.map(stageOption)}
+                </select>
+                <small>Required when a Term Ending Date is entered.</small>
+              </label>
+            </div>
+          ) : null}
+        </div>
+        <footer>
+          {record ? (
+            <button type="button" className="ipp-danger-button" onClick={() => void remove()} disabled={saving || deleting}>
+              {deleting ? <RefreshCw className="spin" size={16} /> : <Trash2 size={16} />}
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+          ) : null}
+          <span className="ipp-dialog-footer-spacer" />
+          <button type="button" className="outline-button" onClick={close} disabled={saving || deleting}>Cancel</button>
+          <button type="submit" className="primary-button" disabled={saving || deleting || !options}>
+            {saving ? <RefreshCw className="spin" size={16} /> : <Save size={16} />}
+            {saving ? 'Saving…' : record ? 'Save record' : 'Add record'}
+          </button>
+        </footer>
+      </form>
+    </dialog>
+  )
+}
+
+function WritingSnapshotDocument({ description, response, loading, error, onAdd, onEdit, contentUrl }: {
+  description: string
+  response: StudentPlanWritingSnapshotsResponse | null
+  loading: boolean
+  error: string | null
+  onAdd: () => void
+  onEdit: (snapshot: StudentPlanWritingSnapshotRecord) => void
+  contentUrl: (snapshotId: string, kind: 'file' | 'image') => string
+}) {
+  const snapshots = response?.snapshots ?? []
+
+  return (
+    <div className="ipp-module-document-body ipp-writing-snapshot-document">
+      <div className="ipp-intervention-intro">
+        {description ? <p className="ipp-module-front-description">{description}</p> : <span />}
+        <button type="button" className="ipp-module-action-button primary ipp-inline-edit ipp-no-print" onClick={onAdd}>
+          <Plus size={14} /> Add writing snapshot
+        </button>
+      </div>
+      {loading && !response ? (
+        <div className="ipp-module-loading"><RefreshCw className="spin" size={18} />Loading Writing Snapshots…</div>
+      ) : error ? (
+        <div className="error-banner"><CircleAlert size={18} />{error}</div>
+      ) : snapshots.length === 0 ? (
+        <div className="ipp-intervention-empty">No writing snapshots have been recorded.</div>
+      ) : (
+        <div className="ipp-writing-snapshot-list">
+          {snapshots.map((snapshot) => (
+            <article className="ipp-writing-snapshot-card" key={snapshot.id}>
+              <div className="ipp-writing-snapshot-content">
+                <p>{plainTextFromHtml(snapshot.description) || 'No Evidence of Development was recorded.'}</p>
+                {snapshot.hasWritingSampleImage ? (
+                  <figure className="ipp-writing-snapshot-image">
+                    <img src={contentUrl(snapshot.id, 'image')} alt={`Writing sample added ${formatPlanDate(snapshot.commentDate)}`} loading="lazy" />
+                    <figcaption>Writing sample image</figcaption>
+                  </figure>
+                ) : null}
+                {snapshot.hasWritingSampleFile ? (
+                  <a className="ipp-writing-snapshot-file ipp-no-print" href={contentUrl(snapshot.id, 'file')}>
+                    <FileText size={19} />
+                    <span>
+                      <strong>{snapshot.writingSampleFileName || 'Writing sample file'}</strong>
+                      <small>Download attached writing sample</small>
+                    </span>
+                    <Download size={16} />
+                  </a>
+                ) : null}
+              </div>
+              <footer>
+                <span><strong>Added By:</strong> {snapshot.addedBy || '—'}</span>
+                <span><strong>Evidence Date:</strong> {formatPlanDate(snapshot.commentDate)}</span>
+                {!snapshot.includeInExport ? <em className="ipp-no-print">Excluded from compiled document</em> : null}
+                <button type="button" className="ipp-module-action-button ipp-no-print" onClick={() => onEdit(snapshot)}>
+                  <PencilLine size={13} /> Edit
+                </button>
+              </footer>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function WritingSnapshotDialog({ snapshot, onClose, onSave, onDelete }: {
+  snapshot: StudentPlanWritingSnapshotRecord | null
+  onClose: () => void
+  onSave: (
+    command: StudentPlanWritingSnapshotCommand,
+    snapshot: StudentPlanWritingSnapshotRecord | null,
+  ) => Promise<void>
+  onDelete: (snapshot: StudentPlanWritingSnapshotRecord) => Promise<void>
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const [commentDate, setCommentDate] = useState(
+    toPlanDateInput(snapshot?.commentDate) || new Date().toISOString().slice(0, 10),
+  )
+  const [evidenceOfDevelopment, setEvidenceOfDevelopment] = useState(snapshot?.description ?? '')
+  const [includeInExport, setIncludeInExport] = useState(snapshot?.includeInExport ?? true)
+  const [writingSampleFile, setWritingSampleFile] = useState<File | null>(null)
+  const [writingSampleImage, setWritingSampleImage] = useState<File | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [dialogError, setDialogError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (dialog && !dialog.open) dialog.showModal()
+  }, [])
+
+  const close = () => {
+    if (saving || deleting) return
+    dialogRef.current?.close()
+    onClose()
+  }
+
+  const chooseFile = (file: File | null) => {
+    setWritingSampleFile(file)
+    if (file) {
+      setWritingSampleImage(null)
+      if (imageInputRef.current) imageInputRef.current.value = ''
+    }
+  }
+
+  const chooseImage = (file: File | null) => {
+    setWritingSampleImage(file)
+    if (file) {
+      setWritingSampleFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setDialogError(null)
+    if (!commentDate) {
+      setDialogError('Enter a Date of Comment.')
+      return
+    }
+    if (!plainTextFromHtml(evidenceOfDevelopment)) {
+      setDialogError('Enter Evidence of Development.')
+      return
+    }
+    if (writingSampleFile && writingSampleFile.size > 20 * 1024 * 1024) {
+      setDialogError('Writing Sample File must be 20 MB or smaller.')
+      return
+    }
+    if (writingSampleImage && writingSampleImage.size > 8 * 1024 * 1024) {
+      setDialogError('Writing Sample Image must be 8 MB or smaller.')
+      return
+    }
+    if (writingSampleImage && !writingSampleImage.type.startsWith('image/')) {
+      setDialogError('Writing Sample Image must use an image file format.')
+      return
+    }
+
+    try {
+      setSaving(true)
+      await onSave({
+        commentDate,
+        evidenceOfDevelopment,
+        includeInExport,
+        writingSampleFile,
+        writingSampleImage,
+      }, snapshot)
+      dialogRef.current?.close()
+      onClose()
+    } catch (requestError) {
+      setDialogError(requestError instanceof Error
+        ? requestError.message
+        : 'The Writing Snapshot could not be saved.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const remove = async () => {
+    if (!snapshot || !window.confirm('Delete the Writing Snapshot from ' + formatPlanDate(snapshot.commentDate) + '?')) return
+    setDialogError(null)
+    try {
+      setDeleting(true)
+      await onDelete(snapshot)
+      dialogRef.current?.close()
+      onClose()
+    } catch (requestError) {
+      setDialogError(requestError instanceof Error
+        ? requestError.message
+        : 'The Writing Snapshot could not be deleted.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="ipp-attendance-dialog ipp-intervention-dialog ipp-writing-snapshot-dialog"
+      aria-labelledby="ipp-writing-snapshot-dialog-title"
+      onCancel={(event) => { event.preventDefault(); close() }}
+    >
+      <form method="dialog" onSubmit={(event) => void submit(event)}>
+        <header>
+          <div>
+            <span>Writing Snapshot</span>
+            <h2 id="ipp-writing-snapshot-dialog-title">{snapshot ? 'Update Writing Snapshot' : 'Add Writing Snapshot'}</h2>
+          </div>
+          <button type="button" aria-label="Close Writing Snapshot form" onClick={close} disabled={saving || deleting}>
+            <X size={18} />
+          </button>
+        </header>
+        <div className="ipp-attendance-dialog-body ipp-intervention-dialog-body">
+          <p>Capture evidence of the student’s writing development and optionally attach the writing sample.</p>
+          {dialogError ? <div className="error-banner" role="alert"><CircleAlert size={18} />{dialogError}</div> : null}
+          <div className="ipp-intervention-fields ipp-writing-snapshot-fields">
+            <label>
+              <span>Date of Comment</span>
+              <input type="date" value={commentDate} required onChange={(event) => setCommentDate(event.target.value)} />
+            </label>
+            <label className="ipp-writing-snapshot-export-field">
+              <span>Compiled Document</span>
+              <span className="ipp-writing-snapshot-checkbox">
+                <input type="checkbox" checked={includeInExport} onChange={(event) => setIncludeInExport(event.target.checked)} />
+                Include this snapshot in the export
+              </span>
+            </label>
+            <label className="full-width">
+              <span>Evidence of Development</span>
+              <textarea value={evidenceOfDevelopment} required onChange={(event) => setEvidenceOfDevelopment(event.target.value)} />
+            </label>
+            <label className="ipp-writing-snapshot-upload">
+              <span><Paperclip size={14} /> Writing Sample File</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
+              />
+              <small>PDF or Word, up to 20 MB.{snapshot?.hasWritingSampleFile ? ` Current: ${snapshot.writingSampleFileName || 'attached file'}.` : ''}</small>
+            </label>
+            <label className="ipp-writing-snapshot-upload">
+              <span><ImageIcon size={14} /> Writing Sample Image</span>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(event) => chooseImage(event.target.files?.[0] ?? null)}
+              />
+              <small>Image, up to 8 MB.{snapshot?.hasWritingSampleImage ? ' A writing sample image is currently attached.' : ''}</small>
+            </label>
+          </div>
+          {(writingSampleFile || writingSampleImage) && snapshot && (snapshot.hasWritingSampleFile || snapshot.hasWritingSampleImage) ? (
+            <div className="ipp-writing-snapshot-replace-notice">
+              <CircleAlert size={15} /> The selected upload will replace the existing writing sample attachment.
+            </div>
+          ) : null}
+        </div>
+        <footer>
+          {snapshot ? (
+            <button type="button" className="ipp-danger-button" onClick={() => void remove()} disabled={saving || deleting}>
+              {deleting ? <RefreshCw className="spin" size={16} /> : <Trash2 size={16} />}
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+          ) : null}
+          <span className="ipp-dialog-footer-spacer" />
+          <button type="button" className="outline-button" onClick={close} disabled={saving || deleting}>Cancel</button>
+          <button type="submit" className="primary-button" disabled={saving || deleting}>
+            {saving ? <RefreshCw className="spin" size={16} /> : <Save size={16} />}
+            {saving ? 'Saving…' : snapshot ? 'Save snapshot' : 'Add snapshot'}
+          </button>
+        </footer>
+      </form>
+    </dialog>
+  )
+}
+
+function TeacherCommentsDocument({ description, response, loading, error, sections, onAdd, onEdit }: {
+  description: string
+  response: StudentPlanTeacherCommentsResponse | null
+  loading: boolean
+  error: string | null
+  sections: StudentPlanModule[]
+  onAdd: () => void
+  onEdit: (comment: StudentPlanTeacherCommentRecord) => void
+}) {
+  const comments = response?.comments ?? []
+  const sectionOrder = new Map(sections.map((section, index) => [section.id, index]))
+  const groupedMap = comments.reduce((groups, comment) => {
+    const group = groups.get(comment.sectionId) ?? []
+    group.push(comment)
+    groups.set(comment.sectionId, group)
+    return groups
+  }, new Map<string, StudentPlanTeacherCommentRecord[]>())
+  const grouped = Array.from(groupedMap.entries())
+    .sort(([left], [right]) => (sectionOrder.get(left) ?? 9999) - (sectionOrder.get(right) ?? 9999))
+
+  return (
+    <div className="ipp-module-document-body ipp-teacher-comments-document">
+      <div className="ipp-intervention-intro">
+        {description ? <p className="ipp-module-front-description">{description}</p> : <span />}
+        <button type="button" className="ipp-module-action-button primary ipp-inline-edit ipp-no-print" onClick={onAdd} disabled={sections.length === 0}>
+          <Plus size={14} /> Add comment
+        </button>
+      </div>
+      {loading && !response ? (
+        <div className="ipp-module-loading"><RefreshCw className="spin" size={18} />Loading Teacher Comments…</div>
+      ) : error ? (
+        <div className="error-banner"><CircleAlert size={18} />{error}</div>
+      ) : comments.length === 0 ? (
+        <div className="ipp-intervention-empty">No teacher comments or next steps have been recorded.</div>
+      ) : (
+        <div className="ipp-teacher-comment-groups">
+          {grouped.map(([sectionId, sectionComments]) => (
+            <section className="ipp-teacher-comment-group" key={sectionId}>
+              <h4>{sectionComments[0]?.sectionName || sections.find((section) => section.id === sectionId)?.name || 'Plan section'}</h4>
+              <div className="ipp-teacher-comment-list">
+                {sectionComments.map((comment) => (
+                  <article className="ipp-teacher-comment-card" key={comment.id}>
+                    <div className="ipp-teacher-comment-content">
+                      <p>{plainTextFromHtml(comment.commentsAndNextSteps)}</p>
+                      {plainTextFromHtml(comment.additionalObservations) ? (
+                        <div>
+                          <strong>Additional Observations</strong>
+                          <p>{plainTextFromHtml(comment.additionalObservations)}</p>
+                        </div>
+                      ) : null}
+                    </div>
+                    <footer>
+                      <span><strong>Added By:</strong> {comment.addedBy || '—'}</span>
+                      <span><strong>Date of Comment:</strong> {formatPlanDate(comment.commentDate)}</span>
+                      {!comment.includeInExport ? <em className="ipp-no-print">Excluded from compiled document</em> : null}
+                      <button type="button" className="ipp-module-action-button ipp-no-print" onClick={() => onEdit(comment)}>
+                        <PencilLine size={13} /> Edit
+                      </button>
+                    </footer>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TeacherCommentDialog({ comment, sections, onClose, onSave, onDelete }: {
+  comment: StudentPlanTeacherCommentRecord | null
+  sections: StudentPlanModule[]
+  onClose: () => void
+  onSave: (command: StudentPlanTeacherCommentCommand, comment: StudentPlanTeacherCommentRecord | null) => Promise<void>
+  onDelete: (comment: StudentPlanTeacherCommentRecord) => Promise<void>
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const [sectionId, setSectionId] = useState(comment?.sectionId ?? sections[0]?.id ?? '')
+  const [commentDate, setCommentDate] = useState(
+    toPlanDateInput(comment?.commentDate) || new Date().toISOString().slice(0, 10),
+  )
+  const [commentsAndNextSteps, setCommentsAndNextSteps] = useState(comment?.commentsAndNextSteps ?? '')
+  const [additionalObservations, setAdditionalObservations] = useState(comment?.additionalObservations ?? '')
+  const [includeInExport, setIncludeInExport] = useState(comment?.includeInExport ?? true)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [dialogError, setDialogError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (dialog && !dialog.open) dialog.showModal()
+  }, [])
+
+  const close = () => {
+    if (saving || deleting) return
+    dialogRef.current?.close()
+    onClose()
+  }
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setDialogError(null)
+    if (!sections.some((section) => section.id === sectionId)) {
+      setDialogError('Select an available plan Section.')
+      return
+    }
+    if (!commentDate) {
+      setDialogError('Enter a Date of Comment.')
+      return
+    }
+    if (!plainTextFromHtml(commentsAndNextSteps)) {
+      setDialogError('Enter Comments and Next Steps.')
+      return
+    }
+    try {
+      setSaving(true)
+      await onSave({
+        sectionId,
+        commentDate,
+        commentsAndNextSteps,
+        additionalObservations: additionalObservations.trim() || null,
+        includeInExport,
+      }, comment)
+      dialogRef.current?.close()
+      onClose()
+    } catch (requestError) {
+      setDialogError(requestError instanceof Error ? requestError.message : 'The Teacher Comment could not be saved.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const remove = async () => {
+    if (!comment || !window.confirm('Delete this Teacher Comment and Next Steps record?')) return
+    setDialogError(null)
+    try {
+      setDeleting(true)
+      await onDelete(comment)
+      dialogRef.current?.close()
+      onClose()
+    } catch (requestError) {
+      setDialogError(requestError instanceof Error ? requestError.message : 'The Teacher Comment could not be deleted.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <dialog ref={dialogRef} className="ipp-attendance-dialog ipp-intervention-dialog ipp-teacher-comment-dialog" aria-labelledby="ipp-teacher-comment-dialog-title" onCancel={(event) => { event.preventDefault(); close() }}>
+      <form method="dialog" onSubmit={(event) => void submit(event)}>
+        <header>
+          <div>
+            <span>Teacher Comment and Next Steps</span>
+            <h2 id="ipp-teacher-comment-dialog-title">{comment ? 'Update Comment' : 'Add Comment'}</h2>
+          </div>
+          <button type="button" aria-label="Close Teacher Comment form" onClick={close} disabled={saving || deleting}><X size={18} /></button>
+        </header>
+        <div className="ipp-attendance-dialog-body ipp-intervention-dialog-body">
+          <p>Record comments and next steps against one of the modules selected for this annual plan.</p>
+          {dialogError ? <div className="error-banner" role="alert"><CircleAlert size={18} />{dialogError}</div> : null}
+          <div className="ipp-intervention-fields ipp-teacher-comment-fields">
+            <label>
+              <span>Section</span>
+              <select value={sectionId} required onChange={(event) => setSectionId(event.target.value)}>
+                <option value="">Select plan section</option>
+                {sections.map((section) => <option value={section.id} key={section.id}>{section.name}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Date of Comment</span>
+              <input type="date" value={commentDate} required onChange={(event) => setCommentDate(event.target.value)} />
+            </label>
+            <label className="full-width">
+              <span>Comments and Next Steps</span>
+              <textarea value={commentsAndNextSteps} required onChange={(event) => setCommentsAndNextSteps(event.target.value)} />
+            </label>
+            <label className="full-width">
+              <span>Additional Observations</span>
+              <textarea value={additionalObservations} onChange={(event) => setAdditionalObservations(event.target.value)} />
+            </label>
+            <label className="full-width ipp-writing-snapshot-export-field">
+              <span>Compiled Document</span>
+              <span className="ipp-writing-snapshot-checkbox">
+                <input type="checkbox" checked={includeInExport} onChange={(event) => setIncludeInExport(event.target.checked)} />
+                Include this comment in the export
+              </span>
+            </label>
+          </div>
+        </div>
+        <footer>
+          {comment ? <button type="button" className="ipp-danger-button" onClick={() => void remove()} disabled={saving || deleting}>{deleting ? <RefreshCw className="spin" size={16} /> : <Trash2 size={16} />}{deleting ? 'Deleting…' : 'Delete'}</button> : null}
+          <span className="ipp-dialog-footer-spacer" />
+          <button type="button" className="outline-button" onClick={close} disabled={saving || deleting}>Cancel</button>
+          <button type="submit" className="primary-button" disabled={saving || deleting || sections.length === 0}>{saving ? <RefreshCw className="spin" size={16} /> : <Save size={16} />}{saving ? 'Saving…' : comment ? 'Save comment' : 'Add comment'}</button>
+        </footer>
+      </form>
+    </dialog>
+  )
+}
+
+function SignaturesDocument({ description, response, loading, error, onAdd, onEdit, onReorder }: {
+  description: string
+  response: StudentPlanSignaturesResponse | null
+  loading: boolean
+  error: string | null
+  onAdd: () => void
+  onEdit: (signature: StudentPlanSignatureRecord) => void
+  onReorder: (ordered: StudentPlanSignatureRecord[]) => Promise<StudentPlanSignaturesResponse>
+}) {
+  const [managerOpen, setManagerOpen] = useState(false)
+  const [draftSignatures, setDraftSignatures] = useState<StudentPlanSignatureRecord[]>([])
+  const [draggedSignatureId, setDraggedSignatureId] = useState<string | null>(null)
+  const [reordering, setReordering] = useState(false)
+  const [reorderError, setReorderError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!reordering) setDraftSignatures(response?.signatures ?? [])
+  }, [reordering, response])
+
+  const allAssigned = draftSignatures.every((signature) => signature.stateCode === 0 && signature.statusCode === 1)
+  const canReorder = draftSignatures.length > 1 && allAssigned && !reordering
+  const rendererSignatures = draftSignatures.filter(
+    (signature) => signature.statusLabel.toLocaleLowerCase() !== 'cancelled',
+  )
+
+  const applyOrder = async (ordered: StudentPlanSignatureRecord[]) => {
+    if (!canReorder) return
+    const optimistic = ordered.map((signature, index) => ({ ...signature, signatoryOrder: index + 1 }))
+    setDraftSignatures(optimistic)
+    setReorderError(null)
+    setReordering(true)
+    try {
+      const next = await onReorder(ordered)
+      setDraftSignatures(next.signatures)
+    } catch (requestError) {
+      setDraftSignatures(response?.signatures ?? [])
+      setReorderError(requestError instanceof Error ? requestError.message : 'The signature order could not be saved.')
+    } finally {
+      setReordering(false)
+      setDraggedSignatureId(null)
+    }
+  }
+
+  const moveSignature = (id: string, offset: number) => {
+    const currentIndex = draftSignatures.findIndex((signature) => signature.id === id)
+    const nextIndex = currentIndex + offset
+    if (!canReorder || currentIndex < 0 || nextIndex < 0 || nextIndex >= draftSignatures.length) return
+    const ordered = [...draftSignatures]
+    const [moved] = ordered.splice(currentIndex, 1)
+    ordered.splice(nextIndex, 0, moved)
+    void applyOrder(ordered)
+  }
+
+  const dropSignature = (event: DragEvent<HTMLElement>, targetId: string) => {
+    event.preventDefault()
+    const sourceId = draggedSignatureId || event.dataTransfer.getData('text/plain')
+    const sourceIndex = draftSignatures.findIndex((signature) => signature.id === sourceId)
+    const targetIndex = draftSignatures.findIndex((signature) => signature.id === targetId)
+    if (!canReorder || sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
+      setDraggedSignatureId(null)
+      return
+    }
+    const ordered = [...draftSignatures]
+    const [moved] = ordered.splice(sourceIndex, 1)
+    ordered.splice(targetIndex, 0, moved)
+    void applyOrder(ordered)
+  }
+
+  return (
+    <div className={`ipp-signature-module-layout${managerOpen ? ' manager-open' : ''}`}>
+      <div className="ipp-module-document-body ipp-signature-document">
+        <div className="ipp-intervention-intro">
+          {description ? <p className="ipp-module-front-description">{description}</p> : <span />}
+          <button
+            type="button"
+            className={`ipp-module-action-button primary ipp-inline-edit ipp-no-print${managerOpen ? ' active' : ''}`}
+            aria-expanded={managerOpen}
+            onClick={() => setManagerOpen((current) => !current)}
+          >
+            <Signature size={14} /> {managerOpen ? 'Close signature manager' : 'Manage signatures'}
           </button>
         </div>
-        <div className="ipp-parent-comment-body" aria-label="Parent or guardian comments will appear here after signing" />
-      </section>
-      <div className="ipp-signer-rows">
-        {signerRows.map((signer) => (
-          <section className="ipp-signer-row" key={signer.role}>
-            <p>
-              <span>{signer.role}: </span>
-              <span
-                className="ipp-signer-name"
-                title={signer.email?.trim() ? `DocuSign email: ${signer.email.trim()}` : undefined}
-              >
-                {signer.name?.trim() || '—'}
-              </span>
-            </p>
-            <div className="ipp-signature-lines">
-              <div><span>{signer.role} Signature</span></div>
-              <div><span>Date Signed</span></div>
-            </div>
-          </section>
-        ))}
+        {loading && !response ? (
+          <div className="ipp-module-loading"><RefreshCw className="spin" size={18} />Loading signatures…</div>
+        ) : error ? (
+          <div className="error-banner"><CircleAlert size={18} />{error}</div>
+        ) : rendererSignatures.length === 0 ? (
+          <div className="ipp-intervention-empty ipp-no-print">No signatures have been assigned to this annual plan.</div>
+        ) : (
+          <div className="ipp-signer-rows">
+            {rendererSignatures.map((signer) => (
+              <section className="ipp-signer-row" key={signer.id}>
+                <div className="ipp-signer-renderer-heading">
+                  <p>
+                    <span>{signer.signatoryRoleLabel}: </span>
+                    <span className="ipp-signer-name" title={`DocuSign email: ${signer.signatoryEmail}`}>
+                      {signer.signatoryName}
+                    </span>
+                  </p>
+                </div>
+                {signer.allowComments ? (
+                  <section className="ipp-parent-comment" aria-label={`${signer.signatoryRoleLabel} comments`}>
+                    <div className="ipp-parent-comment-heading"><h4>{signer.signatoryRoleLabel} Comments</h4></div>
+                    <div className="ipp-parent-comment-body" />
+                  </section>
+                ) : null}
+                <div className="ipp-signature-lines">
+                  <div><span>{signer.signatoryRoleLabel} Signature</span></div>
+                  <div>
+                    {signer.dateSigned ? <strong>{formatPlanDate(signer.dateSigned)}</strong> : null}
+                    <span>Date Signed</span>
+                  </div>
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
       </div>
+
+      {managerOpen ? (
+        <aside className="ipp-signature-manager ipp-no-print" aria-label="Manage signatures">
+          <header>
+            <div>
+              <span>DocuSign routing</span>
+              <h4>Manage signatures</h4>
+            </div>
+            <button type="button" aria-label="Close signature manager" onClick={() => setManagerOpen(false)}><X size={17} /></button>
+          </header>
+          <div className="ipp-signature-manager-toolbar">
+            <div>
+              <strong>{draftSignatures.length} {draftSignatures.length === 1 ? 'signatory' : 'signatories'}</strong>
+              <span>Drag cards to set the routing order.</span>
+            </div>
+            <button type="button" className="ipp-module-action-button primary" onClick={onAdd}>
+              <Plus size={14} /> Add signature
+            </button>
+          </div>
+          {reorderError ? <div className="error-banner"><CircleAlert size={17} />{reorderError}</div> : null}
+          {!allAssigned && draftSignatures.length > 1 ? (
+            <div className="ipp-signature-order-notice"><LockKeyhole size={14} />Routing order is locked after signature requests begin.</div>
+          ) : null}
+          {draftSignatures.length === 0 ? (
+            <div className="ipp-signature-manager-empty">No signatures have been assigned.</div>
+          ) : (
+            <div className={`ipp-signature-card-grid${reordering ? ' saving' : ''}`} aria-busy={reordering}>
+              {draftSignatures.map((signer, index) => {
+                const canEdit = signer.stateCode === 0 && signer.statusCode === 1
+                return (
+                  <article
+                    className={`ipp-signature-card${draggedSignatureId === signer.id ? ' dragging' : ''}`}
+                    draggable={canReorder}
+                    onDragStart={(event) => {
+                      setDraggedSignatureId(signer.id)
+                      event.dataTransfer.effectAllowed = 'move'
+                      event.dataTransfer.setData('text/plain', signer.id)
+                    }}
+                    onDragOver={(event) => {
+                      if (canReorder) {
+                        event.preventDefault()
+                        event.dataTransfer.dropEffect = 'move'
+                      }
+                    }}
+                    onDrop={(event) => dropSignature(event, signer.id)}
+                    onDragEnd={() => setDraggedSignatureId(null)}
+                    key={signer.id}
+                  >
+                    <div className="ipp-signature-card-order">
+                      <GripVertical size={17} aria-hidden="true" />
+                      <span>{index + 1}</span>
+                    </div>
+                    <div className="ipp-signature-card-copy">
+                      <strong>{signer.signatoryName}</strong>
+                      <span>{signer.signatoryRoleLabel} · {signer.recipientTypeLabel}</span>
+                      <small>{signer.statusLabel}{signer.allowComments ? ' · Comments allowed' : ''}</small>
+                    </div>
+                    <div className="ipp-signature-card-actions">
+                      <button type="button" aria-label={`Move ${signer.signatoryName} earlier`} disabled={!canReorder || index === 0} onClick={() => moveSignature(signer.id, -1)}>
+                        <ChevronUp size={14} />
+                      </button>
+                      <button type="button" aria-label={`Move ${signer.signatoryName} later`} disabled={!canReorder || index === draftSignatures.length - 1} onClick={() => moveSignature(signer.id, 1)}>
+                        <ChevronDown size={14} />
+                      </button>
+                      {canEdit ? (
+                        <button type="button" className="edit" aria-label={`Edit ${signer.signatoryName}`} onClick={() => onEdit(signer)}>
+                          <PencilLine size={13} /> Edit
+                        </button>
+                      ) : null}
+                    </div>
+                  </article>
+                )
+              })}
+              {reordering ? <div className="ipp-signature-order-saving"><RefreshCw className="spin" size={16} />Saving order…</div> : null}
+            </div>
+          )}
+        </aside>
+      ) : null}
     </div>
   )
 }

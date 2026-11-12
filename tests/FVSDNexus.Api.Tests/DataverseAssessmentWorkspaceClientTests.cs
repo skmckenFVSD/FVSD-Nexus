@@ -606,6 +606,135 @@ public sealed class DataverseAssessmentWorkspaceClientTests
     }
 
     [Fact]
+    public void Plan_signature_query_is_scoped_to_the_master_plan_and_keeps_all_statuses()
+    {
+        var planId = Guid.Parse("92000000-0000-0000-0000-000000000001");
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanSignaturesQuery(planId));
+
+        Assert.Contains("fvsd_studentippsignatures", decoded, StringComparison.Ordinal);
+        Assert.Contains($"_fvsd_studentipp_value eq {planId:D}", decoded, StringComparison.Ordinal);
+        Assert.Contains("fvsd_allowcomments", decoded, StringComparison.Ordinal);
+        Assert.Contains("$orderby=fvsd_signatoryorder asc,fvsd_signatoryaddedorder asc", decoded, StringComparison.Ordinal);
+        Assert.DoesNotContain("statecode eq 0", decoded, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Plan_signatures_include_routing_status_comments_and_immutable_added_order()
+    {
+        using var document = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_studentippsignatureid": "92000000-0000-0000-0000-000000000002",
+                "fvsd_name": "2026|314486069|BHCS|IPP|SIG|02",
+                "fvsd_recipienttype": 1,
+                "fvsd_recipienttype@OData.Community.Display.V1.FormattedValue": "Needs to Sign",
+                "fvsd_signatoryrole": 2,
+                "fvsd_signatoryrole@OData.Community.Display.V1.FormattedValue": "Principal",
+                "fvsd_signatoryname": "Principal One",
+                "fvsd_signatoryemail": "principal.one@example.ca",
+                "fvsd_signatoryorder": 1,
+                "fvsd_signatoryaddedorder": 2,
+                "fvsd_allowcomments": true,
+                "statecode": 0,
+                "statecode@OData.Community.Display.V1.FormattedValue": "Active",
+                "statuscode": 1,
+                "statuscode@OData.Community.Display.V1.FormattedValue": "Assigned",
+                "@odata.etag": "W/\"12345\""
+              },
+              {
+                "fvsd_studentippsignatureid": "92000000-0000-0000-0000-000000000001",
+                "fvsd_signatoryrole": 1,
+                "fvsd_signatoryrole@OData.Community.Display.V1.FormattedValue": "Parent / Guardian",
+                "fvsd_signatoryname": "Guardian One",
+                "fvsd_signatoryemail": "guardian.one@example.ca",
+                "fvsd_signatoryorder": 2,
+                "fvsd_signatoryaddedorder": 1,
+                "fvsd_allowcomments": false,
+                "statecode": 1,
+                "statuscode": 2,
+                "statuscode@OData.Community.Display.V1.FormattedValue": "Signed",
+                "fvsd_datesigned": "2026-11-10"
+              }
+            ] }
+            """);
+
+        var signatures = DataverseAssessmentWorkspaceClient.ParseStudentPlanSignatures(document.RootElement);
+
+        Assert.Equal(2, signatures.Count);
+        Assert.Equal("Principal One", signatures[0].SignatoryName);
+        Assert.Equal(2, signatures[0].SignatoryAddedOrder);
+        Assert.True(signatures[0].AllowComments);
+        Assert.Equal("Assigned", signatures[0].StatusLabel);
+        Assert.Equal("W/\"12345\"", signatures[0].ETag);
+        Assert.Equal("Guardian One", signatures[1].SignatoryName);
+        Assert.False(signatures[1].AllowComments);
+        Assert.Equal("2026-11-10", signatures[1].DateSigned);
+    }
+
+    [Fact]
+    public void Signature_choice_metadata_is_parsed_in_value_order()
+    {
+        using var document = JsonDocument.Parse("""
+            {
+              "GlobalOptionSet": {
+                "Options": [
+                  { "Value": 4, "Label": { "UserLocalizedLabel": { "Label": "Specialist" } } },
+                  { "Value": 1, "Label": { "UserLocalizedLabel": { "Label": "Parent / Guardian" } } }
+                ]
+              }
+            }
+            """);
+
+        var options = DataverseAssessmentWorkspaceClient.ParseStudentPlanSignatureChoices(document.RootElement);
+
+        Assert.Equal([1, 4], options.Select(option => option.Value).ToArray());
+        Assert.Equal(["Parent / Guardian", "Specialist"], options.Select(option => option.Label).ToArray());
+    }
+
+    [Fact]
+    public void Signature_reorder_requires_every_current_assigned_record_with_its_etag()
+    {
+        var first = CreateSignature(Guid.Parse("93000000-0000-0000-0000-000000000001"), 1, "W/\"1\"");
+        var second = CreateSignature(Guid.Parse("93000000-0000-0000-0000-000000000002"), 2, "W/\"2\"");
+        var command = new StudentPlanSignatureOrderCommand([
+            new(second.Id, second.ETag),
+            new(first.Id, first.ETag)
+        ]);
+
+        DataverseAssessmentWorkspaceClient.ValidateStudentPlanSignatureOrder([first, second], command);
+
+        var missingRecord = new StudentPlanSignatureOrderCommand([new(first.Id, first.ETag)]);
+        Assert.Throws<ArgumentException>(() =>
+            DataverseAssessmentWorkspaceClient.ValidateStudentPlanSignatureOrder([first, second], missingRecord));
+
+        var stale = new StudentPlanSignatureOrderCommand([
+            new(second.Id, "W/\"stale\""),
+            new(first.Id, first.ETag)
+        ]);
+        Assert.Throws<AssessmentWorkspaceConflictException>(() =>
+            DataverseAssessmentWorkspaceClient.ValidateStudentPlanSignatureOrder([first, second], stale));
+    }
+
+    [Fact]
+    public void Signature_reorder_is_blocked_after_the_signature_process_starts()
+    {
+        var assigned = CreateSignature(Guid.Parse("93000000-0000-0000-0000-000000000001"), 1, "W/\"1\"");
+        var waiting = CreateSignature(Guid.Parse("93000000-0000-0000-0000-000000000002"), 2, "W/\"2\"") with
+        {
+            StatusCode = 102370001,
+            StatusLabel = "Waiting Signature"
+        };
+        var command = new StudentPlanSignatureOrderCommand([
+            new(assigned.Id, assigned.ETag),
+            new(waiting.Id, waiting.ETag)
+        ]);
+
+        Assert.Throws<ArgumentException>(() =>
+            DataverseAssessmentWorkspaceClient.ValidateStudentPlanSignatureOrder([assigned, waiting], command));
+    }
+
+    [Fact]
     public void Homeroom_intervention_sections_are_scoped_to_student_and_school()
     {
         var studentId = Guid.Parse("12345678-1234-1234-1234-123456789012");
@@ -876,6 +1005,406 @@ public sealed class DataverseAssessmentWorkspaceClientTests
         Assert.Equal(expected, policy.CanDeleteAssessments);
     }
 
+    [Fact]
+    public void Oral_reading_fluency_query_is_scoped_to_plan_and_orf_section()
+    {
+        var planId = Guid.Parse("94000000-0000-0000-0000-000000000001");
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanOralReadingFluencyQuery(planId));
+
+        Assert.Contains("fvsd_studentipplevels", decoded, StringComparison.Ordinal);
+        Assert.Contains($"_fvsd_studentipp_value eq {planId:D}", decoded, StringComparison.Ordinal);
+        Assert.Contains("fvsd_section/fvsd_name eq 'Oral Reading Fluency (ORF)'", decoded, StringComparison.Ordinal);
+        Assert.Contains("$orderby=fvsd_currentdateachieved desc,createdon desc", decoded, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Oral_reading_fluency_results_keep_zero_and_sort_newest_first()
+    {
+        using var document = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_studentipplevelid": "94000000-0000-0000-0000-000000000001",
+                "fvsd_currentdateachieved": "2026-09-15T00:00:00Z",
+                "fvsd_levelofreading": 3,
+                "fvsd_levelofreading@OData.Community.Display.V1.FormattedValue": "Grade 3",
+                "fvsd_wordsperminute": 0,
+                "@odata.etag": "W/\"1\""
+              },
+              {
+                "fvsd_studentipplevelid": "94000000-0000-0000-0000-000000000002",
+                "fvsd_currentdateachieved": "2026-11-12T00:00:00Z",
+                "fvsd_levelofreading": 4,
+                "fvsd_levelofreading@OData.Community.Display.V1.FormattedValue": "Grade 4",
+                "fvsd_wordsperminute": 30,
+                "@odata.etag": "W/\"2\""
+              }
+            ] }
+            """);
+
+        var results = DataverseAssessmentWorkspaceClient.ParseStudentPlanOralReadingFluency(
+            document.RootElement);
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal(30, results[0].WordsPerMinute);
+        Assert.Equal("Grade 4", results[0].LevelOfReadingLabel);
+        Assert.Equal(0, results[1].WordsPerMinute);
+        Assert.Equal("W/\"1\"", results[1].ETag);
+    }
+
+    [Fact]
+    public void Oral_reading_fluency_local_choices_are_parsed_in_value_order()
+    {
+        using var document = JsonDocument.Parse("""
+            {
+              "OptionSet": {
+                "Options": [
+                  { "Value": 6, "Label": { "UserLocalizedLabel": { "Label": "Grade 6" } } },
+                  { "Value": 1, "Label": { "UserLocalizedLabel": { "Label": "Grade 1" } } }
+                ]
+              }
+            }
+            """);
+
+        var options = DataverseAssessmentWorkspaceClient.ParseStudentPlanOralReadingFluencyOptions(
+            document.RootElement);
+
+        Assert.Equal([1, 6], options.Select(option => option.Value).ToArray());
+        Assert.Equal(["Grade 1", "Grade 6"], options.Select(option => option.Label).ToArray());
+    }
+
+    [Fact]
+    public void Oral_reading_fluency_prevents_a_second_result_on_the_same_date()
+    {
+        var existing = new StudentPlanOralReadingFluencyResult(
+            Guid.Parse("94000000-0000-0000-0000-000000000001"),
+            "2026|314486069|BHCS|IPP|ORF|11122026",
+            new DateTimeOffset(2026, 11, 12, 0, 0, 0, TimeSpan.Zero),
+            5,
+            "Grade 5",
+            30,
+            "W/\"1\"");
+
+        var exception = Assert.Throws<AssessmentWorkspaceConflictException>(() =>
+            DataverseAssessmentWorkspaceClient.EnsureOralReadingFluencyDateAvailable(
+                [existing],
+                new DateOnly(2026, 11, 12),
+                null));
+
+        Assert.Contains("already exists", exception.Message, StringComparison.OrdinalIgnoreCase);
+        DataverseAssessmentWorkspaceClient.EnsureOralReadingFluencyDateAvailable(
+            [existing],
+            new DateOnly(2026, 11, 12),
+            existing.Id);
+    }
+
+    [Fact]
+    public void Oral_reading_fluency_name_is_recalculated_from_plan_and_submitted_date()
+    {
+        var name = DataverseAssessmentWorkspaceClient.BuildStudentPlanOralReadingFluencyName(
+            "2026|314486069|BHCS|IPP",
+            new DateOnly(2026, 9, 15));
+
+        Assert.Equal("2026|314486069|BHCS|IPP|ORF|09152026", name);
+    }
+
+    [Fact]
+    public void Word_study_query_is_scoped_to_plan_and_word_study_section()
+    {
+        var planId = Guid.Parse("95000000-0000-0000-0000-000000000001");
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanWordStudyQuery(planId));
+
+        Assert.Contains("fvsd_studentipplevels", decoded, StringComparison.Ordinal);
+        Assert.Contains($"_fvsd_studentipp_value eq {planId:D}", decoded, StringComparison.Ordinal);
+        Assert.Contains("fvsd_section/fvsd_name eq 'Word Study'", decoded, StringComparison.Ordinal);
+        Assert.Contains("fvsd_wtwstartinglevel", decoded, StringComparison.Ordinal);
+        Assert.Contains("$orderby=fvsd_initialdateachieved desc,createdon desc", decoded, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Word_study_records_include_stage_metadata_and_sort_newest_first()
+    {
+        using var document = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_studentipplevelid": "95000000-0000-0000-0000-000000000001",
+                "fvsd_name": "Plan|WS|09132026",
+                "fvsd_initialdateachieved": "2026-09-13T00:00:00Z",
+                "_fvsd_wtwstartinglevel_value": "95000000-0000-0000-0000-000000000011",
+                "fvsd_wtwstartinglevel": {
+                  "fvsd_name": "Concept of word in text",
+                  "fvsd_section": 1,
+                  "fvsd_section@OData.Community.Display.V1.FormattedValue": "Emergent",
+                  "fvsd_div": 1,
+                  "fvsd_div@OData.Community.Display.V1.FormattedValue": "Pre-Kindergarten to Grade 1"
+                },
+                "@odata.etag": "W/\"1\""
+              },
+              {
+                "fvsd_studentipplevelid": "95000000-0000-0000-0000-000000000002",
+                "fvsd_name": "Plan|WS|11122026",
+                "fvsd_initialdateachieved": "2026-11-12T00:00:00Z",
+                "fvsd_currentdateachieved": "2027-01-20T00:00:00Z",
+                "_fvsd_wtwstartinglevel_value": "95000000-0000-0000-0000-000000000012",
+                "_fvsd_wtwfinishinglevel_value": "95000000-0000-0000-0000-000000000013",
+                "fvsd_wtwstartinglevel": { "fvsd_name": "Initial consonants" },
+                "fvsd_wtwfinishinglevel": {
+                  "fvsd_name": "Preconsonantal nasals",
+                  "fvsd_section": 2,
+                  "fvsd_section@OData.Community.Display.V1.FormattedValue": "Letter Name - Alphabetic",
+                  "fvsd_div": 2,
+                  "fvsd_div@OData.Community.Display.V1.FormattedValue": "Kindergarten to Grade 2"
+                },
+                "@odata.etag": "W/\"2\""
+              }
+            ] }
+            """);
+
+        var records = DataverseAssessmentWorkspaceClient.ParseStudentPlanWordStudy(document.RootElement);
+
+        Assert.Equal(2, records.Count);
+        Assert.Equal("Plan|WS|11122026", records[0].Name);
+        Assert.Equal("Preconsonantal nasals", records[0].FinishingLevelName);
+        Assert.Equal("Letter Name - Alphabetic", records[0].FinishingStageReference);
+        Assert.Equal("Kindergarten to Grade 2", records[0].FinishingExpectedGrade);
+        Assert.Equal("Emergent", records[1].StartingStageReference);
+        Assert.Equal("W/\"1\"", records[1].ETag);
+    }
+
+    [Fact]
+    public void Word_study_stages_use_emergent_prefix_and_formatted_choice_values()
+    {
+        using var document = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_wordstheirwaystageid": "95000000-0000-0000-0000-000000000011",
+                "fvsd_name": "Concept of word in text",
+                "fvsd_section": 1,
+                "fvsd_section@OData.Community.Display.V1.FormattedValue": "Emergent",
+                "fvsd_div": 1,
+                "fvsd_div@OData.Community.Display.V1.FormattedValue": "Pre-Kindergarten to Grade 1",
+                "fvsd_sortorder": 2
+              },
+              {
+                "fvsd_wordstheirwaystageid": "95000000-0000-0000-0000-000000000012",
+                "fvsd_name": "Preconsonantal nasals",
+                "fvsd_section": 2,
+                "fvsd_section@OData.Community.Display.V1.FormattedValue": "Letter Name - Alphabetic",
+                "fvsd_sortorder": 8
+              }
+            ] }
+            """);
+
+        var stages = DataverseAssessmentWorkspaceClient.ParseWordStudyStages(document.RootElement);
+
+        Assert.Equal("E2. Concept of word in text (Emergent)", stages[0].Display);
+        Assert.Equal("Pre-Kindergarten to Grade 1", stages[0].ExpectedGrade);
+        Assert.Equal("8. Preconsonantal nasals (Letter Name - Alphabetic)", stages[1].Display);
+    }
+
+    [Fact]
+    public void Word_study_requires_ending_date_and_level_as_a_pair()
+    {
+        var stageId = Guid.Parse("95000000-0000-0000-0000-000000000011");
+        var options = new StudentPlanWordStudyOptionsResponse([
+            new StudentPlanWordStudyStageOption(stageId, "Concept of word", "Emergent", "Grade 1", 1, "E1. Concept of word (Emergent)")
+        ]);
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            DataverseAssessmentWorkspaceClient.ValidateStudentPlanWordStudyCommand(
+                new StudentPlanWordStudyCommand(
+                    new DateOnly(2026, 9, 13), stageId, new DateOnly(2026, 11, 12), null),
+                options));
+
+        Assert.Contains("both the Term Ending Date and WTW Ending Level", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Word_study_name_is_recalculated_from_plan_and_start_date()
+    {
+        var name = DataverseAssessmentWorkspaceClient.BuildStudentPlanWordStudyName(
+            "2026|314486069|BHCS|IPP",
+            new DateOnly(2026, 9, 13));
+
+        Assert.Equal("2026|314486069|BHCS|IPP|WS|09132026", name);
+    }
+
+    [Fact]
+    public void Writing_snapshot_query_is_scoped_to_plan_and_subject()
+    {
+        var planId = Guid.Parse("96000000-0000-0000-0000-000000000001");
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanWritingSnapshotsQuery(planId));
+
+        Assert.Contains("fvsd_ippactivities", decoded, StringComparison.Ordinal);
+        Assert.Contains($"_regardingobjectid_value eq {planId:D}", decoded, StringComparison.Ordinal);
+        Assert.Contains("subject eq 'Writing Snapshot'", decoded, StringComparison.Ordinal);
+        Assert.Contains("$orderby=createdon desc", decoded, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Ipp_activity_section_navigation_property_is_resolved_from_relationship_metadata()
+    {
+        using var document = JsonDocument.Parse("""
+            {
+              "LogicalName": "fvsd_ippactivity",
+              "ManyToOneRelationships": [
+                {
+                  "ReferencingAttribute": "fvsd_section",
+                  "ReferencedEntity": "fvsd_ippsection",
+                  "ReferencingEntityNavigationPropertyName": "fvsd_IPPActivity_Section_fvsd_ippsection"
+                }
+              ]
+            }
+            """);
+
+        var navigationProperty =
+            DataverseAssessmentWorkspaceClient.ParseIppActivitySectionNavigationProperty(
+                document.RootElement);
+
+        Assert.Equal("fvsd_IPPActivity_Section_fvsd_ippsection", navigationProperty);
+    }
+
+    [Fact]
+    public void Writing_snapshot_records_keep_export_and_attachment_metadata()
+    {
+        using var document = JsonDocument.Parse("""
+            { "value": [
+              {
+                "activityid": "96000000-0000-0000-0000-000000000001",
+                "subject": "Writing Snapshot",
+                "description": "<p>Earlier evidence</p>",
+                "actualstart": "2026-09-13T12:00:00Z",
+                "fvsd_includeinexport": false,
+                "createdon": "2026-09-13T16:00:00Z",
+                "createdby": { "fullname": "Teacher One" },
+                "@odata.etag": "W/\"1\""
+              },
+              {
+                "activityid": "96000000-0000-0000-0000-000000000002",
+                "subject": "Writing Snapshot",
+                "description": "Current evidence",
+                "actualstart": "2026-11-12T12:00:00Z",
+                "fvsd_includeinexport": true,
+                "fvsd_writingsamplefile": "96000000-0000-0000-0000-000000000010",
+                "fvsd_writingsamplefile_name": "writing-sample.pdf",
+                "fvsd_writingsampleimage": "base64-thumbnail",
+                "createdon": "2026-11-12T16:00:00Z",
+                "createdby": { "fullname": "Teacher Two" },
+                "@odata.etag": "W/\"2\""
+              }
+            ] }
+            """);
+
+        var snapshots = DataverseAssessmentWorkspaceClient.ParseStudentPlanWritingSnapshots(
+            document.RootElement);
+
+        Assert.Equal(2, snapshots.Count);
+        Assert.Equal("Teacher Two", snapshots[0].AddedBy);
+        Assert.True(snapshots[0].IncludeInExport);
+        Assert.True(snapshots[0].HasWritingSampleFile);
+        Assert.True(snapshots[0].HasWritingSampleImage);
+        Assert.Equal("writing-sample.pdf", snapshots[0].WritingSampleFileName);
+        Assert.False(snapshots[1].IncludeInExport);
+        Assert.Equal("<p>Earlier evidence</p>", snapshots[1].Description);
+    }
+
+    [Fact]
+    public void Writing_snapshot_payload_sets_subject_and_matching_activity_dates()
+    {
+        var payload = DataverseAssessmentWorkspaceClient.BuildStudentPlanWritingSnapshotPayload(
+            new StudentPlanWritingSnapshotCommand(
+                new DateOnly(2026, 11, 12), "  Evidence of development  ", true));
+
+        Assert.Equal("Writing Snapshot", payload["subject"]);
+        Assert.Equal("Evidence of development", payload["description"]);
+        Assert.Equal("2026-11-12T12:00:00Z", payload["actualstart"]);
+        Assert.Equal(payload["actualstart"], payload["actualend"]);
+        Assert.Equal(true, payload["fvsd_includeinexport"]);
+    }
+
+    [Fact]
+    public void Writing_snapshot_accepts_only_one_sample_upload_type()
+    {
+        var file = new StudentPlanWritingSnapshotUpload(
+            "sample.pdf", "application/pdf", [1, 2, 3]);
+        var image = new StudentPlanWritingSnapshotUpload(
+            "sample.jpg", "image/jpeg", [4, 5, 6]);
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            DataverseAssessmentWorkspaceClient.ValidateStudentPlanWritingSnapshotCommand(
+                new StudentPlanWritingSnapshotCommand(
+                    new DateOnly(2026, 11, 12), "Evidence", true),
+                file,
+                image));
+
+        Assert.Contains("either a Writing Sample File or a Writing Sample Image", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Teacher_comment_query_is_scoped_to_plan_and_subject()
+    {
+        var planId = Guid.Parse("97000000-0000-0000-0000-000000000001");
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanTeacherCommentsQuery(planId));
+
+        Assert.Contains("fvsd_ippactivities", decoded, StringComparison.Ordinal);
+        Assert.Contains($"_regardingobjectid_value eq {planId:D}", decoded, StringComparison.Ordinal);
+        Assert.Contains("subject eq 'Teacher Comment and Next Steps'", decoded, StringComparison.Ordinal);
+        Assert.Contains("activityadditionalparams", decoded, StringComparison.Ordinal);
+        Assert.Contains("$orderby=createdon desc", decoded, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Teacher_comment_records_include_section_and_additional_observations()
+    {
+        using var document = JsonDocument.Parse("""
+            { "value": [
+              {
+                "activityid": "97000000-0000-0000-0000-000000000001",
+                "_fvsd_section_value": "97000000-0000-0000-0000-000000000011",
+                "_fvsd_section_value@OData.Community.Display.V1.FormattedValue": "Empower Reading",
+                "description": "Comments and next steps",
+                "activityadditionalparams": "Additional observations",
+                "actualstart": "2026-11-12T12:00:00Z",
+                "fvsd_includeinexport": true,
+                "createdon": "2026-11-12T16:00:00Z",
+                "createdby": { "fullname": "Scott McKenzie" },
+                "@odata.etag": "W/\"7\""
+              }
+            ] }
+            """);
+
+        var comments = DataverseAssessmentWorkspaceClient.ParseStudentPlanTeacherComments(
+            document.RootElement);
+
+        var comment = Assert.Single(comments);
+        Assert.Equal("Empower Reading", comment.SectionName);
+        Assert.Equal("Comments and next steps", comment.CommentsAndNextSteps);
+        Assert.Equal("Additional observations", comment.AdditionalObservations);
+        Assert.Equal("Scott McKenzie", comment.AddedBy);
+        Assert.True(comment.IncludeInExport);
+    }
+
+    [Fact]
+    public void Teacher_comment_payload_sets_matching_activity_dates_and_additional_parameters()
+    {
+        var payload = DataverseAssessmentWorkspaceClient.BuildStudentPlanTeacherCommentPayload(
+            new StudentPlanTeacherCommentCommand(
+                Guid.Parse("97000000-0000-0000-0000-000000000011"),
+                new DateOnly(2026, 11, 12),
+                " Next steps ",
+                " Additional observations ",
+                true));
+
+        Assert.Equal("Teacher Comment and Next Steps", payload["subject"]);
+        Assert.Equal("Next steps", payload["description"]);
+        Assert.Equal("Additional observations", payload["activityadditionalparams"]);
+        Assert.Equal("2026-11-12T12:00:00Z", payload["actualstart"]);
+        Assert.Equal(payload["actualstart"], payload["actualend"]);
+    }
+
     private static DataverseAccessContext CreateAccessContext(string role, bool includeAlternativeSchool) => new(
         true,
         Guid.Parse("60000000-0000-0000-0000-000000000001"),
@@ -895,4 +1424,24 @@ public sealed class DataverseAssessmentWorkspaceClientTests
                 Guid.Parse("80000000-0000-0000-0000-000000000002"),
                 "Alternative School")
             : null);
+
+    private static StudentPlanSignature CreateSignature(Guid id, int order, string eTag) => new(
+        id,
+        $"Signature {order}",
+        1,
+        "Needs to Sign",
+        order,
+        order == 1 ? "Parent / Guardian" : "Principal",
+        $"Signatory {order}",
+        $"signatory{order}@example.ca",
+        order,
+        order,
+        true,
+        null,
+        null,
+        0,
+        "Active",
+        1,
+        "Assigned",
+        eTag);
 }

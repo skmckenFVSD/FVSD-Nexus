@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Deployed - IEP/IPP Module Functionality and Intervention Focus Release
+> **Status:** Validated - IEP/IPP Signatures, Activity Modules, and Teacher Comments Release
 
 Generated: 2026-08-25
 
@@ -291,6 +291,19 @@ Quota CLI was invoked first for each provider. `Microsoft.Web` returned a non-ap
     - [x] 11. Azure Policy Validation
     - [x] 12. Aspire Post-Provisioning Checks - not applicable; the solution is not .NET Aspire
   - [x] Validate the modular IEP/IPP and product documentation release
+    - [x] 1. AZD Installation
+    - [x] 2. Schema Validation
+    - [x] 3. Environment Setup
+    - [x] 4. Authentication Check
+    - [x] 5. Subscription/Location Check
+    - [x] 6. Aspire Pre-Provisioning Checks - not applicable; the solution is not .NET Aspire
+    - [x] 7. Provision Preview
+    - [x] 8. Build Verification
+    - [x] 9. Docker Build Context Validation - not applicable; the service has no Dockerfile
+    - [x] 10. Package Validation
+    - [x] 11. Azure Policy Validation
+    - [x] 12. Aspire Post-Provisioning Checks - not applicable; the solution is not .NET Aspire
+  - [x] Validate the IEP/IPP signatures, activity modules, and teacher-comments release
     - [x] 1. AZD Installation
     - [x] 2. Schema Validation
     - [x] 3. Environment Setup
@@ -1229,3 +1242,20 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Entra sign-in | `GET /api/auth/signin` returned HTTP 302 to the FVSD tenant with `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/signin-oidc` as the callback and delegated Dataverse scope |
 | Key Vault reference | `AzureAd__ClientSecret` reports `Resolved` through the App Service system-assigned identity |
 | Live RBAC | App Service identity `3ac2acd7-3412-4161-b4bf-af96c4051a85` retains role definition `4633458b-17de-408a-b874-0445c86b69e6` (`Key Vault Secrets User`) scoped only to `kv-fvsdi-iwmpkez4` |
+
+### IEP/IPP Signatures, Activity Modules, and Teacher Comments Release Revalidation — 2026-11-12T10:40:00-06:00
+
+#### Validation Proof
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Azure context | `azd version`, `azd auth login --check-status`, `azd env list`, targeted environment values, and `az account show` | Passed; AZD 1.31.2, signed-in FVSD identity, existing `fvsd-insights-dev` environment, Pay-As-You-Go subscription `64b2bfe8-fb82-4105-991c-95a36ad469c5`, and Canada Central |
+| Runtime and project specialization | `node --version`, Aspire marker scan, Dockerfile scan, and `azure.yaml` inspection | Passed; Node 22.17.1 is supported, the production service is ASP.NET Core 8, the solution is not Aspire, and there is no Docker build context |
+| React validation | `npm audit --audit-level=high` and `npm run build` | Passed with zero vulnerabilities; TypeScript and Vite generated the production bundle |
+| ASP.NET Core validation | `dotnet test FVSDNexus.sln --configuration Release --no-restore` and `dotnet list FVSDNexus.sln package --vulnerable --include-transitive` | Passed; 134 tests, zero failures, and no vulnerable packages |
+| Bicep validation | `az bicep build --file infra/main.bicep --stdout` and `az bicep lint --file infra/main.bicep` | Passed without template or lint errors |
+| Provision preview | `azd provision --preview --no-prompt` with a process-scoped validation-only placeholder for the intentionally unpersisted Entra secret | Passed; no changes were applied, with the preview limited to existing App Service and monitoring property reconciliation |
+| Package validation | `azd package --no-prompt` | Passed after stopping verified localhost processes that held Windows build locks; package `fvsd-insights-web-azddeploy-1794501525.zip`, SHA-256 `39EE6441C862996743CBFD592230EF45EB568AE11274BB4F799B516B233138DE` |
+| Release fingerprints | Local SHA-256 | JavaScript `96525CD0E6E863E2E9194333FB8FCEC21FA7C2704FBDE06FBA7AE9AF553EDCDC`; CSS `4C9097AF028B53BC6DAEACA5BF7B370E765D971F7735F82B289AADA79ADA1424` |
+| Azure policy | `az policy assignment list` at subscription scope | Passed; only the existing Microsoft Defender for Cloud default assignment is active |
+| Static RBAC | `infra/resources.bicep` role-assignment review | Passed; the App Service system identity retains only vault-scoped `Key Vault Secrets User`, matching the application secret-read operation; Fabric and Dataverse access remain delegated to the signed-in user |

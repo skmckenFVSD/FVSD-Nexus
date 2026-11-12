@@ -315,7 +315,651 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
                 wratDocument.RootElement));
     }
 
+    public async Task<StudentPlanOralReadingFluencyResponse> GetStudentPlanOralReadingFluencyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanOralReadingFluencyAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanOralReadingFluencyOptionsResponse> GetStudentPlanOralReadingFluencyOptionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanOralReadingFluencyOptionsAsync(cancellationToken);
+    }
+
+    public async Task<StudentPlanOralReadingFluencyResponse> CreateStudentPlanOralReadingFluencyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanOralReadingFluencyCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId),
+            cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var plan = planRows[0];
+        var schoolYear = ReadString(plan, "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var normalized = await ValidateStudentPlanOralReadingFluencyCommandAsync(command, cancellationToken);
+        var sectionId = await GetOralReadingFluencySectionIdAsync(cancellationToken);
+        var currentResults = await LoadStudentPlanOralReadingFluencyAsync(planId, schoolYear, cancellationToken);
+        EnsureOralReadingFluencyDateAvailable(currentResults.Results, normalized.AssessmentDate, null);
+        var planName = ReadString(plan, "fvsd_name") ?? $"{schoolYear}|{subject.StudentAsn}|IPP";
+        await RecalculateStudentPlanOralReadingFluencyNamesAsync(
+            planName,
+            currentResults.Results,
+            cancellationToken);
+        var payload = BuildStudentPlanOralReadingFluencyPayload(normalized);
+        payload["fvsd_name"] = BuildStudentPlanOralReadingFluencyName(planName, normalized.AssessmentDate);
+        payload["fvsd_studentipp@odata.bind"] = $"/fvsd_studentipps({planId:D})";
+        payload["fvsd_section@odata.bind"] = $"/fvsd_ippsections({sectionId:D})";
+
+        await SendJsonAsync(
+            HttpMethod.Post,
+            "fvsd_studentipplevels",
+            payload,
+            null,
+            cancellationToken);
+        return await LoadStudentPlanOralReadingFluencyAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanOralReadingFluencyResponse> UpdateStudentPlanOralReadingFluencyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid resultId,
+        string currentSchoolYear,
+        StudentPlanOralReadingFluencyCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId),
+            cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var plan = planRows[0];
+        var schoolYear = ReadString(plan, "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var normalized = await ValidateStudentPlanOralReadingFluencyCommandAsync(command, cancellationToken);
+        if (string.IsNullOrWhiteSpace(normalized.ETag))
+        {
+            throw new ArgumentException("Reload the oral reading fluency result before saving your changes.");
+        }
+
+        using var existingDocument = await GetJsonAsync(
+            BuildStudentPlanOralReadingFluencyValidationQuery(planId, resultId),
+            cancellationToken);
+        if (existingDocument.RootElement.GetProperty("value").GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected oral reading fluency result is not available for this annual plan.");
+        }
+
+        var currentResults = await LoadStudentPlanOralReadingFluencyAsync(planId, schoolYear, cancellationToken);
+        EnsureOralReadingFluencyDateAvailable(currentResults.Results, normalized.AssessmentDate, resultId);
+        var planName = ReadString(plan, "fvsd_name") ?? $"{schoolYear}|{subject.StudentAsn}|IPP";
+        var payload = BuildStudentPlanOralReadingFluencyPayload(normalized);
+        payload["fvsd_name"] = BuildStudentPlanOralReadingFluencyName(planName, normalized.AssessmentDate);
+
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_studentipplevels({resultId:D})",
+            payload,
+            normalized.ETag,
+            cancellationToken);
+        return await LoadStudentPlanOralReadingFluencyAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanOralReadingFluencyResponse> DeleteStudentPlanOralReadingFluencyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid resultId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        if (string.IsNullOrWhiteSpace(eTag))
+        {
+            throw new ArgumentException("Reload the oral reading fluency result before deleting it.");
+        }
+
+        using var existingDocument = await GetJsonAsync(
+            BuildStudentPlanOralReadingFluencyValidationQuery(planId, resultId),
+            cancellationToken);
+        if (existingDocument.RootElement.GetProperty("value").GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected oral reading fluency result is not available for this annual plan.");
+        }
+
+        await SendJsonAsync(
+            HttpMethod.Delete,
+            $"fvsd_studentipplevels({resultId:D})",
+            null,
+            eTag,
+            cancellationToken);
+        return await LoadStudentPlanOralReadingFluencyAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanWordStudyResponse> GetStudentPlanWordStudyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanWordStudyAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanWordStudyOptionsResponse> GetStudentPlanWordStudyOptionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanWordStudyOptionsAsync(cancellationToken);
+    }
+
+    public async Task<StudentPlanWordStudyResponse> CreateStudentPlanWordStudyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanWordStudyCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId), cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var plan = planRows[0];
+        var schoolYear = ReadString(plan, "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var options = await LoadStudentPlanWordStudyOptionsAsync(cancellationToken);
+        ValidateStudentPlanWordStudyCommand(command, options);
+        var sectionId = await GetIppSectionIdAsync("Word Study", cancellationToken);
+        var current = await LoadStudentPlanWordStudyAsync(planId, schoolYear, cancellationToken);
+        EnsureWordStudyStartDateAvailable(current.Records, command.TermStartDate, null);
+        var planName = ReadString(plan, "fvsd_name") ?? $"{schoolYear}|{subject.StudentAsn}|IPP";
+        await RecalculateStudentPlanWordStudyNamesAsync(planName, current.Records, cancellationToken);
+
+        var payload = BuildStudentPlanWordStudyPayload(command);
+        payload["fvsd_name"] = BuildStudentPlanWordStudyName(planName, command.TermStartDate);
+        payload["fvsd_studentipp@odata.bind"] = $"/fvsd_studentipps({planId:D})";
+        payload["fvsd_section@odata.bind"] = $"/fvsd_ippsections({sectionId:D})";
+        await SendJsonAsync(HttpMethod.Post, "fvsd_studentipplevels", payload, null, cancellationToken);
+        return await LoadStudentPlanWordStudyAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanWordStudyResponse> UpdateStudentPlanWordStudyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid recordId,
+        string currentSchoolYear,
+        StudentPlanWordStudyCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId), cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var plan = planRows[0];
+        var schoolYear = ReadString(plan, "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var options = await LoadStudentPlanWordStudyOptionsAsync(cancellationToken);
+        ValidateStudentPlanWordStudyCommand(command, options);
+        if (string.IsNullOrWhiteSpace(command.ETag))
+        {
+            throw new ArgumentException("Reload the Word Study record before saving your changes.");
+        }
+
+        using var existingDocument = await GetJsonAsync(
+            BuildStudentPlanWordStudyValidationQuery(planId, recordId), cancellationToken);
+        if (existingDocument.RootElement.GetProperty("value").GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected Word Study record is not available for this annual plan.");
+        }
+
+        var current = await LoadStudentPlanWordStudyAsync(planId, schoolYear, cancellationToken);
+        EnsureWordStudyStartDateAvailable(current.Records, command.TermStartDate, recordId);
+        var planName = ReadString(plan, "fvsd_name") ?? $"{schoolYear}|{subject.StudentAsn}|IPP";
+        var payload = BuildStudentPlanWordStudyPayload(command);
+        payload["fvsd_name"] = BuildStudentPlanWordStudyName(planName, command.TermStartDate);
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_studentipplevels({recordId:D})",
+            payload,
+            command.ETag,
+            cancellationToken);
+        return await LoadStudentPlanWordStudyAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanWordStudyResponse> DeleteStudentPlanWordStudyAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid recordId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        if (string.IsNullOrWhiteSpace(eTag))
+        {
+            throw new ArgumentException("Reload the Word Study record before deleting it.");
+        }
+
+        using var existingDocument = await GetJsonAsync(
+            BuildStudentPlanWordStudyValidationQuery(planId, recordId), cancellationToken);
+        if (existingDocument.RootElement.GetProperty("value").GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected Word Study record is not available for this annual plan.");
+        }
+
+        await SendJsonAsync(
+            HttpMethod.Delete,
+            $"fvsd_studentipplevels({recordId:D})",
+            null,
+            eTag,
+            cancellationToken);
+        return await LoadStudentPlanWordStudyAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanWritingSnapshotsResponse> GetStudentPlanWritingSnapshotsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanWritingSnapshotsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanWritingSnapshotsResponse> CreateStudentPlanWritingSnapshotAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanWritingSnapshotCommand command,
+        StudentPlanWritingSnapshotUpload? writingSampleFile,
+        StudentPlanWritingSnapshotUpload? writingSampleImage,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        ValidateStudentPlanWritingSnapshotCommand(command, writingSampleFile, writingSampleImage);
+        var sectionId = await GetIppSectionIdAsync("Writing Snapshot", cancellationToken);
+        var sectionNavigationProperty = await GetIppActivitySectionNavigationPropertyAsync(cancellationToken);
+        var payload = BuildStudentPlanWritingSnapshotPayload(command);
+        payload["regardingobjectid_fvsd_studentipp@odata.bind"] = $"/fvsd_studentipps({planId:D})";
+        payload[$"{sectionNavigationProperty}@odata.bind"] = $"/fvsd_ippsections({sectionId:D})";
+
+        var snapshotId = await CreateRecordAsync(
+            "fvsd_ippactivities", payload, "activityid", cancellationToken);
+        try
+        {
+            await SetIppActivityOpenAsync(snapshotId, cancellationToken);
+            await SaveWritingSnapshotUploadsAsync(
+                snapshotId, writingSampleFile, writingSampleImage, false, cancellationToken);
+        }
+        catch
+        {
+            try
+            {
+                await SendJsonAsync(
+                    HttpMethod.Delete,
+                    $"fvsd_ippactivities({snapshotId:D})",
+                    null,
+                    null,
+                    cancellationToken);
+            }
+            catch (Exception rollbackException)
+            {
+                logger.LogWarning(
+                    rollbackException,
+                    "Writing Snapshot {SnapshotId} could not be rolled back after its save failed.",
+                    snapshotId);
+            }
+            throw;
+        }
+
+        return await LoadStudentPlanWritingSnapshotsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanWritingSnapshotsResponse> UpdateStudentPlanWritingSnapshotAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid snapshotId,
+        string currentSchoolYear,
+        StudentPlanWritingSnapshotCommand command,
+        StudentPlanWritingSnapshotUpload? writingSampleFile,
+        StudentPlanWritingSnapshotUpload? writingSampleImage,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        ValidateStudentPlanWritingSnapshotCommand(command, writingSampleFile, writingSampleImage);
+        if (string.IsNullOrWhiteSpace(command.ETag))
+        {
+            throw new ArgumentException("Reload the Writing Snapshot before saving your changes.");
+        }
+
+        await EnsureWritingSnapshotAvailableAsync(planId, snapshotId, cancellationToken);
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_ippactivities({snapshotId:D})",
+            BuildStudentPlanWritingSnapshotPayload(command),
+            command.ETag,
+            cancellationToken);
+        await SetIppActivityOpenAsync(snapshotId, cancellationToken);
+        await SaveWritingSnapshotUploadsAsync(
+            snapshotId, writingSampleFile, writingSampleImage, true, cancellationToken);
+        return await LoadStudentPlanWritingSnapshotsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanWritingSnapshotsResponse> DeleteStudentPlanWritingSnapshotAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid snapshotId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        if (string.IsNullOrWhiteSpace(eTag))
+        {
+            throw new ArgumentException("Reload the Writing Snapshot before deleting it.");
+        }
+
+        await EnsureWritingSnapshotAvailableAsync(planId, snapshotId, cancellationToken);
+        await SendJsonAsync(
+            HttpMethod.Delete,
+            $"fvsd_ippactivities({snapshotId:D})",
+            null,
+            eTag,
+            cancellationToken);
+        return await LoadStudentPlanWritingSnapshotsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanWritingSnapshotContent> GetStudentPlanWritingSnapshotContentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid snapshotId,
+        bool image,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        var fileName = await EnsureWritingSnapshotAvailableAsync(planId, snapshotId, cancellationToken);
+        var column = image ? "fvsd_writingsampleimage" : "fvsd_writingsamplefile";
+        var suffix = image ? "/$value?size=full" : "/$value";
+        var defaultFileName = image
+            ? $"writing-sample-{snapshotId:D}.jpg"
+            : fileName ?? $"writing-sample-{snapshotId:D}";
+        return await GetWritingSnapshotContentAsync(
+            $"fvsd_ippactivities({snapshotId:D})/{column}{suffix}",
+            defaultFileName,
+            image ? "image/jpeg" : "application/octet-stream",
+            cancellationToken);
+    }
+
+    public async Task<StudentPlanTeacherCommentsResponse> GetStudentPlanTeacherCommentsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanTeacherCommentsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanTeacherCommentsResponse> CreateStudentPlanTeacherCommentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanTeacherCommentCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var modules = await LoadStudentPlanModulesAsync(subject, planId, cancellationToken);
+        ValidateStudentPlanTeacherCommentCommand(command, modules.Modules);
+        var sectionNavigationProperty = await GetIppActivitySectionNavigationPropertyAsync(cancellationToken);
+        var payload = BuildStudentPlanTeacherCommentPayload(command);
+        payload["regardingobjectid_fvsd_studentipp@odata.bind"] = $"/fvsd_studentipps({planId:D})";
+        payload[$"{sectionNavigationProperty}@odata.bind"] = $"/fvsd_ippsections({command.SectionId:D})";
+        var commentId = await CreateRecordAsync(
+            "fvsd_ippactivities", payload, "activityid", cancellationToken);
+        await SetIppActivityOpenAsync(commentId, cancellationToken);
+        return await LoadStudentPlanTeacherCommentsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanTeacherCommentsResponse> UpdateStudentPlanTeacherCommentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid commentId,
+        string currentSchoolYear,
+        StudentPlanTeacherCommentCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var modules = await LoadStudentPlanModulesAsync(subject, planId, cancellationToken);
+        ValidateStudentPlanTeacherCommentCommand(command, modules.Modules);
+        if (string.IsNullOrWhiteSpace(command.ETag))
+        {
+            throw new ArgumentException("Reload the Teacher Comment before saving your changes.");
+        }
+        await EnsureTeacherCommentAvailableAsync(planId, commentId, cancellationToken);
+        var sectionNavigationProperty = await GetIppActivitySectionNavigationPropertyAsync(cancellationToken);
+        var payload = BuildStudentPlanTeacherCommentPayload(command);
+        payload[$"{sectionNavigationProperty}@odata.bind"] = $"/fvsd_ippsections({command.SectionId:D})";
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_ippactivities({commentId:D})",
+            payload,
+            command.ETag,
+            cancellationToken);
+        await SetIppActivityOpenAsync(commentId, cancellationToken);
+        return await LoadStudentPlanTeacherCommentsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanTeacherCommentsResponse> DeleteStudentPlanTeacherCommentAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid commentId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        if (string.IsNullOrWhiteSpace(eTag))
+        {
+            throw new ArgumentException("Reload the Teacher Comment before deleting it.");
+        }
+        await EnsureTeacherCommentAvailableAsync(planId, commentId, cancellationToken);
+        await SendJsonAsync(
+            HttpMethod.Delete,
+            $"fvsd_ippactivities({commentId:D})",
+            null,
+            eTag,
+            cancellationToken);
+        return await LoadStudentPlanTeacherCommentsAsync(planId, schoolYear, cancellationToken);
+    }
+
+
     public async Task<StudentPlanInterventionsResponse> GetStudentPlanInterventionsAsync(
+
         DataverseAccessContext accessContext,
         string? developmentRole,
         bool isDeveloper,
@@ -538,6 +1182,229 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             eTag,
             cancellationToken);
         return await LoadStudentPlanInterventionsAsync(planId, subject.StudentId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanSignaturesResponse> GetStudentPlanSignaturesAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanSignaturesAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanSignatureOptionsResponse> GetStudentPlanSignatureOptionsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanSignatureOptionsAsync(cancellationToken);
+    }
+
+    public async Task<StudentPlanSignaturesResponse> CreateStudentPlanSignatureAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanSignatureCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var normalized = await ValidateStudentPlanSignatureCommandAsync(command, cancellationToken);
+        var current = await LoadStudentPlanSignaturesAsync(planId, schoolYear, cancellationToken);
+        var addedOrder = current.Signatures.Count == 0
+            ? 1
+            : current.Signatures.Max(signature => signature.SignatoryAddedOrder) + 1;
+        var schoolYearStart = GetSchoolYearStart(schoolYear);
+        if (schoolYearStart == int.MinValue)
+        {
+            throw new ArgumentException("The plan school year is not valid.");
+        }
+
+        var school = await GetPlanSchoolContextAsync(subject.SchoolId, cancellationToken);
+        var recordName = $"{schoolYearStart}|{subject.StudentAsn}|{school.Alias}|IPP|SIG|{addedOrder:00}";
+        await SendJsonAsync(
+            HttpMethod.Post,
+            "fvsd_studentippsignatures",
+            new Dictionary<string, object?>
+            {
+                ["fvsd_name"] = recordName,
+                ["fvsd_studentipp@odata.bind"] = $"/fvsd_studentipps({planId:D})",
+                ["fvsd_recipienttype"] = normalized.RecipientType,
+                ["fvsd_signatoryrole"] = normalized.SignatoryRole,
+                ["fvsd_signatoryname"] = normalized.SignatoryName,
+                ["fvsd_signatoryemail"] = normalized.SignatoryEmail,
+                ["fvsd_signatoryorder"] = normalized.SignatoryOrder,
+                ["fvsd_signatoryaddedorder"] = addedOrder,
+                ["fvsd_allowcomments"] = normalized.AllowComments
+            },
+            null,
+            cancellationToken);
+        return await LoadStudentPlanSignaturesAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanSignaturesResponse> UpdateStudentPlanSignatureAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid signatureId,
+        string currentSchoolYear,
+        StudentPlanSignatureCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        if (string.IsNullOrWhiteSpace(command.ETag))
+        {
+            throw new ArgumentException("Reload the signature before saving your changes.");
+        }
+
+        var normalized = await ValidateStudentPlanSignatureCommandAsync(command, cancellationToken);
+        var current = await LoadStudentPlanSignaturesAsync(planId, schoolYear, cancellationToken);
+        var existing = current.Signatures.FirstOrDefault(signature => signature.Id == signatureId)
+            ?? throw new AssessmentWorkspaceAccessException(
+                "The selected signature is not available for this annual plan.");
+        EnsureSignatureCanBeChanged(existing);
+
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_studentippsignatures({signatureId:D})",
+            new Dictionary<string, object?>
+            {
+                ["fvsd_recipienttype"] = normalized.RecipientType,
+                ["fvsd_signatoryrole"] = normalized.SignatoryRole,
+                ["fvsd_signatoryname"] = normalized.SignatoryName,
+                ["fvsd_signatoryemail"] = normalized.SignatoryEmail,
+                ["fvsd_signatoryorder"] = normalized.SignatoryOrder,
+                ["fvsd_allowcomments"] = normalized.AllowComments
+            },
+            command.ETag,
+            cancellationToken);
+        return await LoadStudentPlanSignaturesAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanSignaturesResponse> ReorderStudentPlanSignaturesAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanSignatureOrderCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var current = await LoadStudentPlanSignaturesAsync(planId, schoolYear, cancellationToken);
+        ValidateStudentPlanSignatureOrder(current.Signatures, command);
+
+        for (var index = 0; index < command.Signatures.Count; index++)
+        {
+            var item = command.Signatures[index];
+            await SendJsonAsync(
+                HttpMethod.Patch,
+                $"fvsd_studentippsignatures({item.Id:D})",
+                new Dictionary<string, object?>
+                {
+                    ["fvsd_signatoryorder"] = index + 1
+                },
+                item.ETag,
+                cancellationToken);
+        }
+
+        return await LoadStudentPlanSignaturesAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanSignaturesResponse> DeleteStudentPlanSignatureAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid signatureId,
+        string currentSchoolYear,
+        string? eTag,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext,
+            developmentRole,
+            isDeveloper,
+            teacherSectionId,
+            studentId,
+            cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        if (string.IsNullOrWhiteSpace(eTag))
+        {
+            throw new ArgumentException("Reload the signature before deleting it.");
+        }
+
+        var current = await LoadStudentPlanSignaturesAsync(planId, schoolYear, cancellationToken);
+        var existing = current.Signatures.FirstOrDefault(signature => signature.Id == signatureId)
+            ?? throw new AssessmentWorkspaceAccessException(
+                "The selected signature is not available for this annual plan.");
+        EnsureSignatureCanBeChanged(existing);
+        await SendJsonAsync(
+            HttpMethod.Delete,
+            $"fvsd_studentippsignatures({signatureId:D})",
+            null,
+            eTag,
+            cancellationToken);
+        return await LoadStudentPlanSignaturesAsync(planId, schoolYear, cancellationToken);
     }
 
     public async Task<StudentPlanCodingResponse> GetStudentPlanCodingAsync(
@@ -1137,7 +2004,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
 
     private static string BuildStudentPlanValidationQuery(Guid studentId, Guid planId) =>
         "fvsd_studentipps?" +
-        "$select=fvsd_studentippid,fvsd_ippsections,fvsd_schoolyear,fvsd_gradeatipp," +
+        "$select=fvsd_studentippid,fvsd_name,fvsd_ippsections,fvsd_schoolyear,fvsd_gradeatipp," +
         "fvsd_schoolatipp,fvsd_coursename,fvsd_teacheratipp,fvsd_principalatipp," +
         "fvsd_parentorguardianname,fvsd_parentorguardianemail,fvsd_fallattendance,fvsd_winterattendance," +
         "fvsd_springattendance,modifiedon&" +
@@ -1186,6 +2053,11 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         "$filter=statecode eq 0&" +
         "$expand=fvsd_curriculum($select=fvsd_name),fvsd_school($select=name)&$top=5000";
 
+    internal static string BuildIppSectionByNameQuery(string name) =>
+        "fvsd_ippsections?" +
+        "$select=fvsd_ippsectionid,fvsd_name&" +
+        $"$filter={Uri.EscapeDataString($"statecode eq 0 and fvsd_name eq '{EscapeODataString(name)}'")}&$top=2";
+
     private static string BuildPlanSchoolContextQuery(Guid schoolId) =>
         "businessunits?" +
         "$select=businessunitid,name,fvsd_alias,_fvsd_principal_value&" +
@@ -1226,6 +2098,90 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         $"$filter={Uri.EscapeDataString($"_fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&" +
         "$expand=fvsd_interventiontype($select=fvsd_name)&" +
         "$orderby=fvsd_datestarted desc,modifiedon desc&$top=5000";
+
+    internal static string BuildStudentPlanSignaturesQuery(Guid planId) =>
+        "fvsd_studentippsignatures?" +
+        "$select=fvsd_studentippsignatureid,fvsd_name,fvsd_recipienttype,fvsd_signatoryrole," +
+        "fvsd_signatoryname,fvsd_signatoryemail,fvsd_signatoryorder,fvsd_signatoryaddedorder," +
+        "fvsd_allowcomments,fvsd_daterequested,fvsd_datesigned,statecode,statuscode,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"_fvsd_studentipp_value eq {planId:D}")}&" +
+        "$orderby=fvsd_signatoryorder asc,fvsd_signatoryaddedorder asc&$top=5000";
+
+    internal static string BuildStudentPlanOralReadingFluencyQuery(Guid planId) =>
+        "fvsd_studentipplevels?" +
+        "$select=fvsd_studentipplevelid,fvsd_name,fvsd_currentdateachieved," +
+        "fvsd_levelofreading,fvsd_wordsperminute,_fvsd_studentipp_value,_fvsd_section_value,createdon,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"_fvsd_studentipp_value eq {planId:D} and fvsd_section/fvsd_name eq 'Oral Reading Fluency (ORF)'")}&" +
+        "$expand=fvsd_section($select=fvsd_name)&" +
+        "$orderby=fvsd_currentdateachieved desc,createdon desc&$top=5000";
+
+    internal static string BuildStudentPlanOralReadingFluencyValidationQuery(Guid planId, Guid resultId) =>
+        "fvsd_studentipplevels?" +
+        "$select=fvsd_studentipplevelid&" +
+        $"$filter={Uri.EscapeDataString($"fvsd_studentipplevelid eq {resultId:D} and _fvsd_studentipp_value eq {planId:D} and fvsd_section/fvsd_name eq 'Oral Reading Fluency (ORF)'")}&$top=1";
+
+    internal static string BuildStudentPlanOralReadingFluencyChoicesQuery() =>
+        "EntityDefinitions(LogicalName='fvsd_studentipplevel')/" +
+        "Attributes(LogicalName='fvsd_levelofreading')/" +
+        "Microsoft.Dynamics.CRM.PicklistAttributeMetadata?" +
+        "$select=LogicalName&$expand=OptionSet($select=Options),GlobalOptionSet($select=Options)";
+
+    internal static string BuildStudentPlanWordStudyQuery(Guid planId) =>
+        "fvsd_studentipplevels?" +
+        "$select=fvsd_studentipplevelid,fvsd_name,fvsd_initialdateachieved,fvsd_currentdateachieved," +
+        "_fvsd_wtwstartinglevel_value,_fvsd_wtwfinishinglevel_value,_fvsd_studentipp_value,_fvsd_section_value,createdon,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"_fvsd_studentipp_value eq {planId:D} and fvsd_section/fvsd_name eq 'Word Study'")}&" +
+        "$expand=fvsd_section($select=fvsd_name)," +
+        "fvsd_wtwstartinglevel($select=fvsd_wordstheirwaystageid,fvsd_name,fvsd_section,fvsd_div,fvsd_sortorder)," +
+        "fvsd_wtwfinishinglevel($select=fvsd_wordstheirwaystageid,fvsd_name,fvsd_section,fvsd_div,fvsd_sortorder)&" +
+        "$orderby=fvsd_initialdateachieved desc,createdon desc&$top=5000";
+
+    internal static string BuildStudentPlanWordStudyValidationQuery(Guid planId, Guid recordId) =>
+        "fvsd_studentipplevels?" +
+        "$select=fvsd_studentipplevelid&" +
+        $"$filter={Uri.EscapeDataString($"fvsd_studentipplevelid eq {recordId:D} and _fvsd_studentipp_value eq {planId:D} and fvsd_section/fvsd_name eq 'Word Study'")}&$top=1";
+
+    internal static string BuildWordStudyStagesQuery() =>
+        "fvsd_wordstheirwaystages?" +
+        "$select=fvsd_wordstheirwaystageid,fvsd_name,fvsd_section,fvsd_div,fvsd_sortorder&" +
+        "$filter=statecode eq 0&$orderby=fvsd_sortorder asc,fvsd_name asc&$top=5000";
+
+    internal static string BuildStudentPlanWritingSnapshotsQuery(Guid planId) =>
+        "fvsd_ippactivities?" +
+        "$select=activityid,subject,description,actualstart,actualend,fvsd_includeinexport," +
+        "fvsd_writingsamplefile,fvsd_writingsamplefile_name,fvsd_writingsampleimage," +
+        "createdon,modifiedon,_createdby_value,_regardingobjectid_value&" +
+        $"$filter={Uri.EscapeDataString($"_regardingobjectid_value eq {planId:D} and subject eq 'Writing Snapshot'")}&" +
+        "$expand=createdby($select=fullname)&" +
+        "$orderby=createdon desc&$top=5000";
+
+    internal static string BuildStudentPlanWritingSnapshotValidationQuery(Guid planId, Guid snapshotId) =>
+        "fvsd_ippactivities?" +
+        "$select=activityid,fvsd_writingsamplefile_name&" +
+        $"$filter={Uri.EscapeDataString($"activityid eq {snapshotId:D} and _regardingobjectid_value eq {planId:D} and subject eq 'Writing Snapshot'")}&$top=1";
+
+    internal static string BuildStudentPlanTeacherCommentsQuery(Guid planId) =>
+        "fvsd_ippactivities?" +
+        "$select=activityid,subject,description,activityadditionalparams,actualstart,actualend," +
+        "fvsd_includeinexport,createdon,modifiedon,_createdby_value,_regardingobjectid_value,_fvsd_section_value&" +
+        $"$filter={Uri.EscapeDataString($"_regardingobjectid_value eq {planId:D} and subject eq 'Teacher Comment and Next Steps'")}&" +
+        "$expand=createdby($select=fullname)&$orderby=createdon desc&$top=5000";
+
+    internal static string BuildStudentPlanTeacherCommentValidationQuery(Guid planId, Guid commentId) =>
+        "fvsd_ippactivities?" +
+        "$select=activityid&" +
+        $"$filter={Uri.EscapeDataString($"activityid eq {commentId:D} and _regardingobjectid_value eq {planId:D} and subject eq 'Teacher Comment and Next Steps'")}&$top=1";
+
+    internal static string BuildIppActivityRelationshipsQuery() =>
+        "EntityDefinitions(LogicalName='fvsd_ippactivity')?" +
+        "$select=LogicalName&$expand=ManyToOneRelationships(" +
+        "$select=ReferencingAttribute,ReferencedEntity,ReferencingEntityNavigationPropertyName)";
+
+    internal static string BuildStudentPlanSignatureChoicesQuery(string attributeName) =>
+        "EntityDefinitions(LogicalName='fvsd_studentippsignature')/" +
+        $"Attributes(LogicalName='{attributeName}')/" +
+        "Microsoft.Dynamics.CRM.PicklistAttributeMetadata?" +
+        "$select=LogicalName&$expand=GlobalOptionSet($select=Options)";
 
     internal static string BuildInterventionReferencesQuery() =>
         "fvsd_interventionreferences?" +
@@ -1559,6 +2515,222 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         _ => int.MaxValue
     };
 
+    internal static IReadOnlyList<StudentPlanOralReadingFluencyResult> ParseStudentPlanOralReadingFluency(
+        JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var id = ReadGuid(row, "fvsd_studentipplevelid");
+                var level = ReadInteger(row, "fvsd_levelofreading");
+                var wordsPerMinute = ReadInteger(row, "fvsd_wordsperminute");
+                return id is null || level is null || wordsPerMinute is null
+                    ? null
+                    : new StudentPlanOralReadingFluencyResult(
+                        id.Value,
+                        ReadString(row, "fvsd_name") ?? "Oral Reading Fluency",
+                        ReadDateTimeOffset(row, "fvsd_currentdateachieved"),
+                        level.Value,
+                        ReadFormattedString(row, "fvsd_levelofreading") ?? $"Level {level.Value}",
+                        wordsPerMinute.Value,
+                        ReadString(row, "@odata.etag"));
+            })
+            .Where(result => result is not null)
+            .Cast<StudentPlanOralReadingFluencyResult>()
+            .OrderByDescending(result => result.AssessmentDate)
+            .ThenByDescending(result => result.Id)
+            .ToArray();
+
+    internal static IReadOnlyList<StudentPlanOralReadingFluencyOption> ParseStudentPlanOralReadingFluencyOptions(
+        JsonElement root)
+    {
+        JsonElement optionSet;
+        if ((!root.TryGetProperty("OptionSet", out optionSet) || optionSet.ValueKind != JsonValueKind.Object)
+            && (!root.TryGetProperty("GlobalOptionSet", out optionSet) || optionSet.ValueKind != JsonValueKind.Object))
+        {
+            return Array.Empty<StudentPlanOralReadingFluencyOption>();
+        }
+        if (!optionSet.TryGetProperty("Options", out var options) || options.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<StudentPlanOralReadingFluencyOption>();
+        }
+
+        return options.EnumerateArray()
+            .Select(option =>
+            {
+                var value = ReadInteger(option, "Value");
+                var label = option.TryGetProperty("Label", out var labelContainer)
+                    && labelContainer.ValueKind == JsonValueKind.Object
+                    && labelContainer.TryGetProperty("UserLocalizedLabel", out var localizedLabel)
+                    && localizedLabel.ValueKind == JsonValueKind.Object
+                        ? ReadString(localizedLabel, "Label")
+                        : null;
+                return value is null || string.IsNullOrWhiteSpace(label)
+                    ? null
+                    : new StudentPlanOralReadingFluencyOption(value.Value, label);
+            })
+            .Where(option => option is not null)
+            .Cast<StudentPlanOralReadingFluencyOption>()
+            .OrderBy(option => option.Value)
+            .ToArray();
+    }
+
+    internal static IReadOnlyList<StudentPlanWordStudyRecord> ParseStudentPlanWordStudy(JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var id = ReadGuid(row, "fvsd_studentipplevelid");
+                var startingId = ReadGuid(row, "_fvsd_wtwstartinglevel_value");
+                if (id is null || startingId is null)
+                {
+                    return null;
+                }
+
+                var starting = row.TryGetProperty("fvsd_wtwstartinglevel", out var startingStage)
+                    && startingStage.ValueKind == JsonValueKind.Object ? startingStage : default;
+                var finishing = row.TryGetProperty("fvsd_wtwfinishinglevel", out var finishingStage)
+                    && finishingStage.ValueKind == JsonValueKind.Object ? finishingStage : default;
+                return new StudentPlanWordStudyRecord(
+                    id.Value,
+                    ReadString(row, "fvsd_name") ?? "Word Study",
+                    ReadDateTimeOffset(row, "fvsd_initialdateachieved"),
+                    ReadDateTimeOffset(row, "fvsd_currentdateachieved"),
+                    startingId.Value,
+                    starting.ValueKind == JsonValueKind.Object
+                        ? ReadString(starting, "fvsd_name") ?? "Starting level"
+                        : ReadFormattedString(row, "_fvsd_wtwstartinglevel_value") ?? "Starting level",
+                    starting.ValueKind == JsonValueKind.Object ? ReadFormattedString(starting, "fvsd_section") : null,
+                    starting.ValueKind == JsonValueKind.Object ? ReadFormattedString(starting, "fvsd_div") : null,
+                    ReadGuid(row, "_fvsd_wtwfinishinglevel_value"),
+                    finishing.ValueKind == JsonValueKind.Object ? ReadString(finishing, "fvsd_name") : null,
+                    finishing.ValueKind == JsonValueKind.Object ? ReadFormattedString(finishing, "fvsd_section") : null,
+                    finishing.ValueKind == JsonValueKind.Object ? ReadFormattedString(finishing, "fvsd_div") : null,
+                    ReadString(row, "@odata.etag"));
+            })
+            .Where(record => record is not null)
+            .Cast<StudentPlanWordStudyRecord>()
+            .OrderByDescending(record => record.TermStartDate)
+            .ThenByDescending(record => record.Id)
+            .ToArray();
+
+    internal static IReadOnlyList<StudentPlanWordStudyStageOption> ParseWordStudyStages(JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var id = ReadGuid(row, "fvsd_wordstheirwaystageid");
+                var name = ReadString(row, "fvsd_name");
+                if (id is null || string.IsNullOrWhiteSpace(name))
+                {
+                    return null;
+                }
+
+                var section = ReadFormattedString(row, "fvsd_section");
+                var expectedGrade = ReadFormattedString(row, "fvsd_div");
+                var sortOrder = ReadInteger(row, "fvsd_sortorder")
+                    ?? ParseSortOrder(ReadString(row, "fvsd_sortorder"));
+                var prefix = string.Equals(section, "Emergent", StringComparison.OrdinalIgnoreCase)
+                    ? $"E{sortOrder}"
+                    : sortOrder.ToString(CultureInfo.InvariantCulture);
+                var display = $"{prefix}. {name}" + (string.IsNullOrWhiteSpace(section) ? string.Empty : $" ({section})");
+                return new StudentPlanWordStudyStageOption(
+                    id.Value, name, section, expectedGrade, sortOrder, display);
+            })
+            .Where(option => option is not null)
+            .Cast<StudentPlanWordStudyStageOption>()
+            .OrderBy(option => option.SortOrder)
+            .ThenBy(option => option.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    internal static IReadOnlyList<StudentPlanWritingSnapshotRecord> ParseStudentPlanWritingSnapshots(
+        JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var id = ReadGuid(row, "activityid");
+                if (id is null)
+                {
+                    return null;
+                }
+
+                var fileName = ReadString(row, "fvsd_writingsamplefile_name");
+                var addedBy = row.TryGetProperty("createdby", out var creator)
+                    && creator.ValueKind == JsonValueKind.Object
+                        ? ReadString(creator, "fullname")
+                        : null;
+                return new StudentPlanWritingSnapshotRecord(
+                    id.Value,
+                    ReadString(row, "subject") ?? "Writing Snapshot",
+                    ReadString(row, "description") ?? string.Empty,
+                    ReadBoolean(row, "fvsd_includeinexport") ?? false,
+                    ReadDateTimeOffset(row, "actualstart"),
+                    addedBy ?? ReadFormattedString(row, "_createdby_value") ?? "—",
+                    ReadDateTimeOffset(row, "createdon"),
+                    ReadGuid(row, "fvsd_writingsamplefile") is not null || !string.IsNullOrWhiteSpace(fileName),
+                    fileName,
+                    !string.IsNullOrWhiteSpace(ReadString(row, "fvsd_writingsampleimage")),
+                    ReadString(row, "@odata.etag"));
+            })
+            .Where(record => record is not null)
+            .Cast<StudentPlanWritingSnapshotRecord>()
+            .OrderByDescending(record => record.CreatedOn)
+            .ThenByDescending(record => record.Id)
+            .ToArray();
+
+    internal static IReadOnlyList<StudentPlanTeacherCommentRecord> ParseStudentPlanTeacherComments(
+        JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var id = ReadGuid(row, "activityid");
+                var sectionId = ReadGuid(row, "_fvsd_section_value");
+                if (id is null || sectionId is null)
+                {
+                    return null;
+                }
+                var addedBy = row.TryGetProperty("createdby", out var creator)
+                    && creator.ValueKind == JsonValueKind.Object
+                        ? ReadString(creator, "fullname")
+                        : null;
+                return new StudentPlanTeacherCommentRecord(
+                    id.Value,
+                    sectionId.Value,
+                    ReadFormattedString(row, "_fvsd_section_value") ?? "Plan section",
+                    ReadString(row, "description") ?? string.Empty,
+                    ReadString(row, "activityadditionalparams"),
+                    ReadBoolean(row, "fvsd_includeinexport") ?? false,
+                    ReadDateTimeOffset(row, "actualstart"),
+                    addedBy ?? ReadFormattedString(row, "_createdby_value") ?? "—",
+                    ReadDateTimeOffset(row, "createdon"),
+                    ReadString(row, "@odata.etag"));
+            })
+            .Where(record => record is not null)
+            .Cast<StudentPlanTeacherCommentRecord>()
+            .OrderByDescending(record => record.CreatedOn)
+            .ThenByDescending(record => record.Id)
+            .ToArray();
+
+    internal static string? ParseIppActivitySectionNavigationProperty(JsonElement root)
+    {
+        if (!root.TryGetProperty("ManyToOneRelationships", out var relationships)
+            || relationships.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var candidates = relationships.EnumerateArray()
+            .Where(relationship => string.Equals(
+                ReadString(relationship, "ReferencedEntity"),
+                "fvsd_ippsection",
+                StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        return candidates
+            .OrderByDescending(relationship => string.Equals(
+                ReadString(relationship, "ReferencingAttribute"),
+                "fvsd_section",
+                StringComparison.OrdinalIgnoreCase))
+            .Select(relationship => ReadString(relationship, "ReferencingEntityNavigationPropertyName"))
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+    }
+
     internal static IReadOnlyList<StudentPlanIntervention> ParseStudentPlanInterventions(JsonElement root)
     {
         var interventions = new List<StudentPlanIntervention>();
@@ -1594,6 +2766,79 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
 
         return interventions
             .OrderByDescending(intervention => intervention.DateStarted)
+            .ToArray();
+    }
+
+    internal static IReadOnlyList<StudentPlanSignature> ParseStudentPlanSignatures(JsonElement root)
+    {
+        var signatures = new List<StudentPlanSignature>();
+        foreach (var row in root.GetProperty("value").EnumerateArray())
+        {
+            var id = ReadGuid(row, "fvsd_studentippsignatureid");
+            if (id is null)
+            {
+                continue;
+            }
+
+            var recipientType = ReadInteger(row, "fvsd_recipienttype") ?? 0;
+            var signatoryRole = ReadInteger(row, "fvsd_signatoryrole") ?? 0;
+            var stateCode = ReadInteger(row, "statecode") ?? 0;
+            var statusCode = ReadInteger(row, "statuscode") ?? 0;
+            signatures.Add(new StudentPlanSignature(
+                id.Value,
+                ReadString(row, "fvsd_name") ?? "Signature",
+                recipientType,
+                ReadFormattedString(row, "fvsd_recipienttype") ?? $"Recipient type {recipientType}",
+                signatoryRole,
+                ReadFormattedString(row, "fvsd_signatoryrole") ?? $"Signatory role {signatoryRole}",
+                ReadString(row, "fvsd_signatoryname") ?? string.Empty,
+                ReadString(row, "fvsd_signatoryemail") ?? string.Empty,
+                ReadInteger(row, "fvsd_signatoryorder") ?? 0,
+                ReadInteger(row, "fvsd_signatoryaddedorder") ?? 0,
+                ReadBoolean(row, "fvsd_allowcomments") ?? false,
+                ReadDateTimeOffset(row, "fvsd_daterequested"),
+                ReadString(row, "fvsd_datesigned"),
+                stateCode,
+                ReadFormattedString(row, "statecode") ?? (stateCode == 0 ? "Active" : "Inactive"),
+                statusCode,
+                ReadFormattedString(row, "statuscode") ?? $"Status {statusCode}",
+                ReadString(row, "@odata.etag")));
+        }
+
+        return signatures
+            .OrderBy(signature => signature.SignatoryOrder)
+            .ThenBy(signature => signature.SignatoryAddedOrder)
+            .ToArray();
+    }
+
+    internal static IReadOnlyList<StudentPlanSignatureChoiceOption> ParseStudentPlanSignatureChoices(
+        JsonElement root)
+    {
+        if (!root.TryGetProperty("GlobalOptionSet", out var optionSet)
+            || optionSet.ValueKind != JsonValueKind.Object
+            || !optionSet.TryGetProperty("Options", out var options)
+            || options.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<StudentPlanSignatureChoiceOption>();
+        }
+
+        return options.EnumerateArray()
+            .Select(option =>
+            {
+                var value = ReadInteger(option, "Value");
+                var label = option.TryGetProperty("Label", out var labelContainer)
+                    && labelContainer.ValueKind == JsonValueKind.Object
+                    && labelContainer.TryGetProperty("UserLocalizedLabel", out var localizedLabel)
+                    && localizedLabel.ValueKind == JsonValueKind.Object
+                        ? ReadString(localizedLabel, "Label")
+                        : null;
+                return value is null || string.IsNullOrWhiteSpace(label)
+                    ? null
+                    : new StudentPlanSignatureChoiceOption(value.Value, label);
+            })
+            .Where(option => option is not null)
+            .Cast<StudentPlanSignatureChoiceOption>()
+            .OrderBy(option => option.Value)
             .ToArray();
     }
 
@@ -1806,6 +3051,598 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             ParseStudentPlanInterventions(interventionsDocument.RootElement));
     }
 
+    private async Task<StudentPlanOralReadingFluencyResponse> LoadStudentPlanOralReadingFluencyAsync(
+        Guid planId,
+        string schoolYear,
+        CancellationToken cancellationToken)
+    {
+        using var resultsDocument = await GetJsonAsync(
+            BuildStudentPlanOralReadingFluencyQuery(planId),
+            cancellationToken);
+        return new StudentPlanOralReadingFluencyResponse(
+            planId,
+            schoolYear,
+            ParseStudentPlanOralReadingFluency(resultsDocument.RootElement));
+    }
+
+    private async Task<StudentPlanWordStudyResponse> LoadStudentPlanWordStudyAsync(
+        Guid planId,
+        string schoolYear,
+        CancellationToken cancellationToken)
+    {
+        using var recordsDocument = await GetJsonAsync(
+            BuildStudentPlanWordStudyQuery(planId), cancellationToken);
+        return new StudentPlanWordStudyResponse(
+            planId,
+            schoolYear,
+            ParseStudentPlanWordStudy(recordsDocument.RootElement));
+    }
+
+    private async Task<StudentPlanWordStudyOptionsResponse> LoadStudentPlanWordStudyOptionsAsync(
+        CancellationToken cancellationToken)
+    {
+        using var stagesDocument = await GetJsonAsync(BuildWordStudyStagesQuery(), cancellationToken);
+        var stages = ParseWordStudyStages(stagesDocument.RootElement);
+        if (stages.Count == 0)
+        {
+            throw new InvalidOperationException("Words Their Way stages are not configured in Dataverse.");
+        }
+
+        return new StudentPlanWordStudyOptionsResponse(stages);
+    }
+
+    private async Task<StudentPlanWritingSnapshotsResponse> LoadStudentPlanWritingSnapshotsAsync(
+        Guid planId,
+        string schoolYear,
+        CancellationToken cancellationToken)
+    {
+        using var snapshotsDocument = await GetJsonAsync(
+            BuildStudentPlanWritingSnapshotsQuery(planId), cancellationToken);
+        return new StudentPlanWritingSnapshotsResponse(
+            planId,
+            schoolYear,
+            ParseStudentPlanWritingSnapshots(snapshotsDocument.RootElement));
+    }
+
+    private async Task<StudentPlanTeacherCommentsResponse> LoadStudentPlanTeacherCommentsAsync(
+        Guid planId,
+        string schoolYear,
+        CancellationToken cancellationToken)
+    {
+        using var commentsDocument = await GetJsonAsync(
+            BuildStudentPlanTeacherCommentsQuery(planId), cancellationToken);
+        return new StudentPlanTeacherCommentsResponse(
+            planId,
+            schoolYear,
+            ParseStudentPlanTeacherComments(commentsDocument.RootElement));
+    }
+
+    private async Task<StudentPlanOralReadingFluencyOptionsResponse> LoadStudentPlanOralReadingFluencyOptionsAsync(
+        CancellationToken cancellationToken)
+    {
+        using var optionsDocument = await GetJsonAsync(
+            BuildStudentPlanOralReadingFluencyChoicesQuery(),
+            cancellationToken);
+        var options = ParseStudentPlanOralReadingFluencyOptions(optionsDocument.RootElement);
+        if (options.Count == 0)
+        {
+            throw new InvalidOperationException("Level of Reading choices are not configured in Dataverse.");
+        }
+
+        return new StudentPlanOralReadingFluencyOptionsResponse(options);
+    }
+
+    private async Task<StudentPlanOralReadingFluencyCommand> ValidateStudentPlanOralReadingFluencyCommandAsync(
+        StudentPlanOralReadingFluencyCommand command,
+        CancellationToken cancellationToken)
+    {
+        if (command.WordsPerMinute < 0)
+        {
+            throw new ArgumentException("Words per Minute must be a whole number of zero or greater.");
+        }
+
+        var options = await LoadStudentPlanOralReadingFluencyOptionsAsync(cancellationToken);
+        if (!options.LevelsOfReading.Any(option => option.Value == command.LevelOfReading))
+        {
+            throw new ArgumentException("Select a valid Level of Reading.");
+        }
+
+        return command;
+    }
+
+    internal static void EnsureOralReadingFluencyDateAvailable(
+        IReadOnlyList<StudentPlanOralReadingFluencyResult> results,
+        DateOnly assessmentDate,
+        Guid? excludedResultId)
+    {
+        var duplicate = results.Any(result =>
+            result.Id != excludedResultId
+            && result.AssessmentDate is not null
+            && DateOnly.FromDateTime(result.AssessmentDate.Value.Date) == assessmentDate);
+        if (duplicate)
+        {
+            throw new AssessmentWorkspaceConflictException(
+                "An oral reading fluency result already exists for this Assessment Date. Edit the existing result or select a different date.");
+        }
+    }
+
+    internal static string BuildStudentPlanOralReadingFluencyName(
+        string planName,
+        DateOnly assessmentDate) =>
+        $"{planName}|ORF|{assessmentDate:MMddyyyy}";
+
+    private async Task RecalculateStudentPlanOralReadingFluencyNamesAsync(
+        string planName,
+        IReadOnlyList<StudentPlanOralReadingFluencyResult> results,
+        CancellationToken cancellationToken)
+    {
+        foreach (var result in results)
+        {
+            if (result.AssessmentDate is null || string.IsNullOrWhiteSpace(result.ETag))
+            {
+                continue;
+            }
+
+            var assessmentDate = DateOnly.FromDateTime(result.AssessmentDate.Value.Date);
+            var expectedName = BuildStudentPlanOralReadingFluencyName(planName, assessmentDate);
+            if (string.Equals(result.Name, expectedName, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            await SendJsonAsync(
+                HttpMethod.Patch,
+                $"fvsd_studentipplevels({result.Id:D})",
+                new Dictionary<string, object?> { ["fvsd_name"] = expectedName },
+                result.ETag,
+                cancellationToken);
+        }
+    }
+
+    internal static void ValidateStudentPlanWordStudyCommand(
+        StudentPlanWordStudyCommand command,
+        StudentPlanWordStudyOptionsResponse options)
+    {
+        if (!options.Stages.Any(stage => stage.Id == command.StartingLevelId))
+        {
+            throw new ArgumentException("Select a valid WTW Starting Level.");
+        }
+        if (command.TermEndDate < command.TermStartDate)
+        {
+            throw new ArgumentException("Term Ending Date cannot be before Term Starting Date.");
+        }
+        if ((command.TermEndDate is null) != (command.FinishingLevelId is null))
+        {
+            throw new ArgumentException("Enter both the Term Ending Date and WTW Ending Level, or leave both blank.");
+        }
+        if (command.FinishingLevelId is not null
+            && !options.Stages.Any(stage => stage.Id == command.FinishingLevelId.Value))
+        {
+            throw new ArgumentException("Select a valid WTW Ending Level.");
+        }
+    }
+
+    private static Dictionary<string, object?> BuildStudentPlanWordStudyPayload(
+        StudentPlanWordStudyCommand command) =>
+        new()
+        {
+            ["fvsd_initialdateachieved"] = command.TermStartDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            ["fvsd_currentdateachieved"] = command.TermEndDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            ["fvsd_wtwstartinglevel@odata.bind"] = $"/fvsd_wordstheirwaystages({command.StartingLevelId:D})",
+            ["fvsd_wtwfinishinglevel@odata.bind"] = command.FinishingLevelId is null
+                ? null
+                : $"/fvsd_wordstheirwaystages({command.FinishingLevelId.Value:D})"
+        };
+
+    internal static void EnsureWordStudyStartDateAvailable(
+        IReadOnlyList<StudentPlanWordStudyRecord> records,
+        DateOnly startDate,
+        Guid? excludedRecordId)
+    {
+        if (records.Any(record =>
+            record.Id != excludedRecordId
+            && record.TermStartDate is not null
+            && DateOnly.FromDateTime(record.TermStartDate.Value.Date) == startDate))
+        {
+            throw new AssessmentWorkspaceConflictException(
+                "A Word Study record already exists for this Term Starting Date. Edit the existing record or select a different date.");
+        }
+    }
+
+    internal static string BuildStudentPlanWordStudyName(string planName, DateOnly startDate) =>
+        $"{planName}|WS|{startDate:MMddyyyy}";
+
+    private async Task RecalculateStudentPlanWordStudyNamesAsync(
+        string planName,
+        IReadOnlyList<StudentPlanWordStudyRecord> records,
+        CancellationToken cancellationToken)
+    {
+        foreach (var record in records)
+        {
+            if (record.TermStartDate is null || string.IsNullOrWhiteSpace(record.ETag))
+            {
+                continue;
+            }
+
+            var expectedName = BuildStudentPlanWordStudyName(
+                planName,
+                DateOnly.FromDateTime(record.TermStartDate.Value.Date));
+            if (string.Equals(record.Name, expectedName, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            await SendJsonAsync(
+                HttpMethod.Patch,
+                $"fvsd_studentipplevels({record.Id:D})",
+                new Dictionary<string, object?> { ["fvsd_name"] = expectedName },
+                record.ETag,
+                cancellationToken);
+        }
+    }
+
+    internal static void ValidateStudentPlanWritingSnapshotCommand(
+        StudentPlanWritingSnapshotCommand command,
+        StudentPlanWritingSnapshotUpload? writingSampleFile,
+        StudentPlanWritingSnapshotUpload? writingSampleImage)
+    {
+        if (command.CommentDate == default)
+        {
+            throw new ArgumentException("Date of Comment is required.");
+        }
+        if (string.IsNullOrWhiteSpace(command.EvidenceOfDevelopment))
+        {
+            throw new ArgumentException("Evidence of Development is required.");
+        }
+        if (writingSampleFile is not null && writingSampleImage is not null)
+        {
+            throw new ArgumentException("Upload either a Writing Sample File or a Writing Sample Image, not both.");
+        }
+
+        ValidateWritingSnapshotUpload(writingSampleFile, false);
+        ValidateWritingSnapshotUpload(writingSampleImage, true);
+    }
+
+    private static void ValidateWritingSnapshotUpload(
+        StudentPlanWritingSnapshotUpload? upload,
+        bool image)
+    {
+        if (upload is null)
+        {
+            return;
+        }
+
+        if (upload.Content.Length == 0 || string.IsNullOrWhiteSpace(upload.FileName))
+        {
+            throw new ArgumentException($"The Writing Sample {(image ? "Image" : "File")} is empty.");
+        }
+        var maximumBytes = image ? 8 * 1024 * 1024 : 20 * 1024 * 1024;
+        if (upload.Content.Length > maximumBytes)
+        {
+            throw new ArgumentException(
+                $"The Writing Sample {(image ? "Image" : "File")} must be {maximumBytes / 1024 / 1024} MB or smaller.");
+        }
+        if (image && !upload.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("Writing Sample Image must use an image file format.");
+        }
+    }
+
+    internal static Dictionary<string, object?> BuildStudentPlanWritingSnapshotPayload(
+        StudentPlanWritingSnapshotCommand command)
+    {
+        var commentDate = $"{command.CommentDate:yyyy-MM-dd}T12:00:00Z";
+        return new Dictionary<string, object?>
+        {
+            ["subject"] = "Writing Snapshot",
+            ["description"] = command.EvidenceOfDevelopment.Trim(),
+            ["fvsd_includeinexport"] = command.IncludeInExport,
+            ["actualstart"] = commentDate,
+            ["actualend"] = commentDate
+        };
+    }
+
+    internal static void ValidateStudentPlanTeacherCommentCommand(
+        StudentPlanTeacherCommentCommand command,
+        IReadOnlyList<StudentPlanModuleState> modules)
+    {
+        if (command.CommentDate == default)
+        {
+            throw new ArgumentException("Date of Comment is required.");
+        }
+        if (string.IsNullOrWhiteSpace(command.CommentsAndNextSteps))
+        {
+            throw new ArgumentException("Comments and Next Steps is required.");
+        }
+        var excludedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Student Details",
+            "Student Conditions and Coding",
+            "Writing Snapshot",
+            "Teacher Comment and Next Steps",
+            "Signatures"
+        };
+        if (!modules.Any(module =>
+            module.Id == command.SectionId
+            && module.Selected
+            && !excludedNames.Contains(module.Name)))
+        {
+            throw new ArgumentException("Select an available plan Section for this Teacher Comment.");
+        }
+    }
+
+    internal static Dictionary<string, object?> BuildStudentPlanTeacherCommentPayload(
+        StudentPlanTeacherCommentCommand command)
+    {
+        var commentDate = $"{command.CommentDate:yyyy-MM-dd}T12:00:00Z";
+        return new Dictionary<string, object?>
+        {
+            ["subject"] = "Teacher Comment and Next Steps",
+            ["description"] = command.CommentsAndNextSteps.Trim(),
+            ["activityadditionalparams"] = NormalizeOptionalText(command.AdditionalObservations),
+            ["fvsd_includeinexport"] = command.IncludeInExport,
+            ["actualstart"] = commentDate,
+            ["actualend"] = commentDate
+        };
+    }
+
+    private async Task EnsureTeacherCommentAvailableAsync(
+        Guid planId,
+        Guid commentId,
+        CancellationToken cancellationToken)
+    {
+        using var existingDocument = await GetJsonAsync(
+            BuildStudentPlanTeacherCommentValidationQuery(planId, commentId), cancellationToken);
+        if (existingDocument.RootElement.GetProperty("value").GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected Teacher Comment is not available for this annual plan.");
+        }
+    }
+
+    private async Task<string?> EnsureWritingSnapshotAvailableAsync(
+        Guid planId,
+        Guid snapshotId,
+        CancellationToken cancellationToken)
+    {
+        using var existingDocument = await GetJsonAsync(
+            BuildStudentPlanWritingSnapshotValidationQuery(planId, snapshotId), cancellationToken);
+        var rows = existingDocument.RootElement.GetProperty("value");
+        if (rows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected Writing Snapshot is not available for this annual plan.");
+        }
+
+        return ReadString(rows[0], "fvsd_writingsamplefile_name");
+    }
+
+    private async Task SetIppActivityOpenAsync(
+        Guid activityId,
+        CancellationToken cancellationToken) =>
+        await SendJsonAsync(
+            HttpMethod.Patch,
+            $"fvsd_ippactivities({activityId:D})",
+            new Dictionary<string, object?>
+            {
+                ["statecode"] = 0,
+                ["statuscode"] = 1
+            },
+            null,
+            cancellationToken);
+
+    private async Task SaveWritingSnapshotUploadsAsync(
+        Guid snapshotId,
+        StudentPlanWritingSnapshotUpload? writingSampleFile,
+        StudentPlanWritingSnapshotUpload? writingSampleImage,
+        bool replaceExisting,
+        CancellationToken cancellationToken)
+    {
+        if (writingSampleFile is not null)
+        {
+            if (replaceExisting)
+            {
+                await SendJsonAsync(
+                    HttpMethod.Patch,
+                    $"fvsd_ippactivities({snapshotId:D})",
+                    new Dictionary<string, object?> { ["fvsd_writingsampleimage"] = null },
+                    null,
+                    cancellationToken);
+            }
+            await UploadFileColumnAsync(
+                $"fvsd_ippactivities({snapshotId:D})/fvsd_writingsamplefile",
+                writingSampleFile,
+                cancellationToken);
+        }
+        else if (writingSampleImage is not null)
+        {
+            if (replaceExisting)
+            {
+                await DeleteFileColumnIfPresentAsync(
+                    $"fvsd_ippactivities({snapshotId:D})/fvsd_writingsamplefile",
+                    cancellationToken);
+            }
+            await SendJsonAsync(
+                HttpMethod.Patch,
+                $"fvsd_ippactivities({snapshotId:D})",
+                new Dictionary<string, object?>
+                {
+                    ["fvsd_writingsampleimage"] = Convert.ToBase64String(writingSampleImage.Content)
+                },
+                null,
+                cancellationToken);
+        }
+    }
+
+    private async Task<Guid> GetOralReadingFluencySectionIdAsync(CancellationToken cancellationToken)
+        => await GetIppSectionIdAsync("Oral Reading Fluency (ORF)", cancellationToken);
+
+    private async Task<string> GetIppActivitySectionNavigationPropertyAsync(
+        CancellationToken cancellationToken)
+    {
+        using var metadataDocument = await GetJsonAsync(
+            BuildIppActivityRelationshipsQuery(), cancellationToken);
+        return ParseIppActivitySectionNavigationProperty(metadataDocument.RootElement)
+            ?? throw new InvalidOperationException(
+                "The Section lookup relationship for IPP Activities is not configured in Dataverse.");
+    }
+
+    private async Task<Guid> GetIppSectionIdAsync(string sectionName, CancellationToken cancellationToken)
+    {
+        using var sectionDocument = await GetJsonAsync(
+            BuildIppSectionByNameQuery(sectionName),
+            cancellationToken);
+        var rows = sectionDocument.RootElement.GetProperty("value");
+        var sectionId = rows.GetArrayLength() == 1
+            ? ReadGuid(rows[0], "fvsd_ippsectionid")
+            : null;
+        return sectionId ?? throw new InvalidOperationException(
+            $"The {sectionName} IPP Section is not configured in Dataverse.");
+    }
+
+    private static Dictionary<string, object?> BuildStudentPlanOralReadingFluencyPayload(
+        StudentPlanOralReadingFluencyCommand command) =>
+        new()
+        {
+            ["fvsd_currentdateachieved"] = command.AssessmentDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            ["fvsd_levelofreading"] = command.LevelOfReading,
+            ["fvsd_wordsperminute"] = command.WordsPerMinute
+        };
+
+    private async Task<StudentPlanSignaturesResponse> LoadStudentPlanSignaturesAsync(
+        Guid planId,
+        string schoolYear,
+        CancellationToken cancellationToken)
+    {
+        using var signaturesDocument = await GetJsonAsync(
+            BuildStudentPlanSignaturesQuery(planId),
+            cancellationToken);
+        return new StudentPlanSignaturesResponse(
+            planId,
+            schoolYear,
+            ParseStudentPlanSignatures(signaturesDocument.RootElement));
+    }
+
+    private async Task<StudentPlanSignatureOptionsResponse> LoadStudentPlanSignatureOptionsAsync(
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var recipientTypesTask = GetJsonAsync(
+                BuildStudentPlanSignatureChoicesQuery("fvsd_recipienttype"),
+                cancellationToken);
+            var rolesTask = GetJsonAsync(
+                BuildStudentPlanSignatureChoicesQuery("fvsd_signatoryrole"),
+                cancellationToken);
+            await Task.WhenAll(recipientTypesTask, rolesTask);
+            using var recipientTypesDocument = await recipientTypesTask;
+            using var rolesDocument = await rolesTask;
+            var recipientTypes = ParseStudentPlanSignatureChoices(recipientTypesDocument.RootElement);
+            var roles = ParseStudentPlanSignatureChoices(rolesDocument.RootElement);
+            if (recipientTypes.Count > 0 && roles.Count > 0)
+            {
+                return new StudentPlanSignatureOptionsResponse(recipientTypes, roles);
+            }
+        }
+        catch (HttpRequestException exception)
+        {
+            logger.LogWarning(
+                exception,
+                "Dataverse signature choice metadata was unavailable; using the known choice values.");
+        }
+
+        return new StudentPlanSignatureOptionsResponse(
+            [
+                new(1, "Needs to Sign"),
+                new(2, "In Person Signer"),
+                new(3, "Receives a Copy"),
+                new(4, "Needs to View")
+            ],
+            [
+                new(1, "Parent / Guardian"),
+                new(2, "Principal"),
+                new(3, "Teacher"),
+                new(4, "Specialist")
+            ]);
+    }
+
+    private async Task<StudentPlanSignatureCommand> ValidateStudentPlanSignatureCommandAsync(
+        StudentPlanSignatureCommand command,
+        CancellationToken cancellationToken)
+    {
+        var name = NormalizeOptionalText(command.SignatoryName);
+        var email = NormalizeOptionalText(command.SignatoryEmail);
+        if (name is null)
+        {
+            throw new ArgumentException("Enter the Signatory Name.");
+        }
+        if (email is null || !ParentOrGuardianEmailRegex().IsMatch(email))
+        {
+            throw new ArgumentException("Enter a valid Signatory Email address.");
+        }
+        if (command.SignatoryOrder < 1)
+        {
+            throw new ArgumentException("Signatory Order must be a whole number greater than zero.");
+        }
+
+        var options = await LoadStudentPlanSignatureOptionsAsync(cancellationToken);
+        if (!options.RecipientTypes.Any(option => option.Value == command.RecipientType))
+        {
+            throw new ArgumentException("Select a valid Recipient Type.");
+        }
+        if (!options.SignatoryRoles.Any(option => option.Value == command.SignatoryRole))
+        {
+            throw new ArgumentException("Select a valid Signatory Role.");
+        }
+
+        return command with { SignatoryName = name, SignatoryEmail = email };
+    }
+
+    private static void EnsureSignatureCanBeChanged(StudentPlanSignature signature)
+    {
+        if (signature.StateCode != 0 || signature.StatusCode != 1)
+        {
+            throw new ArgumentException(
+                "Only a signature in Assigned status can be edited or removed.");
+        }
+    }
+
+    internal static void ValidateStudentPlanSignatureOrder(
+        IReadOnlyList<StudentPlanSignature> current,
+        StudentPlanSignatureOrderCommand command)
+    {
+        if (current.Count < 2)
+        {
+            throw new ArgumentException("At least two signatures are required to change the routing order.");
+        }
+        if (current.Any(signature => signature.StateCode != 0 || signature.StatusCode != 1))
+        {
+            throw new ArgumentException(
+                "Signature routing order can be changed only while every signature is in Assigned status.");
+        }
+        if (command.Signatures is null
+            || command.Signatures.Count != current.Count
+            || command.Signatures.Select(item => item.Id).Distinct().Count() != current.Count)
+        {
+            throw new ArgumentException("Submit every signature exactly once when changing the routing order.");
+        }
+
+        var currentById = current.ToDictionary(signature => signature.Id);
+        foreach (var item in command.Signatures)
+        {
+            if (!currentById.TryGetValue(item.Id, out var existing))
+            {
+                throw new ArgumentException("The signature order contains a record outside this annual plan.");
+            }
+            if (string.IsNullOrWhiteSpace(item.ETag)
+                || !string.Equals(item.ETag, existing.ETag, StringComparison.Ordinal))
+            {
+                throw new AssessmentWorkspaceConflictException(
+                    "A signature changed after the manager was opened. Reload the signatures before reordering them.");
+            }
+        }
+    }
+
     private async Task<StudentPlanInterventionOptionsResponse> LoadStudentPlanInterventionOptionsAsync(
         PlanSubject subject,
         CancellationToken cancellationToken)
@@ -1971,7 +3808,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         if (!string.Equals(schoolYear, currentSchoolYear, StringComparison.Ordinal))
         {
             throw new AssessmentWorkspaceAccessException(
-                "Only the current school-year IEP / IPP interventions can be changed.");
+                "Only the current school-year IEP / IPP can be changed.");
         }
     }
 
@@ -2737,6 +4574,149 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+    }
+
+    private async Task<Guid> CreateRecordAsync(
+        string relativeUri,
+        IReadOnlyDictionary<string, object?> payload,
+        string primaryIdName,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = await tokenAcquisition.GetAccessTokenForUserAsync([_options.Scope]);
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(_options.ApiBaseUrl, relativeUri))
+        {
+            Content = JsonContent.Create(payload)
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        request.Headers.TryAddWithoutValidation("OData-MaxVersion", "4.0");
+        request.Headers.TryAddWithoutValidation("OData-Version", "4.0");
+        request.Headers.TryAddWithoutValidation("Prefer", "return=representation");
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await CreateDataverseWriteExceptionAsync(response, cancellationToken);
+        }
+
+        if (response.Content.Headers.ContentLength is > 0)
+        {
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+            var id = ReadGuid(document.RootElement, primaryIdName);
+            if (id is not null)
+            {
+                return id.Value;
+            }
+        }
+
+        var entityUri = response.Headers.TryGetValues("OData-EntityId", out var values)
+            ? values.FirstOrDefault()
+            : response.Headers.Location?.ToString();
+        var match = Regex.Match(entityUri ?? string.Empty, @"\((?<id>[0-9a-fA-F-]{36})\)");
+        if (match.Success && Guid.TryParse(match.Groups["id"].Value, out var entityId))
+        {
+            return entityId;
+        }
+
+        throw new InvalidOperationException("Dataverse created the record but did not return its identifier.");
+    }
+
+    private async Task UploadFileColumnAsync(
+        string relativeUri,
+        StudentPlanWritingSnapshotUpload upload,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = await tokenAcquisition.GetAccessTokenForUserAsync([_options.Scope]);
+        var fileName = Path.GetFileName(upload.FileName);
+        var uploadUri = $"{relativeUri}?x-ms-file-name={Uri.EscapeDataString(fileName)}";
+        using var request = new HttpRequestMessage(HttpMethod.Patch, new Uri(_options.ApiBaseUrl, uploadUri))
+        {
+            Content = new ByteArrayContent(upload.Content)
+        };
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        request.Headers.TryAddWithoutValidation("OData-MaxVersion", "4.0");
+        request.Headers.TryAddWithoutValidation("OData-Version", "4.0");
+        request.Headers.TryAddWithoutValidation("If-None-Match", "null");
+        if (fileName.All(character => character <= 127))
+        {
+            request.Headers.TryAddWithoutValidation("x-ms-file-name", fileName);
+        }
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await CreateDataverseWriteExceptionAsync(response, cancellationToken);
+        }
+    }
+
+    private async Task DeleteFileColumnIfPresentAsync(
+        string relativeUri,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = await tokenAcquisition.GetAccessTokenForUserAsync([_options.Scope]);
+        using var request = new HttpRequestMessage(HttpMethod.Delete, new Uri(_options.ApiBaseUrl, relativeUri));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.TryAddWithoutValidation("OData-MaxVersion", "4.0");
+        request.Headers.TryAddWithoutValidation("OData-Version", "4.0");
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
+        {
+            throw await CreateDataverseWriteExceptionAsync(response, cancellationToken);
+        }
+    }
+
+    private async Task<StudentPlanWritingSnapshotContent> GetWritingSnapshotContentAsync(
+        string relativeUri,
+        string defaultFileName,
+        string defaultContentType,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = await tokenAcquisition.GetAccessTokenForUserAsync([_options.Scope]);
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(_options.ApiBaseUrl, relativeUri));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
+        request.Headers.TryAddWithoutValidation("OData-MaxVersion", "4.0");
+        request.Headers.TryAddWithoutValidation("OData-Version", "4.0");
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"The Writing Snapshot attachment could not be loaded (HTTP {(int)response.StatusCode}).",
+                null,
+                response.StatusCode);
+        }
+
+        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+            ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+            ?? (response.Headers.TryGetValues("x-ms-file-name", out var fileNames)
+                ? fileNames.FirstOrDefault()
+                : null)
+            ?? defaultFileName;
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? defaultContentType;
+        var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        return new StudentPlanWritingSnapshotContent(content, contentType, fileName);
+    }
+
+    private async Task<HttpRequestException> CreateDataverseWriteExceptionAsync(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        var correlationId = response.Headers.TryGetValues("x-ms-service-request-id", out var values)
+            ? values.FirstOrDefault()
+            : null;
+        var detail = await response.Content.ReadAsStringAsync(cancellationToken);
+        logger.LogWarning(
+            "Dataverse assessment write failed with HTTP {StatusCode}. Correlation ID: {CorrelationId}. Detail: {Detail}",
+            response.StatusCode,
+            correlationId,
+            detail);
+        return new HttpRequestException(
+            $"The Dataverse assessment write failed with HTTP {(int)response.StatusCode}.",
+            null,
+            response.StatusCode);
     }
 
     private async Task SendJsonAsync(
