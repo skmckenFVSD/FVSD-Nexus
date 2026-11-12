@@ -18,6 +18,7 @@ The documentation distinguishes four states:
 - [Product capabilities](capabilities/README.md)
 - [Architecture](architecture/README.md)
 - [Delivery](delivery/README.md)
+- [Design system and user experience](design-system/README.md)
 - [Decision register](decisions/decision-register.md)
 - [Architecture decision records](decisions/adr/README.md)
 - [Glossary](reference/glossary.md)
@@ -50,6 +51,16 @@ The documentation distinguishes four states:
 - [Phase 1 product build](delivery/phase-1-product-build.md)
 - [Adoption and engagement](delivery/adoption-and-engagement.md)
 - [Testing strategy](delivery/testing-strategy.md)
+
+## Design system and user experience
+
+- [Design-system overview](design-system/README.md)
+- [Foundations and design tokens](design-system/foundations.md)
+- [Asset library and iconography](design-system/assets.md)
+- [Shared component contracts](design-system/components.md)
+- [Rendered component gallery](design-system/component-gallery.md)
+- [Application and workspace layouts](design-system/layouts.md)
+- [Screen-by-screen adoption plan](design-system/adoption-plan.md)
 
 ## Reference material
 

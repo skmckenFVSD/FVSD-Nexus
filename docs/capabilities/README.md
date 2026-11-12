@@ -17,6 +17,8 @@ FVSD Nexus is being delivered as a set of related capabilities built on common i
 
 ## Shared experience principles
 
+The canonical visual foundations, shared components, and layout patterns are maintained in the [FVSD Nexus design system](../design-system/README.md).
+
 Every capability should:
 
 - Start from a user task or question rather than a database table or report visual.

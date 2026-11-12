@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="720" viewBox="0 0 1000 720" role="img" aria-labelledby="title desc">
+  <title id="title">FVSD Nexus proposed shared components</title>
+  <desc id="desc">Rendered reference for buttons, a form field, notices, status badges and a document-aligned record card.</desc>
+  <rect width="1000" height="720" rx="14" fill="#f5f7fa"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="32" y="42" fill="#071940" font-size="24" font-weight="700">Shared component reference</text>
+    <text x="32" y="66" fill="#4a5b6e" font-size="13">Proposed visual target; final values remain subject to design review.</text>
+
+    <rect x="32" y="92" width="936" height="112" rx="12" fill="#fff" stroke="#dde3ea"/>
+    <text x="54" y="122" fill="#071940" font-size="16" font-weight="700">Buttons</text>
+    <rect x="54" y="142" width="148" height="40" rx="8" fill="#1f4e79"/>
+    <text x="128" y="167" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">Save changes</text>
+    <rect x="216" y="142" width="126" height="40" rx="8" fill="#fff" stroke="#cfd8e3"/>
+    <text x="279" y="167" fill="#1f4e79" font-size="14" font-weight="700" text-anchor="middle">Cancel</text>
+    <rect x="356" y="142" width="122" height="40" rx="8" fill="#fff6f7" stroke="#e5aab0"/>
+    <text x="417" y="167" fill="#9a1d29" font-size="14" font-weight="700" text-anchor="middle">Delete</text>
+    <rect x="492" y="142" width="136" height="40" rx="8" fill="#dfe4ea"/>
+    <text x="560" y="167" fill="#728092" font-size="14" font-weight="700" text-anchor="middle">Saving…</text>
+
+    <rect x="32" y="220" width="450" height="172" rx="12" fill="#fff" stroke="#dde3ea"/>
+    <text x="54" y="250" fill="#071940" font-size="16" font-weight="700">Field</text>
+    <text x="54" y="280" fill="#294d65" font-size="13" font-weight="600">Assessment date</text>
+    <rect x="54" y="292" width="400" height="40" rx="8" fill="#fff" stroke="#cfd8e3"/>
+    <text x="68" y="317" fill="#0f1e33" font-size="14">November 12, 2026</text>
+    <text x="54" y="356" fill="#5a6b7d" font-size="12">Use the date the assessment was completed.</text>
+
+    <rect x="498" y="220" width="470" height="172" rx="12" fill="#fff" stroke="#dde3ea"/>
+    <text x="520" y="250" fill="#071940" font-size="16" font-weight="700">Status badges</text>
+    <rect x="520" y="276" width="76" height="26" rx="13" fill="#e3f4ea"/>
+    <text x="558" y="294" fill="#146c3f" font-size="12" font-weight="700" text-anchor="middle">Signed</text>
+    <rect x="608" y="276" width="154" height="26" rx="13" fill="#fff3dd"/>
+    <text x="685" y="294" fill="#8a4b00" font-size="12" font-weight="700" text-anchor="middle">Awaiting signature</text>
+    <rect x="774" y="276" width="74" height="26" rx="13" fill="#e8f0fe"/>
+    <text x="811" y="294" fill="#1d4fb8" font-size="12" font-weight="700" text-anchor="middle">Draft</text>
+    <rect x="520" y="318" width="110" height="26" rx="13" fill="#eef1f5"/>
+    <text x="575" y="336" fill="#4a5b6e" font-size="12" font-weight="700" text-anchor="middle">Not started</text>
+
+    <rect x="32" y="408" width="936" height="102" rx="12" fill="#fff" stroke="#dde3ea"/>
+    <text x="54" y="438" fill="#071940" font-size="16" font-weight="700">Notices</text>
+    <rect x="54" y="454" width="280" height="38" rx="8" fill="#edf5ff" stroke="#b8d2f4"/>
+    <circle cx="73" cy="473" r="8" fill="#1d4fb8"/>
+    <text x="73" y="477" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">i</text>
+    <text x="91" y="478" fill="#174a78" font-size="12" font-weight="600">Plan details were refreshed.</text>
+    <rect x="348" y="454" width="280" height="38" rx="8" fill="#edf9f2" stroke="#a9d8bd"/>
+    <circle cx="367" cy="473" r="8" fill="#146c3f"/>
+    <text x="367" y="477" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">✓</text>
+    <text x="385" y="478" fill="#146c3f" font-size="12" font-weight="600">Changes saved successfully.</text>
+    <rect x="642" y="454" width="304" height="38" rx="8" fill="#fff3dd" stroke="#ead8a6"/>
+    <circle cx="661" cy="473" r="8" fill="#8a4b00"/>
+    <text x="661" y="477" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">!</text>
+    <text x="679" y="478" fill="#6d5520" font-size="12" font-weight="600">A signature is still outstanding.</text>
+
+    <rect x="32" y="526" width="936" height="158" rx="12" fill="#fff" stroke="#dde3ea"/>
+    <text x="54" y="556" fill="#071940" font-size="16" font-weight="700">Document-aligned record card</text>
+    <rect x="54" y="574" width="892" height="88" rx="10" fill="#fff" stroke="#dde3ea"/>
+    <text x="74" y="600" fill="#5a6b7d" font-size="12">6 Nov 2026 · Grade 3</text>
+    <text x="74" y="632" fill="#071940" font-size="24" font-weight="700">58</text>
+    <text x="108" y="632" fill="#4a5b6e" font-size="13">words per minute</text>
+    <text x="292" y="632" fill="#146c3f" font-size="13" font-weight="700">+7 since last result</text>
+    <rect x="846" y="596" width="76" height="40" rx="8" fill="#fff" stroke="#cfd8e3"/>
+    <text x="884" y="621" fill="#1f4e79" font-size="14" font-weight="700" text-anchor="middle">Edit</text>
+  </g>
+</svg>

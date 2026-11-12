@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="250" viewBox="0 0 960 250" role="img" aria-labelledby="title desc">
+  <title id="title">FVSD Nexus colour foundations</title>
+  <desc id="desc">Swatches for current structural colours, surfaces and the candidate action blue.</desc>
+  <rect width="960" height="250" rx="12" fill="#f5f7fa"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="28" y="38" fill="#071940" font-size="20" font-weight="700">Colour foundations</text>
+    <text x="28" y="61" fill="#4a5b6e" font-size="13">Current structural values and the action-blue decision still under review</text>
+    <g transform="translate(28 86)">
+      <rect width="160" height="72" rx="10" fill="#071940"/>
+      <text x="12" y="94" fill="#071940" font-size="13" font-weight="700">Structural navy</text>
+      <text x="12" y="113" fill="#5a6b7d" font-size="12">#071940 · Current</text>
+    </g>
+    <g transform="translate(214 86)">
+      <rect width="160" height="72" rx="10" fill="#1f4e79"/>
+      <text x="12" y="94" fill="#071940" font-size="13" font-weight="700">Structural blue</text>
+      <text x="12" y="113" fill="#5a6b7d" font-size="12">#1F4E79 · Current</text>
+    </g>
+    <g transform="translate(400 86)">
+      <rect width="160" height="72" rx="10" fill="#2d6be7"/>
+      <text x="12" y="94" fill="#071940" font-size="13" font-weight="700">Concept action blue</text>
+      <text x="12" y="113" fill="#5a6b7d" font-size="12">#2D6BE7 · Open</text>
+    </g>
+    <g transform="translate(586 86)">
+      <rect width="160" height="72" rx="10" fill="#ffffff" stroke="#dde3ea"/>
+      <text x="12" y="94" fill="#071940" font-size="13" font-weight="700">Surface</text>
+      <text x="12" y="113" fill="#5a6b7d" font-size="12">#FFFFFF · Proposed role</text>
+    </g>
+    <g transform="translate(772 86)">
+      <rect width="160" height="72" rx="10" fill="#f5f7fa" stroke="#cfd8e3"/>
+      <text x="12" y="94" fill="#071940" font-size="13" font-weight="700">Surface alternate</text>
+      <text x="12" y="113" fill="#5a6b7d" font-size="12">#F5F7FA · Proposed</text>
+    </g>
+  </g>
+</svg>
