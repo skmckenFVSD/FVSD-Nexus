@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Validated - FMCS Foundations and Goal Modules Release
+> **Status:** Deployed - FMCS Foundations and Goal Modules Release
 
 Generated: 2026-08-25
 
@@ -1304,3 +1304,17 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Release fingerprints | Local SHA-256 | JavaScript `15768F13F00F113A2A76E5F9E02313B9ED83B78EB791BB09DB2F8E114415807F`; CSS `7473D494C312FB796F6D3C9F4C0D2774319534B83760DC7A1E56ED27C642767F` |
 | Azure policy | Subscription assignments and resource-group noncompliance state | Passed; only the existing Microsoft Defender for Cloud default assignment is active and no noncompliant states were returned for the target resource group |
 | Static RBAC | `infra/resources.bicep` role-assignment review | Passed; the App Service system identity retains only vault-scoped `Key Vault Secrets User`; Fabric and Dataverse access remain delegated to the signed-in user |
+
+#### Deployment Proof — 2026-11-12T15:51:30-06:00
+
+| Check | Result |
+|-------|--------|
+| GitHub release | Application commit `0310280a0fd3a82188661fd608a2a8a6dc2b525b` (`feat: complete modular IEP goal workspace`) is published on `main` and matched `origin/main` at deployment time |
+| Azure deployment | `azd deploy --no-prompt` completed successfully against the existing Canada Central App Service in 4 minutes 46 seconds; Azure deployment `b672e216-f9ad-41d2-aa03-e4494a09a951` reports status 4 (success) |
+| Production endpoint | `azd show` reports `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/` |
+| Production health | `GET /health` returned HTTP 200 with `{"status":"healthy","service":"FVSD Nexus"}` |
+| Exact frontend release | Production serves `assets/index-Dry9P3u5.js` and `assets/index-2nsfTtFu.css`, exactly matching the validated local bundle |
+| Release fingerprints | JavaScript SHA-256 `15768F13F00F113A2A76E5F9E02313B9ED83B78EB791BB09DB2F8E114415807F`; CSS SHA-256 `7473D494C312FB796F6D3C9F4C0D2774319534B83760DC7A1E56ED27C642767F` |
+| Entra sign-in | `GET /api/auth/signin` returned HTTP 302 to the FVSD Microsoft Entra tenant with `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/signin-oidc` as the production callback and delegated Dataverse scope |
+| Key Vault reference | `AzureAd__ClientSecret` reports `Resolved` through the App Service system-assigned identity against `kv-fvsdi-iwmpkez4` |
+| Live RBAC | App Service identity `3ac2acd7-3412-4161-b4bf-af96c4051a85` retains one `Key Vault Secrets User` assignment scoped only to `kv-fvsdi-iwmpkez4` |
