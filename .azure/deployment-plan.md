@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Validated - IEP/IPP Signatures, Activity Modules, and Teacher Comments Release
+> **Status:** Deployed - IEP/IPP Signatures, Activity Modules, and Teacher Comments Release
 
 Generated: 2026-08-25
 
@@ -1259,3 +1259,17 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Release fingerprints | Local SHA-256 | JavaScript `96525CD0E6E863E2E9194333FB8FCEC21FA7C2704FBDE06FBA7AE9AF553EDCDC`; CSS `4C9097AF028B53BC6DAEACA5BF7B370E765D971F7735F82B289AADA79ADA1424` |
 | Azure policy | `az policy assignment list` at subscription scope | Passed; only the existing Microsoft Defender for Cloud default assignment is active |
 | Static RBAC | `infra/resources.bicep` role-assignment review | Passed; the App Service system identity retains only vault-scoped `Key Vault Secrets User`, matching the application secret-read operation; Fabric and Dataverse access remain delegated to the signed-in user |
+
+#### Deployment Proof — 2026-11-12T10:46:54-06:00
+
+| Check | Result |
+|-------|--------|
+| GitHub release | Commit `9c7bf8c` (`feat: extend modular IEP workspace`) is published on `main` and matched `origin/main` at deployment time |
+| Azure deployment | `azd deploy --no-prompt` completed successfully against the existing Canada Central App Service; Azure deployment `83850e2f-1ce2-4944-a273-ff0b30c19e67` reports status 4 (success) |
+| Production endpoint | `azd show` reports `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/` |
+| Production health | `GET /health` returned HTTP 200 with `{"status":"healthy","service":"FVSD Nexus"}` |
+| Exact frontend release | Production serves `assets/index-CV0MTtts.js` and `assets/index-p4Trmhiq.css`, exactly matching the validated local bundle |
+| Release fingerprints | JavaScript SHA-256 `96525CD0E6E863E2E9194333FB8FCEC21FA7C2704FBDE06FBA7AE9AF553EDCDC`; CSS SHA-256 `4C9097AF028B53BC6DAEACA5BF7B370E765D971F7735F82B289AADA79ADA1424` |
+| Entra sign-in | `GET /api/auth/signin` returned HTTP 302 to `login.microsoftonline.com` with `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/signin-oidc` as the production callback |
+| Key Vault reference | `AzureAd__ClientSecret` reports `Resolved` using the App Service system-assigned identity |
+| Live RBAC | App Service identity `3ac2acd7-3412-4161-b4bf-af96c4051a85` retains one `Key Vault Secrets User` assignment scoped only to `kv-fvsdi-iwmpkez4` |
