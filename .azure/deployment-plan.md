@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Deployed - IEP/IPP Signatures, Activity Modules, and Teacher Comments Release
+> **Status:** Validated - FMCS Foundations and Goal Modules Release
 
 Generated: 2026-08-25
 
@@ -1273,3 +1273,34 @@ ScottM approved the matrix-specific Assessment Group selector. Overview charts w
 | Entra sign-in | `GET /api/auth/signin` returned HTTP 302 to `login.microsoftonline.com` with `https://app-fvsd-insights-iwmpkez4.azurewebsites.net/signin-oidc` as the production callback |
 | Key Vault reference | `AzureAd__ClientSecret` reports `Resolved` using the App Service system-assigned identity |
 | Live RBAC | App Service identity `3ac2acd7-3412-4161-b4bf-af96c4051a85` retains one `Key Vault Secrets User` assignment scoped only to `kv-fvsdi-iwmpkez4` |
+
+### FMCS Foundations and Goal Modules Release Revalidation — 2026-11-12
+
+- [x] All validation checks pass
+  - [x] 1. AZD Installation
+  - [x] 2. Schema Validation
+  - [x] 3. Environment Setup
+  - [x] 4. Authentication Check
+  - [x] 5. Subscription/Location Check
+  - [x] 6. Aspire Pre-Provisioning Checks — not applicable; the solution is not .NET Aspire
+  - [x] 7. Provision Preview
+  - [x] 8. Build Verification
+  - [x] 9. Docker Build Context Validation — not applicable; the service has no Dockerfile
+  - [x] 10. Package Validation
+  - [x] 11. Azure Policy Validation
+  - [x] 12. Aspire Post-Provisioning Checks — not applicable; the solution is not .NET Aspire
+
+#### Validation Proof
+
+| Check | Command | Result |
+|-------|---------|--------|
+| Azure context | `azd version`, `azd auth login --check-status`, `azd env list`, safe targeted environment values, and `az account show` | Passed; AZD 1.31.2, signed-in FVSD identity, existing `fvsd-insights-dev` environment, Pay-As-You-Go subscription `64b2bfe8-fb82-4105-991c-95a36ad469c5`, and Canada Central |
+| Runtime and project specialization | `node --version`, Aspire marker scan, Dockerfile scan, and `azure.yaml` inspection | Passed; Node 22.17.1 is supported for the Vite build, production runs ASP.NET Core 8, the solution is not Aspire, and there is no Docker build context |
+| React validation | `npm audit --audit-level=high` and `npm run build` | Passed with zero vulnerabilities; TypeScript and Vite generated `index-Dry9P3u5.js` and `index-2nsfTtFu.css` |
+| ASP.NET Core validation | `dotnet test FVSDNexus.sln --configuration Release --no-restore` and `dotnet list FVSDNexus.sln package --vulnerable --include-transitive` | Passed; 143 tests, zero failures, and no vulnerable packages |
+| Bicep validation | `az bicep build --file infra/main.bicep --stdout` and `az bicep lint --file infra/main.bicep` | Passed without template or lint errors |
+| Provision preview | `azd provision --preview --no-prompt` with process-scoped `ENTRA_CLIENT_SECRET` validation placeholder | Passed; no changes were applied and no resources are created or deleted; preview only reports existing App Service and monitoring property reconciliation |
+| Package validation | `azd package --no-prompt` | Passed; package `fvsd-insights-web-azddeploy-1794519696.zip`, SHA-256 `919C57227F1019A115A0ED59823C9802302A238AE056FAB612C5D8CB2D2843A8` |
+| Release fingerprints | Local SHA-256 | JavaScript `15768F13F00F113A2A76E5F9E02313B9ED83B78EB791BB09DB2F8E114415807F`; CSS `7473D494C312FB796F6D3C9F4C0D2774319534B83760DC7A1E56ED27C642767F` |
+| Azure policy | Subscription assignments and resource-group noncompliance state | Passed; only the existing Microsoft Defender for Cloud default assignment is active and no noncompliant states were returned for the target resource group |
+| Static RBAC | `infra/resources.bicep` role-assignment review | Passed; the App Service system identity retains only vault-scoped `Key Vault Secrets User`; Fabric and Dataverse access remain delegated to the signed-in user |

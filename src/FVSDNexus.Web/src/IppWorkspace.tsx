@@ -219,6 +219,123 @@ type StudentPlanWordStudyCommand = {
   finishingLevelId: string | null
 }
 
+type StudentPlanEmpowerLevelOption = {
+  id: string
+  name: string
+  description: string
+  fillHex: string
+  fontHex: string
+  sortOrder: number
+}
+
+type StudentPlanEmpowerGoal = {
+  goalId: string
+  name: string
+  alias: string
+  description: string
+  foundationLevel: string
+  division: string
+  subsection?: string | null
+  sortOrder: number
+  progressId?: string | null
+  initialLevelId?: string | null
+  initialLevelName?: string | null
+  initialLevelFillHex?: string | null
+  initialLevelFontHex?: string | null
+  initialDate?: string | null
+  currentLevelId?: string | null
+  currentLevelName?: string | null
+  currentLevelFillHex?: string | null
+  currentLevelFontHex?: string | null
+  currentDate?: string | null
+  eTag?: string | null
+}
+
+type StudentPlanEmpowerResponse = {
+  planId: string
+  schoolYear: string
+  sectionName: string
+  sectionDescription: string
+  levels: StudentPlanEmpowerLevelOption[]
+  goals: StudentPlanEmpowerGoal[]
+}
+
+type StudentPlanEmpowerProgressCommand = {
+  levelId: string
+  dateAchieved: string
+}
+
+type StudentPlanMathematicsLevelOption = StudentPlanEmpowerLevelOption
+
+type StudentPlanMathematicsGoal = {
+  goalId: string
+  name: string
+  alias: string
+  description: string
+  outcome: string
+  grade: string
+  columnTitle: string
+  sortOrder: number
+  progressId?: string | null
+  initialLevelId?: string | null
+  initialLevelName?: string | null
+  initialLevelFillHex?: string | null
+  initialLevelFontHex?: string | null
+  initialDate?: string | null
+  currentLevelId?: string | null
+  currentLevelName?: string | null
+  currentLevelFillHex?: string | null
+  currentLevelFontHex?: string | null
+  currentDate?: string | null
+  eTag?: string | null
+}
+
+type StudentPlanMathematicsResponse = {
+  planId: string
+  schoolYear: string
+  sectionName: string
+  sectionDescription: string
+  levels: StudentPlanMathematicsLevelOption[]
+  goals: StudentPlanMathematicsGoal[]
+}
+
+type StudentPlanMathematicsProgressCommand = StudentPlanEmpowerProgressCommand
+
+type StudentPlanFmcsLevelOption = StudentPlanEmpowerLevelOption
+
+type StudentPlanFmcsGoal = {
+  goalId: string
+  name: string
+  alias: string
+  description: string
+  outcome: string
+  columnTitle: string
+  sortOrder: number
+  progressId?: string | null
+  initialLevelId?: string | null
+  initialLevelName?: string | null
+  initialLevelFillHex?: string | null
+  initialLevelFontHex?: string | null
+  initialDate?: string | null
+  currentLevelId?: string | null
+  currentLevelName?: string | null
+  currentLevelFillHex?: string | null
+  currentLevelFontHex?: string | null
+  currentDate?: string | null
+  eTag?: string | null
+}
+
+type StudentPlanFmcsResponse = {
+  planId: string
+  schoolYear: string
+  sectionName: string
+  sectionDescription: string
+  levels: StudentPlanFmcsLevelOption[]
+  goals: StudentPlanFmcsGoal[]
+}
+
+type StudentPlanFmcsProgressCommand = StudentPlanEmpowerProgressCommand
+
 type StudentPlanWritingSnapshotRecord = {
   id: string
   subject: string
@@ -481,6 +598,19 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
   const [wordStudyOptionsError, setWordStudyOptionsError] = useState<string | null>(null)
   const [wordStudyDialogOpen, setWordStudyDialogOpen] = useState(false)
   const [editingWordStudy, setEditingWordStudy] = useState<StudentPlanWordStudyRecord | null>(null)
+  const [empowerReading, setEmpowerReading] = useState<StudentPlanEmpowerResponse | null>(null)
+  const [empowerReadingLoading, setEmpowerReadingLoading] = useState(false)
+  const [empowerReadingError, setEmpowerReadingError] = useState<string | null>(null)
+  const [savingEmpowerGoalId, setSavingEmpowerGoalId] = useState<string | null>(null)
+  const [mathematics, setMathematics] = useState<StudentPlanMathematicsResponse | null>(null)
+  const [mathematicsLoading, setMathematicsLoading] = useState(false)
+  const [mathematicsError, setMathematicsError] = useState<string | null>(null)
+  const [savingMathematicsGoalId, setSavingMathematicsGoalId] = useState<string | null>(null)
+  const [fmcsFoundations, setFmcsFoundations] = useState<StudentPlanFmcsResponse | null>(null)
+  const [fmcsFoundationsLoading, setFmcsFoundationsLoading] = useState(false)
+  const [fmcsFoundationsError, setFmcsFoundationsError] = useState<string | null>(null)
+  const [savingFmcsGoalId, setSavingFmcsGoalId] = useState<string | null>(null)
+  const [initializingFmcsOutcome, setInitializingFmcsOutcome] = useState(false)
   const [writingSnapshots, setWritingSnapshots] = useState<StudentPlanWritingSnapshotsResponse | null>(null)
   const [writingSnapshotsLoading, setWritingSnapshotsLoading] = useState(false)
   const [writingSnapshotsError, setWritingSnapshotsError] = useState<string | null>(null)
@@ -563,6 +693,16 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
     setWordStudyOptionsError(null)
     setWordStudyDialogOpen(false)
     setEditingWordStudy(null)
+    setEmpowerReading(null)
+    setEmpowerReadingError(null)
+    setSavingEmpowerGoalId(null)
+    setMathematics(null)
+    setMathematicsError(null)
+    setSavingMathematicsGoalId(null)
+    setFmcsFoundations(null)
+    setFmcsFoundationsError(null)
+    setSavingFmcsGoalId(null)
+    setInitializingFmcsOutcome(false)
     setWritingSnapshots(null)
     setWritingSnapshotsError(null)
     setWritingSnapshotDialogOpen(false)
@@ -676,6 +816,66 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
     }).finally(() => setWordStudyLoading(false))
     return () => controller.abort()
   }, [activeModule?.name, context.studentId, context.teacherSectionId, planId, wordStudy?.planId])
+
+  useEffect(() => {
+    if (!planId || activeModule?.name !== 'Empower Reading' || empowerReading?.planId === planId) return
+    const controller = new AbortController()
+    setEmpowerReadingLoading(true)
+    setEmpowerReadingError(null)
+    void fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/empower-reading`,
+      { credentials: 'include', signal: controller.signal },
+    ).then(async (response) => {
+      if (!response.ok) throw new Error(await readError(response))
+      setEmpowerReading(await response.json() as StudentPlanEmpowerResponse)
+    }).catch((requestError) => {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return
+      setEmpowerReadingError(requestError instanceof Error
+        ? requestError.message
+        : 'Empower Reading goals could not be loaded.')
+    }).finally(() => setEmpowerReadingLoading(false))
+    return () => controller.abort()
+  }, [activeModule?.name, context.studentId, context.teacherSectionId, empowerReading?.planId, planId])
+
+  useEffect(() => {
+    if (!planId || activeModule?.name !== 'Mathematics' || mathematics?.planId === planId) return
+    const controller = new AbortController()
+    setMathematicsLoading(true)
+    setMathematicsError(null)
+    void fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/mathematics`,
+      { credentials: 'include', signal: controller.signal },
+    ).then(async (response) => {
+      if (!response.ok) throw new Error(await readError(response))
+      setMathematics(await response.json() as StudentPlanMathematicsResponse)
+    }).catch((requestError) => {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return
+      setMathematicsError(requestError instanceof Error
+        ? requestError.message
+        : 'Mathematics goals could not be loaded.')
+    }).finally(() => setMathematicsLoading(false))
+    return () => controller.abort()
+  }, [activeModule?.name, context.studentId, context.teacherSectionId, mathematics?.planId, planId])
+
+  useEffect(() => {
+    if (!planId || activeModule?.name !== 'FMCS Foundations' || fmcsFoundations?.planId === planId) return
+    const controller = new AbortController()
+    setFmcsFoundationsLoading(true)
+    setFmcsFoundationsError(null)
+    void fetch(
+      `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/fmcs-foundations`,
+      { credentials: 'include', signal: controller.signal },
+    ).then(async (response) => {
+      if (!response.ok) throw new Error(await readError(response))
+      setFmcsFoundations(await response.json() as StudentPlanFmcsResponse)
+    }).catch((requestError) => {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return
+      setFmcsFoundationsError(requestError instanceof Error
+        ? requestError.message
+        : 'FMCS Foundations goals could not be loaded.')
+    }).finally(() => setFmcsFoundationsLoading(false))
+    return () => controller.abort()
+  }, [activeModule?.name, context.studentId, context.teacherSectionId, fmcsFoundations?.planId, planId])
 
   useEffect(() => {
     if (!planId || activeModule?.name !== 'Writing Snapshot' || writingSnapshots?.planId === planId) return
@@ -1205,6 +1405,134 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
     setError(null)
   }
 
+  const saveEmpowerProgress = async (
+    goal: StudentPlanEmpowerGoal,
+    command: StudentPlanEmpowerProgressCommand,
+  ) => {
+    if (!planId) throw new Error('Reload the annual plan before saving this Empower goal.')
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (goal.progressId) {
+      if (!goal.eTag) throw new Error('Reload the Empower goal before saving your changes.')
+      headers['If-Match'] = goal.eTag
+    }
+    setSavingEmpowerGoalId(goal.goalId)
+    try {
+      const response = await fetch(
+        `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/empower-reading/goals/${goal.goalId}`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers,
+          body: JSON.stringify(command),
+        },
+      )
+      if (!response.ok) {
+        const message = await readError(response)
+        if (response.status === 409) setEmpowerReading(null)
+        throw new Error(message)
+      }
+      setEmpowerReading(await response.json() as StudentPlanEmpowerResponse)
+      setEmpowerReadingError(null)
+      setNotice(`${goal.name} was updated.`)
+      setError(null)
+    } finally {
+      setSavingEmpowerGoalId(null)
+    }
+  }
+
+  const saveMathematicsProgress = async (
+    goal: StudentPlanMathematicsGoal,
+    command: StudentPlanMathematicsProgressCommand,
+  ) => {
+    if (!planId) throw new Error('Reload the annual plan before saving this Mathematics goal.')
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (goal.progressId) {
+      if (!goal.eTag) throw new Error('Reload the Mathematics goal before saving your changes.')
+      headers['If-Match'] = goal.eTag
+    }
+    setSavingMathematicsGoalId(goal.goalId)
+    try {
+      const response = await fetch(
+        `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/mathematics/goals/${goal.goalId}`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers,
+          body: JSON.stringify(command),
+        },
+      )
+      if (!response.ok) {
+        const message = await readError(response)
+        if (response.status === 409) setMathematics(null)
+        throw new Error(message)
+      }
+      setMathematics(await response.json() as StudentPlanMathematicsResponse)
+      setMathematicsError(null)
+      setNotice(`${goal.name} was updated.`)
+      setError(null)
+    } finally {
+      setSavingMathematicsGoalId(null)
+    }
+  }
+
+  const saveFmcsProgress = async (
+    goal: StudentPlanFmcsGoal,
+    command: StudentPlanFmcsProgressCommand,
+  ) => {
+    if (!planId) throw new Error('Reload the annual plan before saving this FMCS Foundations goal.')
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (goal.progressId) {
+      if (!goal.eTag) throw new Error('Reload the FMCS Foundations goal before saving your changes.')
+      headers['If-Match'] = goal.eTag
+    }
+    setSavingFmcsGoalId(goal.goalId)
+    try {
+      const response = await fetch(
+        `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/fmcs-foundations/goals/${goal.goalId}`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers,
+          body: JSON.stringify(command),
+        },
+      )
+      if (!response.ok) {
+        const message = await readError(response)
+        if (response.status === 409) setFmcsFoundations(null)
+        throw new Error(message)
+      }
+      setFmcsFoundations(await response.json() as StudentPlanFmcsResponse)
+      setFmcsFoundationsError(null)
+      setNotice(`${goal.name} was updated.`)
+      setError(null)
+    } finally {
+      setSavingFmcsGoalId(null)
+    }
+  }
+
+  const initializeFmcsOutcomeRecords = async (outcome: string) => {
+    if (!planId) throw new Error('Reload the annual plan before selecting an FMCS Foundations Outcome.')
+    setInitializingFmcsOutcome(true)
+    try {
+      const response = await fetch(
+        `/api/class-assignments/teacher-sections/${context.teacherSectionId}/students/${context.studentId}/plans/${planId}/fmcs-foundations/outcomes`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ outcome }),
+        },
+      )
+      if (!response.ok) throw new Error(await readError(response))
+      setFmcsFoundations(await response.json() as StudentPlanFmcsResponse)
+      setFmcsFoundationsError(null)
+      setNotice(`${outcome} is ready for progress entry.`)
+      setError(null)
+    } finally {
+      setInitializingFmcsOutcome(false)
+    }
+  }
+
   const openWritingSnapshotDialog = (snapshot: StudentPlanWritingSnapshotRecord | null) => {
     setEditingWritingSnapshot(snapshot)
     setWritingSnapshotDialogOpen(true)
@@ -1634,6 +1962,12 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
                   ? <BookOpen size={20} />
                 : activeModule.name === 'Word Study'
                   ? <FileCheck2 size={20} />
+                : activeModule.name === 'Empower Reading'
+                  ? <Target size={20} />
+                : activeModule.name === 'Mathematics'
+                  ? <ChartNoAxesCombined size={20} />
+                : activeModule.name === 'FMCS Foundations'
+                  ? <Target size={20} />
                 : activeModule.name === 'Writing Snapshot'
                   ? <Star size={20} />
                 : activeModule.name === 'Teacher Comment and Next Steps'
@@ -1682,6 +2016,36 @@ export function IppWorkspace({ context, onBackToClassAssignment }: {
               error={wordStudyError}
               onAdd={() => openWordStudyDialog(null)}
               onEdit={openWordStudyDialog}
+            />
+          ) : activeModule.name === 'Empower Reading' ? (
+            <EmpowerReadingDocument
+              description={activeModuleDescription || empowerReading?.sectionDescription || ''}
+              response={empowerReading}
+              loading={empowerReadingLoading}
+              error={empowerReadingError}
+              savingGoalId={savingEmpowerGoalId}
+              onSave={saveEmpowerProgress}
+            />
+          ) : activeModule.name === 'Mathematics' ? (
+            <MathematicsDocument
+              description={activeModuleDescription || mathematics?.sectionDescription || ''}
+              preferredGrade={moduleState?.details.gradeAtPlan}
+              response={mathematics}
+              loading={mathematicsLoading}
+              error={mathematicsError}
+              savingGoalId={savingMathematicsGoalId}
+              onSave={saveMathematicsProgress}
+            />
+          ) : activeModule.name === 'FMCS Foundations' ? (
+            <FmcsFoundationsDocument
+              description={activeModuleDescription || fmcsFoundations?.sectionDescription || ''}
+              response={fmcsFoundations}
+              loading={fmcsFoundationsLoading}
+              error={fmcsFoundationsError}
+              savingGoalId={savingFmcsGoalId}
+              initializingOutcome={initializingFmcsOutcome}
+              onSelectOutcome={initializeFmcsOutcomeRecords}
+              onSave={saveFmcsProgress}
             />
           ) : activeModule.name === 'Writing Snapshot' ? (
             <WritingSnapshotDocument
@@ -3294,6 +3658,681 @@ function WordStudyStageDetail({ name, section, expectedGrade }: {
       {expectedGrade ? <span>Expected Grade: {expectedGrade}</span> : null}
     </div>
   )
+}
+
+function EmpowerReadingDocument({ description, response, loading, error, savingGoalId, onSave }: {
+  description: string
+  response: StudentPlanEmpowerResponse | null
+  loading: boolean
+  error: string | null
+  savingGoalId: string | null
+  onSave: (goal: StudentPlanEmpowerGoal, command: StudentPlanEmpowerProgressCommand) => Promise<void>
+}) {
+  const foundationLevels = useMemo(
+    () => [...new Set((response?.goals ?? []).map((goal) => goal.foundationLevel))],
+    [response],
+  )
+  const [foundationLevel, setFoundationLevel] = useState('')
+  const [division, setDivision] = useState('')
+  const divisions = useMemo(
+    () => [...new Set((response?.goals ?? [])
+      .filter((goal) => goal.foundationLevel === foundationLevel)
+      .map((goal) => goal.division))],
+    [foundationLevel, response],
+  )
+
+  useEffect(() => {
+    if (!foundationLevels.length) return
+    setFoundationLevel((current) => foundationLevels.includes(current) ? current : foundationLevels[0])
+  }, [foundationLevels])
+
+  useEffect(() => {
+    if (!divisions.length) {
+      setDivision('')
+      return
+    }
+    setDivision((current) => divisions.includes(current) ? current : divisions[0])
+  }, [divisions])
+
+  const goals = (response?.goals ?? []).filter((goal) =>
+    goal.foundationLevel === foundationLevel && goal.division === division)
+  const subsection = goals.find((goal) => goal.subsection)?.subsection
+
+  return (
+    <div className="ipp-module-document-body ipp-empower-document">
+      {description ? <p className="ipp-module-front-description">{description}</p> : null}
+      {loading && !response ? (
+        <div className="ipp-module-loading"><RefreshCw className="spin" size={18} />Loading Empower Reading goals…</div>
+      ) : error ? (
+        <div className="error-banner"><CircleAlert size={18} />{error}</div>
+      ) : response ? (
+        <>
+          <div className="ipp-empower-filters ipp-no-print">
+            <label>
+              <span>Foundation Level</span>
+              <select value={foundationLevel} onChange={(event) => setFoundationLevel(event.target.value)}>
+                {foundationLevels.map((value) => <option value={value} key={value}>{value}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Division</span>
+              <select value={division} onChange={(event) => setDivision(event.target.value)}>
+                {divisions.map((value) => <option value={value} key={value}>{value}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <section className="ipp-empower-group" aria-labelledby="ipp-empower-group-title">
+            <header>
+              <div>
+                <span>Empower Reading</span>
+                <h4 id="ipp-empower-group-title">
+                  {[subsection, foundationLevel, division].filter(Boolean).join(' · ')}
+                </h4>
+              </div>
+              <strong>{goals.length} goals</strong>
+            </header>
+
+            <div className="ipp-empower-rating-key" aria-label="Empower rating levels">
+              {response.levels.map((level) => (
+                <div key={level.id} style={{ backgroundColor: level.fillHex, color: level.fontHex }}>
+                  <strong>{level.name}</strong>
+                  <span>{level.description}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="ipp-empower-goals">
+              {goals.map((goal) => (
+                <EmpowerGoalCard
+                  key={goal.goalId}
+                  goal={goal}
+                  levels={response.levels}
+                  saving={savingGoalId === goal.goalId}
+                  disabled={savingGoalId !== null && savingGoalId !== goal.goalId}
+                  onSave={onSave}
+                />
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+function EmpowerGoalCard({ goal, levels, saving, disabled, onSave }: {
+  goal: StudentPlanEmpowerGoal
+  levels: StudentPlanEmpowerLevelOption[]
+  saving: boolean
+  disabled: boolean
+  onSave: (goal: StudentPlanEmpowerGoal, command: StudentPlanEmpowerProgressCommand) => Promise<void>
+}) {
+  const [levelId, setLevelId] = useState(goal.currentLevelId ?? '')
+  const [dateAchieved, setDateAchieved] = useState(toPlanDateInput(goal.currentDate))
+  const [cardError, setCardError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLevelId(goal.currentLevelId ?? '')
+    setDateAchieved(toPlanDateInput(goal.currentDate))
+    setCardError(null)
+  }, [goal.currentDate, goal.currentLevelId, goal.eTag])
+
+  const save = async () => {
+    if (!levelId || !dateAchieved) {
+      setCardError('Select a rating and Date Achieved.')
+      return
+    }
+    setCardError(null)
+    try {
+      await onSave(goal, { levelId, dateAchieved })
+    } catch (requestError) {
+      setCardError(requestError instanceof Error ? requestError.message : 'This goal could not be saved.')
+    }
+  }
+
+  return (
+    <article className="ipp-empower-goal-card">
+      <div className="ipp-empower-goal-copy">
+        <strong>{goal.name}</strong>
+        {goal.description ? <p>{goal.description}</p> : null}
+      </div>
+      <div className="ipp-empower-progress" aria-label={`${goal.name} progress`}>
+        <EmpowerLevelValue
+          label="Initial"
+          level={goal.initialLevelName}
+          date={goal.initialDate}
+          fill={goal.initialLevelFillHex}
+          font={goal.initialLevelFontHex}
+        />
+        <span className="ipp-empower-progress-arrow" aria-hidden="true">→</span>
+        <EmpowerLevelValue
+          label="Current"
+          level={goal.currentLevelName}
+          date={goal.currentDate}
+          fill={goal.currentLevelFillHex}
+          font={goal.currentLevelFontHex}
+        />
+      </div>
+      <div className="ipp-empower-entry ipp-no-print">
+        <label>
+          <span>Level Achieved</span>
+          <select value={levelId} disabled={saving || disabled} onChange={(event) => setLevelId(event.target.value)}>
+            <option value="">Select goal level</option>
+            {levels.map((level) => <option value={level.id} key={level.id}>{level.name}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>Date Achieved</span>
+          <input
+            type="date"
+            value={dateAchieved}
+            disabled={saving || disabled}
+            onChange={(event) => setDateAchieved(event.target.value)}
+          />
+        </label>
+        <button
+          type="button"
+          className="ipp-module-action-button primary"
+          disabled={saving || disabled || !levelId || !dateAchieved}
+          onClick={() => void save()}
+        >
+          {saving ? <RefreshCw className="spin" size={14} /> : <Save size={14} />}
+          {saving ? 'Saving…' : goal.currentLevelId ? 'Save progress' : 'Add progress'}
+        </button>
+        {cardError ? <span className="ipp-empower-card-error" role="alert">{cardError}</span> : null}
+      </div>
+    </article>
+  )
+}
+
+function EmpowerLevelValue({ label, level, date, fill, font }: {
+  label: string
+  level?: string | null
+  date?: string | null
+  fill?: string | null
+  font?: string | null
+}) {
+  return (
+    <div className="ipp-empower-level-value">
+      <span>{label}</span>
+      <strong style={{ backgroundColor: fill ?? '#f4f7f9', color: font ?? '#596f7d' }}>{level ?? '—'}</strong>
+      <small>{date ? formatPlanDate(date) : '—'}</small>
+    </div>
+  )
+}
+
+function MathematicsDocument({ description, preferredGrade, response, loading, error, savingGoalId, onSave }: {
+  description: string
+  preferredGrade?: string | null
+  response: StudentPlanMathematicsResponse | null
+  loading: boolean
+  error: string | null
+  savingGoalId: string | null
+  onSave: (goal: StudentPlanMathematicsGoal, command: StudentPlanMathematicsProgressCommand) => Promise<void>
+}) {
+  const outcomes = useMemo(
+    () => [...new Set((response?.goals ?? []).map((goal) => goal.outcome))],
+    [response],
+  )
+  const [outcome, setOutcome] = useState('')
+  const [grade, setGrade] = useState('')
+  const [layout, setLayout] = useState<'single' | 'dual'>('single')
+  const grades = useMemo(
+    () => [...new Set((response?.goals ?? [])
+      .filter((goal) => goal.outcome === outcome)
+      .map((goal) => goal.grade))].sort(compareProgressionGrades),
+    [outcome, response],
+  )
+
+  useEffect(() => {
+    if (!outcomes.length) return
+    setOutcome((current) => outcomes.includes(current) ? current : outcomes[0])
+  }, [outcomes])
+
+  useEffect(() => {
+    if (!grades.length) {
+      setGrade('')
+      return
+    }
+    setGrade((current) => {
+      if (grades.includes(current)) return current
+      if (preferredGrade && grades.includes(preferredGrade)) return preferredGrade
+      return grades[0]
+    })
+  }, [grades, preferredGrade])
+
+  const goals = (response?.goals ?? []).filter((goal) => goal.outcome === outcome && goal.grade === grade)
+  const gradeDescription = goals.find((goal) => goal.description)?.description ?? ''
+
+  return (
+    <div className="ipp-module-document-body ipp-mathematics-document">
+      {description ? <p className="ipp-module-front-description">{description}</p> : null}
+      {loading && !response ? (
+        <div className="ipp-module-loading"><RefreshCw className="spin" size={18} />Loading Mathematics goals…</div>
+      ) : error ? (
+        <div className="error-banner"><CircleAlert size={18} />{error}</div>
+      ) : response ? (
+        <>
+          <div className="ipp-mathematics-toolbar ipp-no-print">
+            <div className="ipp-mathematics-filters">
+              <label>
+                <span>Outcome</span>
+                <select value={outcome} onChange={(event) => setOutcome(event.target.value)}>
+                  {outcomes.map((value) => <option value={value} key={value}>{value}</option>)}
+                </select>
+              </label>
+              <label>
+                <span>Progression Grade</span>
+                <select value={grade} onChange={(event) => setGrade(event.target.value)}>
+                  {grades.map((value) => <option value={value} key={value}>{value}</option>)}
+                </select>
+              </label>
+            </div>
+            <fieldset className="ipp-mathematics-layout-toggle">
+              <legend>Visual and document layout</legend>
+              <button type="button" className={layout === 'single' ? 'active' : ''} onClick={() => setLayout('single')}>
+                Single Value
+              </button>
+              <button type="button" className={layout === 'dual' ? 'active' : ''} onClick={() => setLayout('dual')}>
+                Dual Value
+              </button>
+            </fieldset>
+          </div>
+
+          <section className="ipp-mathematics-entry" aria-labelledby="ipp-mathematics-entry-title">
+            <header>
+              <div>
+                <span>Record progress</span>
+                <h4 id="ipp-mathematics-entry-title">{outcome} · {grade}</h4>
+              </div>
+              <strong>{goals.length} goals</strong>
+            </header>
+            <div className="ipp-mathematics-entry-list">
+              {goals.map((goal) => (
+                <MathematicsGoalEntry
+                  key={goal.goalId}
+                  goal={goal}
+                  levels={response.levels}
+                  saving={savingGoalId === goal.goalId}
+                  disabled={savingGoalId !== null && savingGoalId !== goal.goalId}
+                  onSave={onSave}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="ipp-mathematics-preview" aria-labelledby="ipp-mathematics-preview-title">
+            <header>
+              <div>
+                <span>Plan visual</span>
+                <h4 id="ipp-mathematics-preview-title">Mathematics: {outcome}</h4>
+                <p>{grade}{gradeDescription ? `: ${gradeDescription}` : ''}</p>
+              </div>
+              <strong>{layout === 'single' ? 'Current achievement and date' : 'Initial and current achievement'}</strong>
+            </header>
+            <div className="ipp-mathematics-rating-key">
+              {response.levels.map((level) => (
+                <span key={level.id} style={{ backgroundColor: level.fillHex, color: level.fontHex }}>{level.name}</span>
+              ))}
+            </div>
+            <div className="ipp-mathematics-card-grid">
+              {goals.map((goal) => (
+                <MathematicsPreviewCard key={goal.goalId} goal={goal} layout={layout} />
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+function MathematicsGoalEntry({ goal, levels, saving, disabled, onSave }: {
+  goal: StudentPlanMathematicsGoal
+  levels: StudentPlanMathematicsLevelOption[]
+  saving: boolean
+  disabled: boolean
+  onSave: (goal: StudentPlanMathematicsGoal, command: StudentPlanMathematicsProgressCommand) => Promise<void>
+}) {
+  const [levelId, setLevelId] = useState(goal.currentLevelId ?? '')
+  const [dateAchieved, setDateAchieved] = useState(toPlanDateInput(goal.currentDate))
+  const [entryError, setEntryError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLevelId(goal.currentLevelId ?? '')
+    setDateAchieved(toPlanDateInput(goal.currentDate))
+    setEntryError(null)
+  }, [goal.currentDate, goal.currentLevelId, goal.eTag])
+
+  const save = async () => {
+    if (!levelId || !dateAchieved) {
+      setEntryError('Select a rating and Date Achieved.')
+      return
+    }
+    setEntryError(null)
+    try {
+      await onSave(goal, { levelId, dateAchieved })
+    } catch (requestError) {
+      setEntryError(requestError instanceof Error ? requestError.message : 'This Mathematics goal could not be saved.')
+    }
+  }
+
+  return (
+    <article className="ipp-mathematics-entry-row">
+      <div>
+        <strong>{goal.name}</strong>
+        <span>{goal.columnTitle}</span>
+      </div>
+      <EmpowerLevelValue
+        label="Current"
+        level={goal.currentLevelName}
+        date={goal.currentDate}
+        fill={goal.currentLevelFillHex}
+        font={goal.currentLevelFontHex}
+      />
+      <label>
+        <span>Level Achieved</span>
+        <select value={levelId} disabled={saving || disabled} onChange={(event) => setLevelId(event.target.value)}>
+          <option value="">Select goal level</option>
+          {levels.map((level) => <option value={level.id} key={level.id}>{level.name}</option>)}
+        </select>
+      </label>
+      <label>
+        <span>Date Achieved</span>
+        <input type="date" value={dateAchieved} disabled={saving || disabled} onChange={(event) => setDateAchieved(event.target.value)} />
+      </label>
+      <button
+        type="button"
+        className="ipp-module-action-button primary"
+        disabled={saving || disabled || !levelId || !dateAchieved}
+        onClick={() => void save()}
+      >
+        {saving ? <RefreshCw className="spin" size={14} /> : <Save size={14} />}
+        {saving ? 'Saving…' : goal.currentLevelId ? 'Save' : 'Add'}
+      </button>
+      {entryError ? <span className="ipp-empower-card-error" role="alert">{entryError}</span> : null}
+    </article>
+  )
+}
+
+function MathematicsPreviewCard({ goal, layout }: {
+  goal: StudentPlanMathematicsGoal
+  layout: 'single' | 'dual'
+}) {
+  return (
+    <article className="ipp-mathematics-preview-card">
+      <span>{goal.columnTitle}</span>
+      <strong>{goal.name}</strong>
+      {layout === 'single' ? (
+        <EmpowerLevelValue
+          label="Current"
+          level={goal.currentLevelName}
+          date={goal.currentDate}
+          fill={goal.currentLevelFillHex}
+          font={goal.currentLevelFontHex}
+        />
+      ) : (
+        <div className="ipp-empower-progress">
+          <EmpowerLevelValue
+            label="Initial"
+            level={goal.initialLevelName}
+            date={goal.initialDate}
+            fill={goal.initialLevelFillHex}
+            font={goal.initialLevelFontHex}
+          />
+          <span className="ipp-empower-progress-arrow" aria-hidden="true">→</span>
+          <EmpowerLevelValue
+            label="Current"
+            level={goal.currentLevelName}
+            date={goal.currentDate}
+            fill={goal.currentLevelFillHex}
+            font={goal.currentLevelFontHex}
+          />
+        </div>
+      )}
+    </article>
+  )
+}
+
+function FmcsFoundationsDocument({ description, response, loading, error, savingGoalId, initializingOutcome, onSelectOutcome, onSave }: {
+  description: string
+  response: StudentPlanFmcsResponse | null
+  loading: boolean
+  error: string | null
+  savingGoalId: string | null
+  initializingOutcome: boolean
+  onSelectOutcome: (outcome: string) => Promise<void>
+  onSave: (goal: StudentPlanFmcsGoal, command: StudentPlanFmcsProgressCommand) => Promise<void>
+}) {
+  const outcomes = useMemo(
+    () => [...new Set((response?.goals ?? []).map((goal) => goal.outcome))],
+    [response],
+  )
+  const [outcome, setOutcome] = useState('')
+  const [layout, setLayout] = useState<'single' | 'multi'>('single')
+  const [outcomeError, setOutcomeError] = useState<string | null>(null)
+
+  const selectOutcome = async (nextOutcome: string) => {
+    setOutcome(nextOutcome)
+    setOutcomeError(null)
+    if (!nextOutcome) return
+    try {
+      await onSelectOutcome(nextOutcome)
+    } catch (requestError) {
+      setOutcomeError(requestError instanceof Error
+        ? requestError.message
+        : 'The selected FMCS Foundations Outcome could not be prepared.')
+    }
+  }
+
+  const goals = (response?.goals ?? []).filter((goal) => goal.outcome === outcome)
+  const visualOutcomes = outcomes.filter((candidate) =>
+    candidate === outcome || (response?.goals ?? []).some((goal) => goal.outcome === candidate && goal.progressId),
+  )
+
+  return (
+    <div className="ipp-module-document-body ipp-fmcs-document">
+      {description ? <p className="ipp-module-front-description">{description}</p> : null}
+      {loading && !response ? (
+        <div className="ipp-module-loading"><RefreshCw className="spin" size={18} />Loading FMCS Foundations goals…</div>
+      ) : error ? (
+        <div className="error-banner"><CircleAlert size={18} />{error}</div>
+      ) : response ? (
+        <>
+          <div className="ipp-mathematics-toolbar ipp-no-print">
+            <div className="ipp-fmcs-filters">
+              <label>
+                <span>Outcome</span>
+                <select value={outcome} disabled={initializingOutcome} onChange={(event) => void selectOutcome(event.target.value)}>
+                  <option value="">Select outcome</option>
+                  {outcomes.map((value) => <option value={value} key={value}>{value}</option>)}
+                </select>
+              </label>
+              {initializingOutcome ? <span className="ipp-fmcs-filter-status"><RefreshCw className="spin" size={13} />Preparing goal records…</span> : null}
+              {outcomeError ? <span className="ipp-empower-card-error" role="alert">{outcomeError}</span> : null}
+            </div>
+            <fieldset className="ipp-mathematics-layout-toggle">
+              <legend>Visual and document layout</legend>
+              <button type="button" className={layout === 'single' ? 'active' : ''} onClick={() => setLayout('single')}>
+                Single Value
+              </button>
+              <button type="button" className={layout === 'multi' ? 'active' : ''} onClick={() => setLayout('multi')}>
+                Multi Value
+              </button>
+            </fieldset>
+          </div>
+
+          {outcome ? <section className="ipp-mathematics-entry" aria-labelledby="ipp-fmcs-entry-title">
+            <header>
+              <div>
+                <span>Record progress</span>
+                <h4 id="ipp-fmcs-entry-title">{outcome}</h4>
+              </div>
+              <strong>{goals.length} tasks</strong>
+            </header>
+            <div className="ipp-mathematics-entry-list">
+              {goals.map((goal) => (
+                <FmcsGoalEntry
+                  key={goal.goalId}
+                  goal={goal}
+                  levels={response.levels}
+                  saving={savingGoalId === goal.goalId}
+                  disabled={savingGoalId !== null && savingGoalId !== goal.goalId}
+                  onSave={onSave}
+                />
+              ))}
+            </div>
+          </section> : (
+            <div className="ipp-fmcs-select-prompt">Select an Outcome to add any missing Student - IPP Level records and record progress.</div>
+          )}
+
+          <section className="ipp-mathematics-preview" aria-labelledby="ipp-fmcs-preview-title">
+            <header>
+              <div>
+                <span>Plan visual</span>
+                <h4 id="ipp-fmcs-preview-title">FMCS Foundations</h4>
+              </div>
+              <strong>{layout === 'single' ? 'Current achievement and date' : 'Initial and current achievement'}</strong>
+            </header>
+            <div className="ipp-mathematics-rating-key">
+              {response.levels.map((level) => (
+                <span key={level.id} style={{ backgroundColor: level.fillHex, color: level.fontHex }}>{level.name}</span>
+              ))}
+            </div>
+            <div className="ipp-fmcs-outcomes">
+              {visualOutcomes.map((visualOutcome) => (
+                <section className="ipp-fmcs-outcome" key={visualOutcome}>
+                  <h5>{visualOutcome}</h5>
+                  <div className="ipp-mathematics-card-grid">
+                    {response.goals.filter((goal) => goal.outcome === visualOutcome).map((goal) => (
+                      <FmcsPreviewCard key={goal.goalId} goal={goal} layout={layout} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+function FmcsGoalEntry({ goal, levels, saving, disabled, onSave }: {
+  goal: StudentPlanFmcsGoal
+  levels: StudentPlanFmcsLevelOption[]
+  saving: boolean
+  disabled: boolean
+  onSave: (goal: StudentPlanFmcsGoal, command: StudentPlanFmcsProgressCommand) => Promise<void>
+}) {
+  const [levelId, setLevelId] = useState(goal.currentLevelId ?? '')
+  const [dateAchieved, setDateAchieved] = useState(toPlanDateInput(goal.currentDate))
+  const [entryError, setEntryError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLevelId(goal.currentLevelId ?? '')
+    setDateAchieved(toPlanDateInput(goal.currentDate))
+    setEntryError(null)
+  }, [goal.currentDate, goal.currentLevelId, goal.eTag])
+
+  const save = async () => {
+    if (!levelId || !dateAchieved) {
+      setEntryError('Select a rating and Date Achieved.')
+      return
+    }
+    setEntryError(null)
+    try {
+      await onSave(goal, { levelId, dateAchieved })
+    } catch (requestError) {
+      setEntryError(requestError instanceof Error ? requestError.message : 'This FMCS Foundations goal could not be saved.')
+    }
+  }
+
+  return (
+    <article className="ipp-mathematics-entry-row">
+      <div>
+        <strong>{goal.name}</strong>
+        <span>{goal.description || goal.columnTitle}</span>
+      </div>
+      <EmpowerLevelValue
+        label="Current"
+        level={goal.currentLevelName}
+        date={goal.currentDate}
+        fill={goal.currentLevelFillHex}
+        font={goal.currentLevelFontHex}
+      />
+      <label>
+        <span>Level Achieved</span>
+        <select value={levelId} disabled={saving || disabled} onChange={(event) => setLevelId(event.target.value)}>
+          <option value="">Select goal level</option>
+          {levels.map((level) => <option value={level.id} key={level.id}>{level.name}</option>)}
+        </select>
+      </label>
+      <label>
+        <span>Date Achieved</span>
+        <input type="date" value={dateAchieved} disabled={saving || disabled} onChange={(event) => setDateAchieved(event.target.value)} />
+      </label>
+      <button
+        type="button"
+        className="ipp-module-action-button primary"
+        disabled={saving || disabled || !levelId || !dateAchieved}
+        onClick={() => void save()}
+      >
+        {saving ? <RefreshCw className="spin" size={14} /> : <Save size={14} />}
+        {saving ? 'Saving…' : goal.currentLevelId ? 'Save' : 'Add'}
+      </button>
+      {entryError ? <span className="ipp-empower-card-error" role="alert">{entryError}</span> : null}
+    </article>
+  )
+}
+
+function FmcsPreviewCard({ goal, layout }: {
+  goal: StudentPlanFmcsGoal
+  layout: 'single' | 'multi'
+}) {
+  return (
+    <article className="ipp-mathematics-preview-card">
+      <span>{goal.columnTitle}</span>
+      <strong>{goal.name}</strong>
+      {layout === 'single' ? (
+        <EmpowerLevelValue
+          label="Current"
+          level={goal.currentLevelName}
+          date={goal.currentDate}
+          fill={goal.currentLevelFillHex}
+          font={goal.currentLevelFontHex}
+        />
+      ) : (
+        <div className="ipp-empower-progress">
+          <EmpowerLevelValue
+            label="Initial"
+            level={goal.initialLevelName}
+            date={goal.initialDate}
+            fill={goal.initialLevelFillHex}
+            font={goal.initialLevelFontHex}
+          />
+          <span className="ipp-empower-progress-arrow" aria-hidden="true">→</span>
+          <EmpowerLevelValue
+            label="Current"
+            level={goal.currentLevelName}
+            date={goal.currentDate}
+            fill={goal.currentLevelFillHex}
+            font={goal.currentLevelFontHex}
+          />
+        </div>
+      )}
+    </article>
+  )
+}
+
+function compareProgressionGrades(left: string, right: string) {
+  const order = (value: string) => {
+    if (/kindergarten/i.test(value)) return 0
+    const match = value.match(/\d+/)
+    return match ? Number(match[0]) : Number.MAX_SAFE_INTEGER
+  }
+  return order(left) - order(right) || left.localeCompare(right)
 }
 
 function WordStudyDialog({

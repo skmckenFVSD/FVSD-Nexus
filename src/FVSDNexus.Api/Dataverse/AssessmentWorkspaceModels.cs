@@ -254,6 +254,136 @@ public sealed record StudentPlanWordStudyCommand(
     Guid? FinishingLevelId,
     string? ETag = null);
 
+public sealed record StudentPlanEmpowerLevelOption(
+    Guid Id,
+    string Name,
+    string Description,
+    string FillHex,
+    string FontHex,
+    int SortOrder);
+
+public sealed record StudentPlanEmpowerGoal(
+    Guid GoalId,
+    string Name,
+    string Alias,
+    string Description,
+    string FoundationLevel,
+    string Division,
+    string? Subsection,
+    int SortOrder,
+    Guid? ProgressId,
+    Guid? InitialLevelId,
+    string? InitialLevelName,
+    string? InitialLevelFillHex,
+    string? InitialLevelFontHex,
+    DateTimeOffset? InitialDate,
+    Guid? CurrentLevelId,
+    string? CurrentLevelName,
+    string? CurrentLevelFillHex,
+    string? CurrentLevelFontHex,
+    DateTimeOffset? CurrentDate,
+    string? ETag);
+
+public sealed record StudentPlanEmpowerResponse(
+    Guid PlanId,
+    string SchoolYear,
+    string SectionName,
+    string SectionDescription,
+    IReadOnlyList<StudentPlanEmpowerLevelOption> Levels,
+    IReadOnlyList<StudentPlanEmpowerGoal> Goals);
+
+public sealed record StudentPlanEmpowerProgressCommand(
+    Guid LevelId,
+    DateOnly DateAchieved,
+    string? ETag = null);
+
+public sealed record StudentPlanMathematicsLevelOption(
+    Guid Id,
+    string Name,
+    string Description,
+    string FillHex,
+    string FontHex,
+    int SortOrder);
+
+public sealed record StudentPlanMathematicsGoal(
+    Guid GoalId,
+    string Name,
+    string Alias,
+    string Description,
+    string Outcome,
+    string Grade,
+    string ColumnTitle,
+    int SortOrder,
+    Guid? ProgressId,
+    Guid? InitialLevelId,
+    string? InitialLevelName,
+    string? InitialLevelFillHex,
+    string? InitialLevelFontHex,
+    DateTimeOffset? InitialDate,
+    Guid? CurrentLevelId,
+    string? CurrentLevelName,
+    string? CurrentLevelFillHex,
+    string? CurrentLevelFontHex,
+    DateTimeOffset? CurrentDate,
+    string? ETag);
+
+public sealed record StudentPlanMathematicsResponse(
+    Guid PlanId,
+    string SchoolYear,
+    string SectionName,
+    string SectionDescription,
+    IReadOnlyList<StudentPlanMathematicsLevelOption> Levels,
+    IReadOnlyList<StudentPlanMathematicsGoal> Goals);
+
+public sealed record StudentPlanMathematicsProgressCommand(
+    Guid LevelId,
+    DateOnly DateAchieved,
+    string? ETag = null);
+
+public sealed record StudentPlanFmcsLevelOption(
+    Guid Id,
+    string Name,
+    string Description,
+    string FillHex,
+    string FontHex,
+    int SortOrder);
+
+public sealed record StudentPlanFmcsGoal(
+    Guid GoalId,
+    string Name,
+    string Alias,
+    string Description,
+    string Outcome,
+    string ColumnTitle,
+    int SortOrder,
+    Guid? ProgressId,
+    Guid? InitialLevelId,
+    string? InitialLevelName,
+    string? InitialLevelFillHex,
+    string? InitialLevelFontHex,
+    DateTimeOffset? InitialDate,
+    Guid? CurrentLevelId,
+    string? CurrentLevelName,
+    string? CurrentLevelFillHex,
+    string? CurrentLevelFontHex,
+    DateTimeOffset? CurrentDate,
+    string? ETag);
+
+public sealed record StudentPlanFmcsResponse(
+    Guid PlanId,
+    string SchoolYear,
+    string SectionName,
+    string SectionDescription,
+    IReadOnlyList<StudentPlanFmcsLevelOption> Levels,
+    IReadOnlyList<StudentPlanFmcsGoal> Goals);
+
+public sealed record StudentPlanFmcsProgressCommand(
+    Guid LevelId,
+    DateOnly DateAchieved,
+    string? ETag = null);
+
+public sealed record StudentPlanFmcsOutcomeCommand(string Outcome);
+
 public sealed record StudentPlanWritingSnapshotRecord(
     Guid Id,
     string Subject,

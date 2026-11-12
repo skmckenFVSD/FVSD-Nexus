@@ -1231,6 +1231,239 @@ public sealed class DataverseAssessmentWorkspaceClientTests
     }
 
     [Fact]
+    public void Empower_queries_are_scoped_to_governed_section_and_selected_plan()
+    {
+        var planId = Guid.Parse("95500000-0000-0000-0000-000000000001");
+        var goals = Uri.UnescapeDataString(DataverseAssessmentWorkspaceClient.BuildStudentPlanEmpowerGoalsQuery());
+        var levels = Uri.UnescapeDataString(DataverseAssessmentWorkspaceClient.BuildStudentPlanEmpowerLevelsQuery());
+        var progress = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanEmpowerProgressQuery(planId));
+
+        Assert.Contains("fvsd_ippsection/fvsd_name eq 'Empower Reading'", goals, StringComparison.Ordinal);
+        Assert.Contains("English Language Arts and Literature", levels, StringComparison.Ordinal);
+        Assert.Contains($"_fvsd_studentipp_value eq {planId:D}", progress, StringComparison.Ordinal);
+        Assert.Contains("fvsd_ippinitiallevel", progress, StringComparison.Ordinal);
+        Assert.Contains("fvsd_ipplevel", progress, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Empower_goals_merge_existing_initial_and_current_progress_without_creating_rows()
+    {
+        using var goals = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_ippgoalid": "95500000-0000-0000-0000-000000000011",
+                "fvsd_name": "Sounding Out Strategy",
+                "fvsd_alias": "DS25-FL1-01",
+                "fvsd_description": "Applies sound knowledge.",
+                "fvsd_foundationlevel": 1,
+                "fvsd_foundationlevel@OData.Community.Display.V1.FormattedValue": "Level 1",
+                "fvsd_div": 1,
+                "fvsd_div@OData.Community.Display.V1.FormattedValue": "Grade 2 to 5",
+                "fvsd_subsection": 1,
+                "fvsd_subsection@OData.Community.Display.V1.FormattedValue": "Decoding and Spelling",
+                "fvsd_sortorder": "01",
+                "fvsd_ippsection": {
+                  "fvsd_name": "Empower Reading",
+                  "fvsd_frontfacingdescription": "Empower description"
+                }
+              }
+            ] }
+            """);
+        using var progress = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_studentipplevelid": "95500000-0000-0000-0000-000000000021",
+                "_fvsd_ippgoal_value": "95500000-0000-0000-0000-000000000011",
+                "_fvsd_ippinitiallevel_value": "95500000-0000-0000-0000-000000000031",
+                "_fvsd_ipplevel_value": "95500000-0000-0000-0000-000000000032",
+                "fvsd_initialdateachieved": "2026-09-15T00:00:00Z",
+                "fvsd_currentdateachieved": "2026-11-12T00:00:00Z",
+                "fvsd_ippinitiallevel": {
+                  "fvsd_name": "Level 1", "fvsd_fillhexcode": "#E9EDF2", "fvsd_fonthexcode": "#071940"
+                },
+                "fvsd_ipplevel": {
+                  "fvsd_name": "Level 2", "fvsd_fillhexcode": "#D2DCE4", "fvsd_fonthexcode": "#071940"
+                },
+                "@odata.etag": "W/\"12\""
+              }
+            ] }
+            """);
+
+        var result = Assert.Single(DataverseAssessmentWorkspaceClient.ParseStudentPlanEmpowerGoals(
+            goals.RootElement, progress.RootElement));
+
+        Assert.Equal("Level 1", result.FoundationLevel);
+        Assert.Equal("Grade 2 to 5", result.Division);
+        Assert.Equal("Decoding and Spelling", result.Subsection);
+        Assert.Equal("Level 1", result.InitialLevelName);
+        Assert.Equal("Level 2", result.CurrentLevelName);
+        Assert.Equal("W/\"12\"", result.ETag);
+        Assert.Equal("Empower description",
+            DataverseAssessmentWorkspaceClient.ParseStudentPlanEmpowerSectionDescription(goals.RootElement));
+    }
+
+    [Fact]
+    public void Empower_first_save_sets_initial_and_current_while_later_save_only_updates_current()
+    {
+        var levelId = Guid.Parse("95500000-0000-0000-0000-000000000031");
+        var command = new StudentPlanEmpowerProgressCommand(levelId, new DateOnly(2026, 11, 12));
+
+        var first = DataverseAssessmentWorkspaceClient.BuildStudentPlanEmpowerProgressPayload(command, true);
+        var later = DataverseAssessmentWorkspaceClient.BuildStudentPlanEmpowerProgressPayload(command, false);
+
+        Assert.Equal("2026-11-12", first["fvsd_initialdateachieved"]);
+        Assert.Equal("2026-11-12", first["fvsd_currentdateachieved"]);
+        Assert.Equal($"/fvsd_ipplevels({levelId:D})", first["fvsd_ippinitiallevel@odata.bind"]);
+        Assert.Equal($"/fvsd_ipplevels({levelId:D})", first["fvsd_ipplevel@odata.bind"]);
+        Assert.False(later.ContainsKey("fvsd_initialdateachieved"));
+        Assert.False(later.ContainsKey("fvsd_ippinitiallevel@odata.bind"));
+    }
+
+    [Fact]
+    public void Mathematics_queries_are_scoped_to_governed_section_curriculum_and_plan()
+    {
+        var planId = Guid.Parse("95800000-0000-0000-0000-000000000001");
+        var goals = Uri.UnescapeDataString(DataverseAssessmentWorkspaceClient.BuildStudentPlanMathematicsGoalsQuery());
+        var levels = Uri.UnescapeDataString(DataverseAssessmentWorkspaceClient.BuildStudentPlanMathematicsLevelsQuery());
+        var progress = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanMathematicsProgressQuery(planId));
+
+        Assert.Contains("fvsd_ippsection/fvsd_name eq 'Mathematics'", goals, StringComparison.Ordinal);
+        Assert.Contains("fvsd_grade", goals, StringComparison.Ordinal);
+        Assert.Contains("fvsd_subsection", goals, StringComparison.Ordinal);
+        Assert.Contains("fvsd_curriculum/fvsd_name eq 'Mathematics'", levels, StringComparison.Ordinal);
+        Assert.Contains("fvsd_name eq 'In Progress' or fvsd_name eq 'Met'", levels, StringComparison.Ordinal);
+        Assert.DoesNotContain("Developing", levels, StringComparison.Ordinal);
+        Assert.Contains($"_fvsd_studentipp_value eq {planId:D}", progress, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Mathematics_goals_use_outcome_progression_grade_and_level_column_titles()
+    {
+        using var goals = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_ippgoalid": "95800000-0000-0000-0000-000000000011",
+                "fvsd_name": "Grade 4 Foundations",
+                "fvsd_alias": "NO1-G4-00",
+                "fvsd_description": "Patterns in Place Value",
+                "fvsd_subsection": 1,
+                "fvsd_subsection@OData.Community.Display.V1.FormattedValue": "Number Outcome 1",
+                "fvsd_grade": 4,
+                "fvsd_grade@OData.Community.Display.V1.FormattedValue": "Grade 4",
+                "fvsd_sortorder": "00"
+              },
+              {
+                "fvsd_ippgoalid": "95800000-0000-0000-0000-000000000012",
+                "fvsd_name": "Place Value Symmetry",
+                "fvsd_alias": "NO1-G4-02",
+                "fvsd_description": "Patterns in Place Value",
+                "fvsd_subsection": 1,
+                "fvsd_subsection@OData.Community.Display.V1.FormattedValue": "Number Outcome 1",
+                "fvsd_grade": 4,
+                "fvsd_grade@OData.Community.Display.V1.FormattedValue": "Grade 4",
+                "fvsd_sortorder": "02"
+              }
+            ] }
+            """);
+        using var progress = JsonDocument.Parse("""{ "value": [] }""");
+
+        var result = DataverseAssessmentWorkspaceClient.ParseStudentPlanMathematicsGoals(
+            goals.RootElement, progress.RootElement);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Number Outcome 1", result[0].Outcome);
+        Assert.Equal("Grade 4", result[0].Grade);
+        Assert.Equal("Precursor", result[0].ColumnTitle);
+        Assert.Equal("Level 2", result[1].ColumnTitle);
+        Assert.Equal("Patterns in Place Value", result[1].Description);
+    }
+
+    [Fact]
+    public void Mathematics_progress_payload_preserves_initial_after_first_save()
+    {
+        var levelId = Guid.Parse("95800000-0000-0000-0000-000000000031");
+        var command = new StudentPlanMathematicsProgressCommand(levelId, new DateOnly(2026, 11, 12));
+
+        var first = DataverseAssessmentWorkspaceClient.BuildStudentPlanMathematicsProgressPayload(command, true);
+        var later = DataverseAssessmentWorkspaceClient.BuildStudentPlanMathematicsProgressPayload(command, false);
+
+        Assert.True(first.ContainsKey("fvsd_ippinitiallevel@odata.bind"));
+        Assert.True(first.ContainsKey("fvsd_initialdateachieved"));
+        Assert.False(later.ContainsKey("fvsd_ippinitiallevel@odata.bind"));
+        Assert.Equal($"/fvsd_ipplevels({levelId:D})", later["fvsd_ipplevel@odata.bind"]);
+    }
+
+    [Fact]
+    public void Fmcs_queries_are_scoped_to_governed_section_literacy_curriculum_and_plan()
+    {
+        var planId = Guid.Parse("95900000-0000-0000-0000-000000000001");
+        var goals = Uri.UnescapeDataString(DataverseAssessmentWorkspaceClient.BuildStudentPlanFmcsGoalsQuery());
+        var levels = Uri.UnescapeDataString(DataverseAssessmentWorkspaceClient.BuildStudentPlanFmcsLevelsQuery());
+        var progress = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildStudentPlanFmcsProgressQuery(planId));
+
+        Assert.Contains("fvsd_ippsection/fvsd_name eq 'FMCS Foundations'", goals, StringComparison.Ordinal);
+        Assert.Contains("fvsd_subsection", goals, StringComparison.Ordinal);
+        Assert.Contains("fvsd_curriculum/fvsd_name eq 'English Language Arts and Literature'", levels, StringComparison.Ordinal);
+        Assert.Contains($"_fvsd_studentipp_value eq {planId:D}", progress, StringComparison.Ordinal);
+        Assert.Contains("FMCS Foundations", progress, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Fmcs_goals_use_outcome_order_and_task_column_titles()
+    {
+        using var goals = JsonDocument.Parse("""
+            { "value": [
+              {
+                "fvsd_ippgoalid": "95900000-0000-0000-0000-000000000011",
+                "fvsd_name": "Participates in daily shared reading",
+                "fvsd_alias": "FMCS-OL-01",
+                "fvsd_description": "Literacy Continuum Progression",
+                "fvsd_subsection": 1,
+                "fvsd_subsection@OData.Community.Display.V1.FormattedValue": "Oral  Language",
+                "fvsd_sortorder": "01"
+              },
+              {
+                "fvsd_ippgoalid": "95900000-0000-0000-0000-000000000012",
+                "fvsd_name": "Recognize rhyming words",
+                "fvsd_alias": "FMCS-PA-02",
+                "fvsd_description": "Literacy Continuum Progression",
+                "fvsd_subsection": 2,
+                "fvsd_subsection@OData.Community.Display.V1.FormattedValue": "Phonemic Awareness",
+                "fvsd_sortorder": "02"
+              }
+            ] }
+            """);
+        using var progress = JsonDocument.Parse("""{ "value": [] }""");
+
+        var result = DataverseAssessmentWorkspaceClient.ParseStudentPlanFmcsGoals(
+            goals.RootElement, progress.RootElement);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Oral Language", result[0].Outcome);
+        Assert.Equal("Task 01", result[0].ColumnTitle);
+        Assert.Equal("Phonemic Awareness", result[1].Outcome);
+        Assert.Equal("Task 02", result[1].ColumnTitle);
+    }
+
+    [Fact]
+    public void Fmcs_progress_payload_preserves_initial_after_first_save()
+    {
+        var levelId = Guid.Parse("95900000-0000-0000-0000-000000000031");
+        var command = new StudentPlanFmcsProgressCommand(levelId, new DateOnly(2026, 11, 12));
+
+        var first = DataverseAssessmentWorkspaceClient.BuildStudentPlanFmcsProgressPayload(command, true);
+        var later = DataverseAssessmentWorkspaceClient.BuildStudentPlanFmcsProgressPayload(command, false);
+
+        Assert.True(first.ContainsKey("fvsd_ippinitiallevel@odata.bind"));
+        Assert.True(first.ContainsKey("fvsd_initialdateachieved"));
+        Assert.False(later.ContainsKey("fvsd_ippinitiallevel@odata.bind"));
+        Assert.Equal($"/fvsd_ipplevels({levelId:D})", later["fvsd_ipplevel@odata.bind"]);
+    }
+
+    [Fact]
     public void Writing_snapshot_query_is_scoped_to_plan_and_subject()
     {
         var planId = Guid.Parse("96000000-0000-0000-0000-000000000001");

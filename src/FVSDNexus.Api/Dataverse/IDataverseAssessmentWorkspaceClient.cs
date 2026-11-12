@@ -188,6 +188,80 @@ public interface IDataverseAssessmentWorkspaceClient
         string? eTag,
         CancellationToken cancellationToken = default);
 
+    Task<StudentPlanEmpowerResponse> GetStudentPlanEmpowerAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanEmpowerResponse> SaveStudentPlanEmpowerProgressAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid goalId,
+        string currentSchoolYear,
+        StudentPlanEmpowerProgressCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanMathematicsResponse> GetStudentPlanMathematicsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanMathematicsResponse> SaveStudentPlanMathematicsProgressAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid goalId,
+        string currentSchoolYear,
+        StudentPlanMathematicsProgressCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanFmcsResponse> GetStudentPlanFmcsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanFmcsResponse> SaveStudentPlanFmcsProgressAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid goalId,
+        string currentSchoolYear,
+        StudentPlanFmcsProgressCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<StudentPlanFmcsResponse> InitializeStudentPlanFmcsOutcomeAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanFmcsOutcomeCommand command,
+        CancellationToken cancellationToken = default);
+
     Task<StudentPlanWritingSnapshotsResponse> GetStudentPlanWritingSnapshotsAsync(
         DataverseAccessContext accessContext,
         string? developmentRole,

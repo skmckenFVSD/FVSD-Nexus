@@ -683,6 +683,308 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         return await LoadStudentPlanWordStudyAsync(planId, schoolYear, cancellationToken);
     }
 
+    public async Task<StudentPlanEmpowerResponse> GetStudentPlanEmpowerAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanEmpowerAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanEmpowerResponse> SaveStudentPlanEmpowerProgressAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid goalId,
+        string currentSchoolYear,
+        StudentPlanEmpowerProgressCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId), cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var plan = planRows[0];
+        var schoolYear = ReadString(plan, "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var current = await LoadStudentPlanEmpowerAsync(planId, schoolYear, cancellationToken);
+        var goal = current.Goals.SingleOrDefault(candidate => candidate.GoalId == goalId)
+            ?? throw new ArgumentException("Select a valid Empower Reading goal.");
+        if (!current.Levels.Any(level => level.Id == command.LevelId))
+        {
+            throw new ArgumentException("Select a valid Empower rating level.");
+        }
+        if (command.DateAchieved == default)
+        {
+            throw new ArgumentException("Date Achieved is required.");
+        }
+
+        var planName = ReadString(plan, "fvsd_name") ?? $"{schoolYear}|{subject.StudentAsn}|IPP";
+        var sectionId = await GetIppSectionIdAsync("Empower Reading", cancellationToken);
+        var payload = BuildStudentPlanEmpowerProgressPayload(command, goal.InitialLevelId is null);
+        payload["fvsd_name"] = $"{planName}|{goal.Alias}";
+        payload["fvsd_studentipp@odata.bind"] = $"/fvsd_studentipps({planId:D})";
+        payload["fvsd_section@odata.bind"] = $"/fvsd_ippsections({sectionId:D})";
+        payload["fvsd_ippgoal@odata.bind"] = $"/fvsd_ippgoals({goalId:D})";
+
+        if (goal.ProgressId is null)
+        {
+            await SendJsonAsync(HttpMethod.Post, "fvsd_studentipplevels", payload, null, cancellationToken);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(command.ETag))
+            {
+                throw new ArgumentException("Reload the Empower goal before saving your changes.");
+            }
+            await SendJsonAsync(
+                HttpMethod.Patch,
+                $"fvsd_studentipplevels({goal.ProgressId.Value:D})",
+                payload,
+                command.ETag,
+                cancellationToken);
+        }
+
+        return await LoadStudentPlanEmpowerAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanMathematicsResponse> GetStudentPlanMathematicsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanMathematicsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanMathematicsResponse> SaveStudentPlanMathematicsProgressAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid goalId,
+        string currentSchoolYear,
+        StudentPlanMathematicsProgressCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId), cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var plan = planRows[0];
+        var schoolYear = ReadString(plan, "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var current = await LoadStudentPlanMathematicsAsync(planId, schoolYear, cancellationToken);
+        var goal = current.Goals.SingleOrDefault(candidate => candidate.GoalId == goalId)
+            ?? throw new ArgumentException("Select a valid Mathematics goal.");
+        if (!current.Levels.Any(level => level.Id == command.LevelId))
+        {
+            throw new ArgumentException("Select a valid Mathematics rating level.");
+        }
+        if (command.DateAchieved == default)
+        {
+            throw new ArgumentException("Date Achieved is required.");
+        }
+
+        var planName = ReadString(plan, "fvsd_name") ?? $"{schoolYear}|{subject.StudentAsn}|IPP";
+        var sectionId = await GetIppSectionIdAsync("Mathematics", cancellationToken);
+        var payload = BuildStudentPlanMathematicsProgressPayload(command, goal.InitialLevelId is null);
+        payload["fvsd_name"] = $"{planName}|{goal.Alias}";
+        payload["fvsd_studentipp@odata.bind"] = $"/fvsd_studentipps({planId:D})";
+        payload["fvsd_section@odata.bind"] = $"/fvsd_ippsections({sectionId:D})";
+        payload["fvsd_ippgoal@odata.bind"] = $"/fvsd_ippgoals({goalId:D})";
+
+        if (goal.ProgressId is null)
+        {
+            await SendJsonAsync(HttpMethod.Post, "fvsd_studentipplevels", payload, null, cancellationToken);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(command.ETag))
+            {
+                throw new ArgumentException("Reload the Mathematics goal before saving your changes.");
+            }
+            await SendJsonAsync(
+                HttpMethod.Patch,
+                $"fvsd_studentipplevels({goal.ProgressId.Value:D})",
+                payload,
+                command.ETag,
+                cancellationToken);
+        }
+
+        return await LoadStudentPlanMathematicsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanFmcsResponse> GetStudentPlanFmcsAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        var schoolYear = await GetPlanSchoolYearAsync(subject.StudentId, planId, cancellationToken);
+        return await LoadStudentPlanFmcsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanFmcsResponse> InitializeStudentPlanFmcsOutcomeAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        string currentSchoolYear,
+        StudentPlanFmcsOutcomeCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId), cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var plan = planRows[0];
+        var schoolYear = ReadString(plan, "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var current = await LoadStudentPlanFmcsAsync(planId, schoolYear, cancellationToken);
+        var outcome = Regex.Replace((command.Outcome ?? string.Empty).Trim(), "\\s+", " ");
+        var goals = current.Goals
+            .Where(goal => string.Equals(goal.Outcome, outcome, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (goals.Length == 0)
+        {
+            throw new ArgumentException("Select a valid FMCS Foundations Outcome.");
+        }
+
+        var planName = ReadString(plan, "fvsd_name") ?? $"{schoolYear}|{subject.StudentAsn}|IPP";
+        var sectionId = await GetIppSectionIdAsync("FMCS Foundations", cancellationToken);
+        foreach (var goal in goals.Where(goal => goal.ProgressId is null))
+        {
+            var payload = new Dictionary<string, object?>
+            {
+                ["fvsd_name"] = $"{planName}|{goal.Alias}",
+                ["fvsd_studentipp@odata.bind"] = $"/fvsd_studentipps({planId:D})",
+                ["fvsd_section@odata.bind"] = $"/fvsd_ippsections({sectionId:D})",
+                ["fvsd_ippgoal@odata.bind"] = $"/fvsd_ippgoals({goal.GoalId:D})"
+            };
+            await SendJsonAsync(HttpMethod.Post, "fvsd_studentipplevels", payload, null, cancellationToken);
+        }
+
+        return await LoadStudentPlanFmcsAsync(planId, schoolYear, cancellationToken);
+    }
+
+    public async Task<StudentPlanFmcsResponse> SaveStudentPlanFmcsProgressAsync(
+        DataverseAccessContext accessContext,
+        string? developmentRole,
+        bool isDeveloper,
+        Guid teacherSectionId,
+        Guid studentId,
+        Guid planId,
+        Guid goalId,
+        string currentSchoolYear,
+        StudentPlanFmcsProgressCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await GetPlanSubjectAsync(
+            accessContext, developmentRole, isDeveloper, teacherSectionId, studentId, cancellationToken);
+        using var planDocument = await GetJsonAsync(
+            BuildStudentPlanValidationQuery(subject.StudentId, planId), cancellationToken);
+        var planRows = planDocument.RootElement.GetProperty("value");
+        if (planRows.GetArrayLength() != 1)
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The selected IEP / IPP is not available for this student.");
+        }
+
+        var plan = planRows[0];
+        var schoolYear = ReadString(plan, "fvsd_schoolyear")
+            ?? throw new InvalidOperationException("The selected plan does not have a school year.");
+        EnsureCurrentPlan(schoolYear, currentSchoolYear);
+        var current = await LoadStudentPlanFmcsAsync(planId, schoolYear, cancellationToken);
+        var goal = current.Goals.SingleOrDefault(candidate => candidate.GoalId == goalId)
+            ?? throw new ArgumentException("Select a valid FMCS Foundations goal.");
+        if (!current.Levels.Any(level => level.Id == command.LevelId))
+        {
+            throw new ArgumentException("Select a valid FMCS rating level.");
+        }
+        if (command.DateAchieved == default)
+        {
+            throw new ArgumentException("Date Achieved is required.");
+        }
+
+        var planName = ReadString(plan, "fvsd_name") ?? $"{schoolYear}|{subject.StudentAsn}|IPP";
+        var sectionId = await GetIppSectionIdAsync("FMCS Foundations", cancellationToken);
+        var payload = BuildStudentPlanFmcsProgressPayload(command, goal.InitialLevelId is null);
+        payload["fvsd_name"] = $"{planName}|{goal.Alias}";
+        payload["fvsd_studentipp@odata.bind"] = $"/fvsd_studentipps({planId:D})";
+        payload["fvsd_section@odata.bind"] = $"/fvsd_ippsections({sectionId:D})";
+        payload["fvsd_ippgoal@odata.bind"] = $"/fvsd_ippgoals({goalId:D})";
+
+        if (goal.ProgressId is null)
+        {
+            await SendJsonAsync(HttpMethod.Post, "fvsd_studentipplevels", payload, null, cancellationToken);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(command.ETag))
+            {
+                throw new ArgumentException("Reload the FMCS Foundations goal before saving your changes.");
+            }
+            await SendJsonAsync(
+                HttpMethod.Patch,
+                $"fvsd_studentipplevels({goal.ProgressId.Value:D})",
+                payload,
+                command.ETag,
+                cancellationToken);
+        }
+
+        return await LoadStudentPlanFmcsAsync(planId, schoolYear, cancellationToken);
+    }
+
     public async Task<StudentPlanWritingSnapshotsResponse> GetStudentPlanWritingSnapshotsAsync(
         DataverseAccessContext accessContext,
         string? developmentRole,
@@ -2141,6 +2443,76 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         "$select=fvsd_studentipplevelid&" +
         $"$filter={Uri.EscapeDataString($"fvsd_studentipplevelid eq {recordId:D} and _fvsd_studentipp_value eq {planId:D} and fvsd_section/fvsd_name eq 'Word Study'")}&$top=1";
 
+    internal static string BuildStudentPlanEmpowerGoalsQuery() =>
+        "fvsd_ippgoals?" +
+        "$select=fvsd_ippgoalid,fvsd_name,fvsd_alias,fvsd_description,fvsd_foundationlevel," +
+        "fvsd_div,fvsd_subsection,fvsd_sortorder,_fvsd_ippsection_value&" +
+        "$filter=statecode eq 0 and fvsd_ippsection/fvsd_name eq 'Empower Reading'&" +
+        "$expand=fvsd_ippsection($select=fvsd_ippsectionid,fvsd_name,fvsd_frontfacingdescription)&" +
+        "$orderby=fvsd_sortorder asc,fvsd_name asc&$top=5000";
+
+    internal static string BuildStudentPlanEmpowerLevelsQuery() =>
+        "fvsd_ipplevels?" +
+        "$select=fvsd_ipplevelid,fvsd_name,fvsd_description,fvsd_fillhexcode,fvsd_fonthexcode,fvsd_sortorder&" +
+        "$filter=statecode eq 0 and fvsd_curriculum/fvsd_name eq 'English Language Arts and Literature'&" +
+        "$expand=fvsd_curriculum($select=fvsd_name)&$orderby=fvsd_sortorder asc,fvsd_name asc&$top=5000";
+
+    internal static string BuildStudentPlanEmpowerProgressQuery(Guid planId) =>
+        "fvsd_studentipplevels?" +
+        "$select=fvsd_studentipplevelid,fvsd_name,fvsd_initialdateachieved,fvsd_currentdateachieved," +
+        "_fvsd_ippgoal_value,_fvsd_ippinitiallevel_value,_fvsd_ipplevel_value,_fvsd_studentipp_value,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"_fvsd_studentipp_value eq {planId:D} and fvsd_ippgoal/fvsd_ippsection/fvsd_name eq 'Empower Reading'")}&" +
+        "$expand=fvsd_ippinitiallevel($select=fvsd_ipplevelid,fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)," +
+        "fvsd_ipplevel($select=fvsd_ipplevelid,fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)&" +
+        "$orderby=modifiedon desc&$top=5000";
+
+    internal static string BuildStudentPlanMathematicsGoalsQuery() =>
+        "fvsd_ippgoals?" +
+        "$select=fvsd_ippgoalid,fvsd_name,fvsd_alias,fvsd_description,fvsd_grade," +
+        "fvsd_subsection,fvsd_sortorder,_fvsd_ippsection_value&" +
+        "$filter=statecode eq 0 and fvsd_ippsection/fvsd_name eq 'Mathematics'&" +
+        "$expand=fvsd_ippsection($select=fvsd_ippsectionid,fvsd_name,fvsd_frontfacingdescription)&" +
+        "$orderby=fvsd_subsection asc,fvsd_grade asc,fvsd_sortorder asc,fvsd_name asc&$top=5000";
+
+    internal static string BuildStudentPlanMathematicsLevelsQuery() =>
+        "fvsd_ipplevels?" +
+        "$select=fvsd_ipplevelid,fvsd_name,fvsd_description,fvsd_fillhexcode,fvsd_fonthexcode,fvsd_sortorder&" +
+        "$filter=statecode eq 0 and fvsd_curriculum/fvsd_name eq 'Mathematics' " +
+        "and (fvsd_name eq 'In Progress' or fvsd_name eq 'Met')&" +
+        "$expand=fvsd_curriculum($select=fvsd_name)&$orderby=fvsd_sortorder asc,fvsd_name asc&$top=5000";
+
+    internal static string BuildStudentPlanMathematicsProgressQuery(Guid planId) =>
+        "fvsd_studentipplevels?" +
+        "$select=fvsd_studentipplevelid,fvsd_name,fvsd_initialdateachieved,fvsd_currentdateachieved," +
+        "_fvsd_ippgoal_value,_fvsd_ippinitiallevel_value,_fvsd_ipplevel_value,_fvsd_studentipp_value,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"_fvsd_studentipp_value eq {planId:D} and fvsd_ippgoal/fvsd_ippsection/fvsd_name eq 'Mathematics'")}&" +
+        "$expand=fvsd_ippinitiallevel($select=fvsd_ipplevelid,fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)," +
+        "fvsd_ipplevel($select=fvsd_ipplevelid,fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)&" +
+        "$orderby=modifiedon desc&$top=5000";
+
+    internal static string BuildStudentPlanFmcsGoalsQuery() =>
+        "fvsd_ippgoals?" +
+        "$select=fvsd_ippgoalid,fvsd_name,fvsd_alias,fvsd_description,fvsd_grade," +
+        "fvsd_subsection,fvsd_sortorder,_fvsd_ippsection_value&" +
+        "$filter=statecode eq 0 and fvsd_ippsection/fvsd_name eq 'FMCS Foundations'&" +
+        "$expand=fvsd_ippsection($select=fvsd_ippsectionid,fvsd_name,fvsd_frontfacingdescription)&" +
+        "$orderby=fvsd_subsection asc,fvsd_grade asc,fvsd_sortorder asc,fvsd_name asc&$top=5000";
+
+    internal static string BuildStudentPlanFmcsLevelsQuery() =>
+        "fvsd_ipplevels?" +
+        "$select=fvsd_ipplevelid,fvsd_name,fvsd_description,fvsd_fillhexcode,fvsd_fonthexcode,fvsd_sortorder&" +
+        "$filter=statecode eq 0 and fvsd_curriculum/fvsd_name eq 'English Language Arts and Literature'&" +
+        "$expand=fvsd_curriculum($select=fvsd_name)&$orderby=fvsd_sortorder asc,fvsd_name asc&$top=5000";
+
+    internal static string BuildStudentPlanFmcsProgressQuery(Guid planId) =>
+        "fvsd_studentipplevels?" +
+        "$select=fvsd_studentipplevelid,fvsd_name,fvsd_initialdateachieved,fvsd_currentdateachieved," +
+        "_fvsd_ippgoal_value,_fvsd_ippinitiallevel_value,_fvsd_ipplevel_value,_fvsd_studentipp_value,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"_fvsd_studentipp_value eq {planId:D} and fvsd_ippgoal/fvsd_ippsection/fvsd_name eq 'FMCS Foundations'")}&" +
+        "$expand=fvsd_ippinitiallevel($select=fvsd_ipplevelid,fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)," +
+        "fvsd_ipplevel($select=fvsd_ipplevelid,fvsd_name,fvsd_fillhexcode,fvsd_fonthexcode)&" +
+        "$orderby=modifiedon desc&$top=5000";
+
     internal static string BuildWordStudyStagesQuery() =>
         "fvsd_wordstheirwaystages?" +
         "$select=fvsd_wordstheirwaystageid,fvsd_name,fvsd_section,fvsd_div,fvsd_sortorder&" +
@@ -2640,6 +3012,337 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             .ThenBy(option => option.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
+    internal static IReadOnlyList<StudentPlanEmpowerLevelOption> ParseStudentPlanEmpowerLevels(JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var id = ReadGuid(row, "fvsd_ipplevelid");
+                var name = ReadString(row, "fvsd_name");
+                if (id is null || string.IsNullOrWhiteSpace(name))
+                {
+                    return null;
+                }
+
+                return new StudentPlanEmpowerLevelOption(
+                    id.Value,
+                    name,
+                    ReadString(row, "fvsd_description") ?? string.Empty,
+                    ReadString(row, "fvsd_fillhexcode") ?? "#FFFFFF",
+                    ReadString(row, "fvsd_fonthexcode") ?? "#071940",
+                    ReadInteger(row, "fvsd_sortorder")
+                        ?? ParseSortOrder(ReadString(row, "fvsd_sortorder")));
+            })
+            .Where(level => level is not null)
+            .Cast<StudentPlanEmpowerLevelOption>()
+            .OrderBy(level => level.SortOrder)
+            .ThenBy(level => level.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    internal static IReadOnlyList<StudentPlanEmpowerGoal> ParseStudentPlanEmpowerGoals(
+        JsonElement goalsRoot,
+        JsonElement progressRoot)
+    {
+        var progressByGoal = progressRoot.GetProperty("value").EnumerateArray()
+            .Select(ParseStudentPlanGoalProgress)
+            .Where(progress => progress is not null)
+            .Cast<StudentPlanGoalProgress>()
+            .GroupBy(progress => progress.GoalId)
+            .ToDictionary(group => group.Key, group => group.First());
+
+        return goalsRoot.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var goalId = ReadGuid(row, "fvsd_ippgoalid");
+                var name = ReadString(row, "fvsd_name");
+                var alias = ReadString(row, "fvsd_alias");
+                if (goalId is null || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(alias))
+                {
+                    return null;
+                }
+
+                progressByGoal.TryGetValue(goalId.Value, out var progress);
+                return new StudentPlanEmpowerGoal(
+                    goalId.Value,
+                    name,
+                    alias,
+                    ReadString(row, "fvsd_description") ?? string.Empty,
+                    ReadFormattedString(row, "fvsd_foundationlevel") ?? "Unspecified level",
+                    ReadFormattedString(row, "fvsd_div") ?? "All grades",
+                    ReadFormattedString(row, "fvsd_subsection"),
+                    ParseSortOrder(ReadString(row, "fvsd_sortorder")),
+                    progress?.Id,
+                    progress?.InitialLevelId,
+                    progress?.InitialLevelName,
+                    progress?.InitialFillHex,
+                    progress?.InitialFontHex,
+                    progress?.InitialDate,
+                    progress?.CurrentLevelId,
+                    progress?.CurrentLevelName,
+                    progress?.CurrentFillHex,
+                    progress?.CurrentFontHex,
+                    progress?.CurrentDate,
+                    progress?.ETag);
+            })
+            .Where(goal => goal is not null)
+            .Cast<StudentPlanEmpowerGoal>()
+            .OrderBy(goal => goal.FoundationLevel, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(goal => goal.Division, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(goal => goal.Subsection, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(goal => goal.SortOrder)
+            .ThenBy(goal => goal.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    internal static string ParseStudentPlanEmpowerSectionDescription(JsonElement goalsRoot)
+    {
+        foreach (var row in goalsRoot.GetProperty("value").EnumerateArray())
+        {
+            if (row.TryGetProperty("fvsd_ippsection", out var section)
+                && section.ValueKind == JsonValueKind.Object)
+            {
+                return ReadString(section, "fvsd_frontfacingdescription") ?? string.Empty;
+            }
+        }
+        return string.Empty;
+    }
+
+    internal static IReadOnlyList<StudentPlanMathematicsLevelOption> ParseStudentPlanMathematicsLevels(
+        JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var id = ReadGuid(row, "fvsd_ipplevelid");
+                var name = ReadString(row, "fvsd_name");
+                if (id is null || string.IsNullOrWhiteSpace(name))
+                {
+                    return null;
+                }
+
+                return new StudentPlanMathematicsLevelOption(
+                    id.Value,
+                    name,
+                    ReadString(row, "fvsd_description") ?? string.Empty,
+                    ReadString(row, "fvsd_fillhexcode") ?? "#EDF2F8",
+                    ReadString(row, "fvsd_fonthexcode") ?? "#071940",
+                    ReadInteger(row, "fvsd_sortorder")
+                        ?? ParseSortOrder(ReadString(row, "fvsd_sortorder")));
+            })
+            .Where(level => level is not null)
+            .Cast<StudentPlanMathematicsLevelOption>()
+            .OrderBy(level => level.SortOrder)
+            .ThenBy(level => level.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    internal static IReadOnlyList<StudentPlanMathematicsGoal> ParseStudentPlanMathematicsGoals(
+        JsonElement goalsRoot,
+        JsonElement progressRoot)
+    {
+        var progressByGoal = progressRoot.GetProperty("value").EnumerateArray()
+            .Select(ParseStudentPlanGoalProgress)
+            .Where(progress => progress is not null)
+            .Cast<StudentPlanGoalProgress>()
+            .GroupBy(progress => progress.GoalId)
+            .ToDictionary(group => group.Key, group => group.First());
+
+        return goalsRoot.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var goalId = ReadGuid(row, "fvsd_ippgoalid");
+                var name = ReadString(row, "fvsd_name");
+                var alias = ReadString(row, "fvsd_alias");
+                var outcome = ReadFormattedString(row, "fvsd_subsection");
+                var grade = ReadFormattedString(row, "fvsd_grade");
+                if (goalId is null || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(alias)
+                    || string.IsNullOrWhiteSpace(outcome) || string.IsNullOrWhiteSpace(grade))
+                {
+                    return null;
+                }
+
+                var sortOrderText = ReadString(row, "fvsd_sortorder") ?? string.Empty;
+                var sortOrder = ParseSortOrder(sortOrderText);
+                progressByGoal.TryGetValue(goalId.Value, out var progress);
+                return new StudentPlanMathematicsGoal(
+                    goalId.Value,
+                    name,
+                    alias,
+                    ReadString(row, "fvsd_description") ?? string.Empty,
+                    outcome,
+                    grade,
+                    string.Equals(sortOrderText, "00", StringComparison.Ordinal) ? "Precursor" : $"Level {sortOrder}",
+                    sortOrder,
+                    progress?.Id,
+                    progress?.InitialLevelId,
+                    progress?.InitialLevelName,
+                    progress?.InitialFillHex,
+                    progress?.InitialFontHex,
+                    progress?.InitialDate,
+                    progress?.CurrentLevelId,
+                    progress?.CurrentLevelName,
+                    progress?.CurrentFillHex,
+                    progress?.CurrentFontHex,
+                    progress?.CurrentDate,
+                    progress?.ETag);
+            })
+            .Where(goal => goal is not null)
+            .Cast<StudentPlanMathematicsGoal>()
+            .OrderBy(goal => goal.Outcome, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(goal => ParseProgressionGradeOrder(goal.Grade))
+            .ThenBy(goal => goal.SortOrder)
+            .ThenBy(goal => goal.Alias, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    internal static IReadOnlyList<StudentPlanFmcsLevelOption> ParseStudentPlanFmcsLevels(JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var id = ReadGuid(row, "fvsd_ipplevelid");
+                var name = ReadString(row, "fvsd_name");
+                if (id is null || string.IsNullOrWhiteSpace(name))
+                {
+                    return null;
+                }
+
+                return new StudentPlanFmcsLevelOption(
+                    id.Value,
+                    name,
+                    ReadString(row, "fvsd_description") ?? string.Empty,
+                    ReadString(row, "fvsd_fillhexcode") ?? "#EDF2F8",
+                    ReadString(row, "fvsd_fonthexcode") ?? "#071940",
+                    ReadInteger(row, "fvsd_sortorder")
+                        ?? ParseSortOrder(ReadString(row, "fvsd_sortorder")));
+            })
+            .Where(level => level is not null)
+            .Cast<StudentPlanFmcsLevelOption>()
+            .OrderBy(level => level.SortOrder)
+            .ThenBy(level => level.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    internal static IReadOnlyList<StudentPlanFmcsGoal> ParseStudentPlanFmcsGoals(
+        JsonElement goalsRoot,
+        JsonElement progressRoot)
+    {
+        var progressByGoal = progressRoot.GetProperty("value").EnumerateArray()
+            .Select(ParseStudentPlanGoalProgress)
+            .Where(progress => progress is not null)
+            .Cast<StudentPlanGoalProgress>()
+            .GroupBy(progress => progress.GoalId)
+            .ToDictionary(group => group.Key, group => group.First());
+
+        var outcomes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var goals = goalsRoot.GetProperty("value").EnumerateArray()
+            .Select(row =>
+            {
+                var goalId = ReadGuid(row, "fvsd_ippgoalid");
+                var name = ReadString(row, "fvsd_name");
+                var alias = ReadString(row, "fvsd_alias");
+                var rawOutcome = ReadFormattedString(row, "fvsd_subsection");
+                var outcome = string.IsNullOrWhiteSpace(rawOutcome)
+                    ? null
+                    : Regex.Replace(rawOutcome.Trim(), "\\s+", " ");
+                if (goalId is null || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(alias)
+                    || string.IsNullOrWhiteSpace(outcome))
+                {
+                    return null;
+                }
+
+                if (!outcomes.ContainsKey(outcome))
+                {
+                    outcomes[outcome] = outcomes.Count;
+                }
+                var sortOrderText = ReadString(row, "fvsd_sortorder") ?? string.Empty;
+                var sortOrder = ParseSortOrder(sortOrderText);
+                progressByGoal.TryGetValue(goalId.Value, out var progress);
+                return new StudentPlanFmcsGoal(
+                    goalId.Value,
+                    name,
+                    alias,
+                    ReadString(row, "fvsd_description") ?? string.Empty,
+                    outcome,
+                    string.Equals(sortOrderText, "00", StringComparison.Ordinal)
+                        ? "Precursor"
+                        : $"Task {sortOrder:00}",
+                    sortOrder,
+                    progress?.Id,
+                    progress?.InitialLevelId,
+                    progress?.InitialLevelName,
+                    progress?.InitialFillHex,
+                    progress?.InitialFontHex,
+                    progress?.InitialDate,
+                    progress?.CurrentLevelId,
+                    progress?.CurrentLevelName,
+                    progress?.CurrentFillHex,
+                    progress?.CurrentFontHex,
+                    progress?.CurrentDate,
+                    progress?.ETag);
+            })
+            .Where(goal => goal is not null)
+            .Cast<StudentPlanFmcsGoal>()
+            .ToArray();
+
+        return goals
+            .OrderBy(goal => outcomes[goal.Outcome])
+            .ThenBy(goal => goal.SortOrder)
+            .ThenBy(goal => goal.Alias, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    internal static int ParseProgressionGradeOrder(string grade)
+    {
+        if (grade.Contains("Kindergarten", StringComparison.OrdinalIgnoreCase))
+        {
+            return 0;
+        }
+        var match = Regex.Match(grade, "\\d+");
+        return match.Success && int.TryParse(match.Value, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : int.MaxValue;
+    }
+
+    private static StudentPlanGoalProgress? ParseStudentPlanGoalProgress(JsonElement row)
+    {
+        var id = ReadGuid(row, "fvsd_studentipplevelid");
+        var goalId = ReadGuid(row, "_fvsd_ippgoal_value");
+        if (id is null || goalId is null)
+        {
+            return null;
+        }
+
+        var initial = row.TryGetProperty("fvsd_ippinitiallevel", out var initialLevel)
+            && initialLevel.ValueKind == JsonValueKind.Object ? initialLevel : default;
+        var current = row.TryGetProperty("fvsd_ipplevel", out var currentLevel)
+            && currentLevel.ValueKind == JsonValueKind.Object ? currentLevel : default;
+        return new StudentPlanGoalProgress(
+            id.Value,
+            goalId.Value,
+            ReadGuid(row, "_fvsd_ippinitiallevel_value"),
+            initial.ValueKind == JsonValueKind.Object ? ReadString(initial, "fvsd_name") : null,
+            initial.ValueKind == JsonValueKind.Object ? ReadString(initial, "fvsd_fillhexcode") : null,
+            initial.ValueKind == JsonValueKind.Object ? ReadString(initial, "fvsd_fonthexcode") : null,
+            ReadDateTimeOffset(row, "fvsd_initialdateachieved"),
+            ReadGuid(row, "_fvsd_ipplevel_value"),
+            current.ValueKind == JsonValueKind.Object ? ReadString(current, "fvsd_name") : null,
+            current.ValueKind == JsonValueKind.Object ? ReadString(current, "fvsd_fillhexcode") : null,
+            current.ValueKind == JsonValueKind.Object ? ReadString(current, "fvsd_fonthexcode") : null,
+            ReadDateTimeOffset(row, "fvsd_currentdateachieved"),
+            ReadString(row, "@odata.etag"));
+    }
+
+    private sealed record StudentPlanGoalProgress(
+        Guid Id,
+        Guid GoalId,
+        Guid? InitialLevelId,
+        string? InitialLevelName,
+        string? InitialFillHex,
+        string? InitialFontHex,
+        DateTimeOffset? InitialDate,
+        Guid? CurrentLevelId,
+        string? CurrentLevelName,
+        string? CurrentFillHex,
+        string? CurrentFontHex,
+        DateTimeOffset? CurrentDate,
+        string? ETag);
+
     internal static IReadOnlyList<StudentPlanWritingSnapshotRecord> ParseStudentPlanWritingSnapshots(
         JsonElement root) =>
         root.GetProperty("value").EnumerateArray()
@@ -3091,6 +3794,93 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         return new StudentPlanWordStudyOptionsResponse(stages);
     }
 
+    private async Task<StudentPlanEmpowerResponse> LoadStudentPlanEmpowerAsync(
+        Guid planId,
+        string schoolYear,
+        CancellationToken cancellationToken)
+    {
+        using var goalsDocument = await GetJsonAsync(BuildStudentPlanEmpowerGoalsQuery(), cancellationToken);
+        using var levelsDocument = await GetJsonAsync(BuildStudentPlanEmpowerLevelsQuery(), cancellationToken);
+        using var progressDocument = await GetJsonAsync(
+            BuildStudentPlanEmpowerProgressQuery(planId), cancellationToken);
+        var levels = ParseStudentPlanEmpowerLevels(levelsDocument.RootElement);
+        var goals = ParseStudentPlanEmpowerGoals(goalsDocument.RootElement, progressDocument.RootElement);
+        if (goals.Count == 0)
+        {
+            throw new InvalidOperationException("Empower Reading goals are not configured in Dataverse.");
+        }
+        if (levels.Count == 0)
+        {
+            throw new InvalidOperationException("Empower rating levels are not configured in Dataverse.");
+        }
+
+        return new StudentPlanEmpowerResponse(
+            planId,
+            schoolYear,
+            "Empower Reading",
+            ParseStudentPlanEmpowerSectionDescription(goalsDocument.RootElement),
+            levels,
+            goals);
+    }
+
+    private async Task<StudentPlanMathematicsResponse> LoadStudentPlanMathematicsAsync(
+        Guid planId,
+        string schoolYear,
+        CancellationToken cancellationToken)
+    {
+        using var goalsDocument = await GetJsonAsync(BuildStudentPlanMathematicsGoalsQuery(), cancellationToken);
+        using var levelsDocument = await GetJsonAsync(BuildStudentPlanMathematicsLevelsQuery(), cancellationToken);
+        using var progressDocument = await GetJsonAsync(
+            BuildStudentPlanMathematicsProgressQuery(planId), cancellationToken);
+        var levels = ParseStudentPlanMathematicsLevels(levelsDocument.RootElement);
+        var goals = ParseStudentPlanMathematicsGoals(goalsDocument.RootElement, progressDocument.RootElement);
+        if (goals.Count == 0)
+        {
+            throw new InvalidOperationException("Mathematics goals are not configured in Dataverse.");
+        }
+        if (levels.Count == 0)
+        {
+            throw new InvalidOperationException("Mathematics rating levels are not configured in Dataverse.");
+        }
+
+        return new StudentPlanMathematicsResponse(
+            planId,
+            schoolYear,
+            "Mathematics",
+            ParseStudentPlanEmpowerSectionDescription(goalsDocument.RootElement),
+            levels,
+            goals);
+    }
+
+    private async Task<StudentPlanFmcsResponse> LoadStudentPlanFmcsAsync(
+        Guid planId,
+        string schoolYear,
+        CancellationToken cancellationToken)
+    {
+        using var goalsDocument = await GetJsonAsync(BuildStudentPlanFmcsGoalsQuery(), cancellationToken);
+        using var levelsDocument = await GetJsonAsync(BuildStudentPlanFmcsLevelsQuery(), cancellationToken);
+        using var progressDocument = await GetJsonAsync(
+            BuildStudentPlanFmcsProgressQuery(planId), cancellationToken);
+        var levels = ParseStudentPlanFmcsLevels(levelsDocument.RootElement);
+        var goals = ParseStudentPlanFmcsGoals(goalsDocument.RootElement, progressDocument.RootElement);
+        if (goals.Count == 0)
+        {
+            throw new InvalidOperationException("FMCS Foundations goals are not configured in Dataverse.");
+        }
+        if (levels.Count == 0)
+        {
+            throw new InvalidOperationException("FMCS rating levels are not configured in Dataverse.");
+        }
+
+        return new StudentPlanFmcsResponse(
+            planId,
+            schoolYear,
+            "FMCS Foundations",
+            ParseStudentPlanEmpowerSectionDescription(goalsDocument.RootElement),
+            levels,
+            goals);
+    }
+
     private async Task<StudentPlanWritingSnapshotsResponse> LoadStudentPlanWritingSnapshotsAsync(
         Guid planId,
         string schoolYear,
@@ -3233,6 +4023,39 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
                 ? null
                 : $"/fvsd_wordstheirwaystages({command.FinishingLevelId.Value:D})"
         };
+
+    internal static Dictionary<string, object?> BuildStudentPlanEmpowerProgressPayload(
+        StudentPlanEmpowerProgressCommand command,
+        bool setInitial)
+    {
+        var date = command.DateAchieved.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var levelBinding = $"/fvsd_ipplevels({command.LevelId:D})";
+        var payload = new Dictionary<string, object?>
+        {
+            ["fvsd_currentdateachieved"] = date,
+            ["fvsd_ipplevel@odata.bind"] = levelBinding
+        };
+        if (setInitial)
+        {
+            payload["fvsd_initialdateachieved"] = date;
+            payload["fvsd_ippinitiallevel@odata.bind"] = levelBinding;
+        }
+        return payload;
+    }
+
+    internal static Dictionary<string, object?> BuildStudentPlanMathematicsProgressPayload(
+        StudentPlanMathematicsProgressCommand command,
+        bool setInitial) =>
+        BuildStudentPlanEmpowerProgressPayload(
+            new StudentPlanEmpowerProgressCommand(command.LevelId, command.DateAchieved, command.ETag),
+            setInitial);
+
+    internal static Dictionary<string, object?> BuildStudentPlanFmcsProgressPayload(
+        StudentPlanFmcsProgressCommand command,
+        bool setInitial) =>
+        BuildStudentPlanEmpowerProgressPayload(
+            new StudentPlanEmpowerProgressCommand(command.LevelId, command.DateAchieved, command.ETag),
+            setInitial);
 
     internal static void EnsureWordStudyStartDateAvailable(
         IReadOnlyList<StudentPlanWordStudyRecord> records,
