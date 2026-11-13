@@ -56,6 +56,7 @@ The documentation distinguishes four states:
 
 - [Design-system overview](design-system/README.md)
 - [Foundations and design tokens](design-system/foundations.md)
+- [Responsive behaviour and breakpoints](design-system/responsive.md)
 - [Asset library and iconography](design-system/assets.md)
 - [Shared component contracts](design-system/components.md)
 - [Rendered component gallery](design-system/component-gallery.md)

@@ -2,21 +2,21 @@
 
 > [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Design system](README.md) / Component gallery
 
-**Status:** Proposed visual targets
+**Status:** Stage 2 foundation implemented; screen migration pending
 
 Each example pairs implementation-shaped markup with a rendered SVG reference so the appearance remains visible in GitHub Markdown and other documentation viewers that remove custom CSS from raw HTML.
 
-![Proposed FVSD Nexus shared components](assets/previews/component-gallery.svg)
+![FVSD Nexus shared component foundation](assets/previews/component-gallery.svg)
 
-The examples use target class names. They are not yet production components.
+The source-backed example is available locally at `http://localhost:5173/?design-system`. It contains no student or production data and exposes `data-visual-regression="design-system-foundations"` as a stable screenshot-test target.
 
 ## Buttons
 
 ```tsx
 <Button variant="primary">Save changes</Button>
 <Button variant="secondary">Cancel</Button>
-<Button variant="dangerSoft">Delete</Button>
-<Button variant="primary" busy disabled>Saving…</Button>
+<Button variant="danger-soft">Delete</Button>
+<Button variant="primary" busy>Saving…</Button>
 ```
 
 Equivalent semantic HTML:
@@ -32,10 +32,11 @@ Equivalent semantic HTML:
 
 ```tsx
 <Field
+  id="assessment-date"
   label="Assessment date"
-  helperText="Use the date the assessment was completed."
+  description="Use the date the assessment was completed."
 >
-  <input type="date" name="assessmentDate" />
+  <input id="assessment-date" type="date" name="assessmentDate" />
 </Field>
 ```
 
@@ -52,10 +53,10 @@ Equivalent semantic HTML:
 ## Status badges
 
 ```tsx
-<StatusBadge tone="success">Signed</StatusBadge>
-<StatusBadge tone="warning">Awaiting signature</StatusBadge>
-<StatusBadge tone="info">Draft</StatusBadge>
-<StatusBadge tone="neutral">Not started</StatusBadge>
+<Badge tone="success">Signed</Badge>
+<Badge tone="warning">Awaiting signature</Badge>
+<Badge tone="info">Draft</Badge>
+<Badge tone="neutral">Not started</Badge>
 ```
 
 Status text is always present; colour is supplementary.

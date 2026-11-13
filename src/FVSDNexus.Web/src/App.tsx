@@ -295,6 +295,7 @@ export function App() {
           </div>
         </div>
 
+        <div className="sidebar-scroll-region">
         <nav aria-label="Main navigation">
           {navGroups.map(({ id, label, icon: GroupIcon, items, emptyMessage }) => {
             const isExpanded = expandedNavGroups[id] ?? false
@@ -359,6 +360,7 @@ export function App() {
           <Settings size={17} aria-hidden="true" />
           <span>Settings</span>
         </button>
+        </div>
 
         <div className="sidebar-footer">
           {user ? user.isDeveloper ? (

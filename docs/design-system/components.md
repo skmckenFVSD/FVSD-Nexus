@@ -2,7 +2,7 @@
 
 > [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Design system](README.md) / Components
 
-**Status:** Proposed consolidation contracts; current production components remain unchanged
+**Status:** Shared foundation implemented in Stage 2; feature-by-feature adoption remains pending
 
 See the [component gallery](component-gallery.md) for markup examples shown beside their rendered target appearance.
 
@@ -65,6 +65,8 @@ Screen mode may add Edit, Add, Delete, loading and validation controls. Document
 - governed module metadata.
 
 Generated HTML is an output, not the operational source of truth. Where descriptions or guidance come from Dataverse, the API must provide a safe, explicit presentation model rather than allowing arbitrary stored HTML to define application behaviour.
+
+The code contract is defined in `src/FVSDNexus.Web/src/design-system/modulePresentation.ts`. Interactive controls are deliberately absent from `ModulePresentationModel`, preventing buttons, form state and dialogs from entering compiled output.
 
 ## Acceptance criteria for every shared component
 

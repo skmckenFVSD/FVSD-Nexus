@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title">
+  <title id="title">FVSD Nexus</title>
+  <defs>
+    <radialGradient id="background-light" cx=".28" cy="0" r=".94"><stop stop-color="#2d6be7" stop-opacity=".30"/><stop offset=".56" stop-color="#2d6be7" stop-opacity=".09"/><stop offset="1" stop-color="#2d6be7" stop-opacity="0"/></radialGradient>
+    <linearGradient id="frame-blue" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="#6da8ff"/><stop offset=".42" stop-color="#2d6be7"/><stop offset="1" stop-color="#234fb0"/></linearGradient>
+    <linearGradient id="goose-white" gradientUnits="userSpaceOnUse" x1="6200" y1="8200" x2="3250" y2="1450"><stop stop-color="#fff"/><stop offset=".48" stop-color="#e8f5ff"/><stop offset="1" stop-color="#79b9fb"/></linearGradient>
+    <linearGradient id="connection-blue" gradientUnits="userSpaceOnUse" x1="561" y1="449" x2="824" y2="872"><stop stop-color="#a8ddff"/><stop offset=".46" stop-color="#559bf4"/><stop offset="1" stop-color="#2d6be7"/></linearGradient>
+    <radialGradient id="node-blue" cx=".31" cy=".23" r=".76"><stop stop-color="#d7f5ff"/><stop offset=".31" stop-color="#77c9fc"/><stop offset=".72" stop-color="#3789ef"/><stop offset="1" stop-color="#2d6be7"/></radialGradient>
+    <linearGradient id="node-rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c6ebff"/><stop offset=".55" stop-color="#61a9ff"/><stop offset="1" stop-color="#2d6be7"/></linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="176" fill="#071940"/>
+  <rect width="1024" height="1024" rx="176" fill="url(#background-light)"/>
+  <rect x="7" y="7" width="1010" height="1010" rx="169" fill="none" stroke="url(#frame-blue)" stroke-width="14"/>
+  <g transform="translate(-167 -46) scale(1.04)" fill="url(#goose-white)"><g transform="translate(0 1000) scale(.1 -.1)"><path d="M7246 8479c-1346-295-2512-693-3223-1099-159-92-432-276-558-377-741-594-818-1214-241-1938 113-141 413-438 596-589 375-310 565-490 710-671 435-546 450-1023 49-1545-144-187-434-465-750-716-67-54-118-99-112-101 15-5 340 143 503 229 697 368 1107 726 1216 1063 22 66 27 106 31 226 11 293-43 491-227 844-180 346-205 462-148 694 118 485 542 909 1152 1151 66 27 122 53 124 59 2 6-23 39-56 73-66 71-86 102-78 125 9 22 51 14 245-46 88-27 180-53 204-56 66-10 134 8 276 74 69 32 212 86 316 120 213 69 288 105 293 138 4 30-32 39-223 57-187 18-261 40-349 102-100 72-119 79-226 78-124 0-221-28-387-109-304-149-680-418-1098-785-287-252-433-336-650-371-164-26-464 11-640 80-199 77-369 228-459 407-60 119-80 210-80 354 1 144 22 244 84 395 123 302 320 519 700 772 606 403 1588 840 2875 1279 198 68 349 123 335 123-14 0-105-18-204-40z"/></g></g>
+  <g fill="none" stroke="url(#connection-blue)" stroke-width="16" stroke-linecap="round"><path d="M531 611a181 181 0 0 1 132-119"/><path d="M753 493a181 181 0 0 1 131 243"/><path d="M824 812a181 181 0 0 1-272-48"/></g>
+  <g fill="none" stroke="url(#connection-blue)" stroke-width="25" stroke-linecap="round"><path d="M708 490v175"/><path d="M514 682q96-32 194-17 96 19 168 117"/></g>
+  <g fill="url(#node-blue)" stroke="url(#node-rim)" stroke-width="5"><circle cx="708" cy="484" r="47"/><circle cx="514" cy="682" r="53"/><circle cx="876" cy="782" r="45"/><circle cx="708" cy="665" r="62"/></g>
+</svg>

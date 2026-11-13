@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="242" viewBox="0 0 960 242" role="img" aria-labelledby="title desc">
+  <title id="title">FVSD Nexus semantic application-state colours</title>
+  <desc id="desc">Separate confirmed colour steps for destructive, warning and complete application states.</desc>
+  <rect width="960" height="242" rx="12" fill="#f5f7fa"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="28" y="37" fill="#071940" font-size="20" font-weight="700">Semantic application states</text>
+    <text x="28" y="60" fill="#4a5b6e" font-size="13">UI actions and workflow states remain distinct from Screener Term Value colours</text>
+
+    <g transform="translate(28 83)">
+      <rect width="282" height="128" rx="10" fill="#fff1f2" stroke="#e3a4ab"/>
+      <rect width="282" height="42" rx="10" fill="#b42318"/>
+      <path d="M20 14h14v16H20z M17 11h20 M23 8h8" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      <text x="48" y="27" fill="#fff" font-size="14" font-weight="700">Destructive</text>
+      <text x="16" y="70" fill="#9a1d29" font-size="13" font-weight="700">Delete or remove</text>
+      <text x="16" y="94" fill="#5a3540" font-size="12">Solid #B42318 · Foreground #9A1D29</text>
+      <text x="16" y="114" fill="#5a3540" font-size="12">Soft #FFF1F2 · Border #E3A4AB</text>
+    </g>
+
+    <g transform="translate(339 83)">
+      <rect width="282" height="128" rx="10" fill="#fff7db" stroke="#d9b44a"/>
+      <rect width="282" height="42" rx="10" fill="#8a5a00"/>
+      <path d="M27 9 38 30H16z M27 16v7 M27 27v1" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="48" y="27" fill="#fff" font-size="14" font-weight="700">Warning / pending</text>
+      <text x="16" y="70" fill="#6b4500" font-size="13" font-weight="700">Awaiting attention</text>
+      <text x="16" y="94" fill="#57420f" font-size="12">Solid #8A5A00 · Foreground #6B4500</text>
+      <text x="16" y="114" fill="#57420f" font-size="12">Soft #FFF7DB · Border #D9B44A</text>
+    </g>
+
+    <g transform="translate(650 83)">
+      <rect width="282" height="128" rx="10" fill="#effaf3" stroke="#b5dcc7"/>
+      <rect width="282" height="42" rx="10" fill="#17633a"/>
+      <path d="m18 21 6 6 13-15" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="48" y="27" fill="#fff" font-size="14" font-weight="700">Complete / success</text>
+      <text x="16" y="70" fill="#17633a" font-size="13" font-weight="700">Completed successfully</text>
+      <text x="16" y="94" fill="#315b43" font-size="12">Solid and foreground #17633A</text>
+      <text x="16" y="114" fill="#315b43" font-size="12">Soft #EFFAF3 · Border #B5DCC7</text>
+    </g>
+  </g>
+</svg>

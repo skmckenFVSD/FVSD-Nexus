@@ -2,7 +2,7 @@
 
 > [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Design system
 
-**Status:** Confirmed documentation foundation; individual visual values and concept assets remain Current, Proposed, or Open as labelled
+**Status:** Stage 1 foundations Confirmed November 13, 2026; implementation begins in Stage 2
 
 This section is the canonical product record for the visual language and reusable user-experience patterns of FVSD Nexus. It exists before the screen-by-screen styling work so that each capability is built from agreed foundations rather than adding another local variant.
 
@@ -39,22 +39,31 @@ The intended code structure is:
 ```text
 src/FVSDNexus.Web/src/styles/
   tokens.css              semantic colour, type, spacing, radius and elevation
+  responsive.css          viewport/container helpers and named container roots
+  ui.css                  shared control presentation
+  layout.css              shell, drawer, header and section-navigation primitives
   document-tokens.css     print/PDF-only extensions that reference shared semantics
 
 src/FVSDNexus.Web/src/components/ui/
   Button, Field, Dialog, Notice, Badge, Tabs, Table, EmptyState, LoadingState
 
 src/FVSDNexus.Web/src/components/layout/
-  AppShell, PageHeader, WorkspaceHeader, ContextDrawer, SectionNavigation
+  ViewportShell, NavigationFrame, PageHeader, ContextDrawer, SectionNavigation
+
+src/FVSDNexus.Web/src/design-system/
+  responsive.ts           shared breakpoint and container-state definitions
+  modulePresentation.ts   common screen/document semantic model
+  DesignSystemExamples    data-free accessibility and screenshot-test surface
 ```
 
-These target locations are **Proposed** until the first implementation slice is approved. The current production stylesheet remains authoritative for the running application.
+These locations are **Confirmed** and established by Stage 2. The current feature stylesheet remains in place during controlled screen migration and uses compatibility aliases from the semantic token layer.
 
 ## Library map
 
 | Area | Canonical document |
 |---|---|
 | Colour, typography, spacing, shape, elevation, focus and breakpoints | [Foundations](foundations.md) |
+| Viewport breakpoints, container states and responsive content rules | [Responsive behaviour](responsive.md) |
 | Logos, application marks, favicons and icon rules | [Assets](assets.md) |
 | Buttons, fields, dialogs, notices, tables and other shared controls | [Components](components.md) |
 | Markup examples beside rendered visual references | [Component gallery](component-gallery.md) |
@@ -71,5 +80,6 @@ The documentation-wide status model applies:
 | Confirmed | Agreed direction or constraint; implementation may still be pending. |
 | Proposed | Candidate value or pattern requiring visual review. |
 | Open | A material choice has not been made. |
+| Reference only | Preserved exploratory material that is not an approved application default. |
 
 No Proposed asset or colour becomes the application default merely because it is stored in this library. A design-system change should identify affected components and screens, include visual and accessibility evidence, and be reviewed before broad migration.

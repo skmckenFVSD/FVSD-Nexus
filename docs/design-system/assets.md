@@ -19,7 +19,7 @@ This register identifies canonical production assets and exploratory candidates.
 
 | Asset | Path | Status | Decision required |
 |---|---|---|---|
-| New scalable FVSD Nexus menu logo supplied November 12, 2026 | [`assets/approved/fvsd-nexus.svg`](assets/approved/fvsd-nexus.svg) | Confirmed; production implementation pending | Replace the current raster menu mark during the shell implementation and verify compact-rail sizing. |
+| New scalable FVSD Nexus menu logo supplied November 12, 2026 | [`assets/approved/fvsd-nexus.svg`](assets/approved/fvsd-nexus.svg) | Confirmed; used in the local shell prototype | Replace the current raster production menu mark after the Stage 3 shell is approved; compact-rail sizing is available for review. |
 | New FVSD Nexus favicon supplied November 12, 2026 | [`assets/approved/fvsd-nexus-favicon.png`](assets/approved/fvsd-nexus-favicon.png) | Confirmed; production implementation pending | Replace the current favicon set and generate required derivative sizes during implementation. |
 
 The supplied logo confirms the asset, not the use of its bright blue as the general application action colour. That remains a separate design-token decision.

@@ -1,0 +1,63 @@
+/*
+  Confirmed viewport boundaries:
+  compact 0–599, small 600–899, medium 900–1199,
+  large 1200–1399, wide 1400+.
+*/
+
+.viewport-shell {
+  inline-size: 100%;
+  block-size: 100dvh;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.scroll-region {
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.container-workspace,
+.container-page,
+.container-panel {
+  min-inline-size: 0;
+  container-type: inline-size;
+}
+
+.container-workspace { container-name: workspace; }
+.container-page { container-name: page; }
+.container-panel { container-name: panel; }
+
+.label-compact { display: none; }
+
+@container workspace (max-width: 719px) {
+  .workspace-narrow-stack { grid-template-columns: minmax(0, 1fr) !important; }
+  .label-full { display: none; }
+  .label-compact { display: inline; }
+}
+
+@container workspace (min-width: 720px) and (max-width: 999px) {
+  .workspace-standard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@container workspace (min-width: 1000px) {
+  .workspace-spacious-only { display: revert; }
+}
+
+@media (min-width: 600px) {
+  .small-up-only { display: revert; }
+}
+
+@media (min-width: 900px) {
+  .medium-up-only { display: revert; }
+}
+
+@media (min-width: 1200px) {
+  .large-up-only { display: revert; }
+}
+
+@media (min-width: 1400px) {
+  .wide-only { display: revert; }
+}
