@@ -1,8 +1,22 @@
-# Phased delivery plan
+---
+title: Phased delivery plan
+description: The phases describe delivery order and dependency, not separate products. Dates and release gates remain evidence-based and may move as functionality, privacy, security, accessibility, and migration findings become…
+type: delivery
+status: confirmed
+icon: 🚀
+area: delivery
+audience: [leadership, product]
+owner: Scott McKenzie
+tags: [nexus, nexus/delivery]
+updated: 2026-11-05
+related: ["[[delivery/phase-1-product-build]]", "[[delivery/adoption-and-engagement]]", "[[delivery/testing-strategy]]", "[[decisions/decision-register]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Delivery](README.md) / Phased delivery plan
+# 🚀 Phased delivery plan
 
-**Status:** Approved product direction; Phase 1 active
+[🏠 Home](../README.md) › [🚀 Delivery](README.md) › Phased delivery plan
+
+**Status:** 🔵 Approved product direction; Phase 1 active
 
 The phases describe delivery order and dependency, not separate products. Dates and release gates remain evidence-based and may move as functionality, privacy, security, accessibility, and migration findings become clearer.
 
@@ -13,7 +27,7 @@ The phases describe delivery order and dependency, not separate products. Dates 
 | 3. Microsoft 365 Copilot integration | Connect Nexus capabilities, the FVSD Data Product Agent, Work IQ, skills, and governed tools through the Microsoft 365 Copilot harness. Microsoft Foundry supplies the API, model, service, evaluation, agent, and MCP components. | Architecture and contract definition |
 | 4. PASI connector | Implement the FVSD-owned provincial connector, operational status handling, reconciliation, and support model. | Feasibility established; onboarding and detailed scope required |
 
-## Phase 1 — Nexus foundation and core workflows
+## 🚀 Phase 1 — Nexus foundation and core workflows
 
 Phase 1 converts the existing working slices into the supported application for the next school year.
 
@@ -26,7 +40,7 @@ Phase 1 converts the existing working slices into the supported application for 
 
 Detailed completed work, remaining work, and acceptance evidence are maintained in the [Phase 1 product build](phase-1-product-build.md).
 
-## Phase 2 — Dossier transition
+## 🚀 Phase 2 — Dossier transition
 
 Phase 2 expands the IEP/IPP foundation rather than creating a separate programme.
 
@@ -36,7 +50,7 @@ Phase 2 expands the IEP/IPP foundation rather than creating a separate programme
 - Design historical migration, reconciliation, retention, and evidence requirements.
 - Run parallel validation before retiring any incumbent workflow.
 
-## Phase 3 — Microsoft 365 Copilot integration
+## 🚀 Phase 3 — Microsoft 365 Copilot integration
 
 Phase 3 makes governed Nexus capabilities available through the Microsoft 365 Copilot harness.
 
@@ -53,7 +67,7 @@ Phase 3 does not move domain rules into prompts or make an agent an operational 
 
 See [Copilot and agent interoperability](../architecture/copilot-interoperability.md) for the investigation and shared-contract design.
 
-## Phase 4 — PASI connector
+## 🚀 Phase 4 — PASI connector
 
 Phase 4 connects governed Nexus operations with Alberta Education's Provincial Approach to Student Information.
 
@@ -63,7 +77,7 @@ Phase 4 connects governed Nexus operations with Alberta Education's Provincial A
 - Show provincial acceptance and exception status in the relevant Nexus workflow.
 - Establish privacy, telemetry, support, disaster-recovery, and certificate-rotation runbooks.
 
-## Gates applying to every phase
+## 🚀 Gates applying to every phase
 
 - Named-user authorization is enforced by Nexus and each destination service.
 - Identifiable student information remains in the approved Canadian geography.
@@ -72,9 +86,13 @@ Phase 4 connects governed Nexus operations with Alberta Education's Provincial A
 - Migration and replacement decisions require parallel validation and an approved rollback path.
 - Documentation and training are updated with the delivered behaviour.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [Phase 1 product build](phase-1-product-build.md)
 - [Adoption and engagement](adoption-and-engagement.md)
 - [Testing strategy](testing-strategy.md)
 - [Decision register](../decisions/decision-register.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Delivery*

@@ -1,17 +1,32 @@
-# ADR-0006: Compose one annual student plan from governed module allocations
+---
+title: "ADR-0006: Compose one annual student plan from governed module allocations"
+description: Nexus will permit at most one annual plan per student and school year. IEP and IPP are classifications of that shared plan rather than separate annual records.
+type: adr
+status: accepted
+icon: ⚖️
+area: decisions
+audience: [architects, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/decisions]
+aliases: [ADR-0006, ADR 6]
+updated: 2026-11-05
+related: ["[[capabilities/ipp/README]]", "[[architecture/data-and-integrations]]", "[[decisions/adr/0001-dataverse-operational-truth]]"]
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Decision register](../decision-register.md) / [Architecture decision records](README.md) / ADR-0006
+# ⚖️ ADR-0006: Compose one annual student plan from governed module allocations
 
-- **Status:** Accepted
+[🏠 Home](../../README.md) › [⚖️ Decisions](../decision-register.md) › [⚖️ ADRs](README.md) › ADR-0006
+
+- **Status:** 🟢 Accepted
 - **Date:** 2026-11-05
 
-## Context
+## 🧭 Context
 
 FVSD has approved development of the next-year Nexus application. The working Educational Framework Canvas app provides the functional baseline. `fvsd_studentipp` is the annual master record and `fvsd_ippsection` is the module-definition catalogue. Students receive different combinations of modules, and additional definitions will be introduced during Dossier migration.
 
 The existing `fvsd_studentipp.fvsd_ippsections` column stores selected module-definition GUIDs as pipe-delimited text. It is an audited, writable 2,000-character Dataverse string. The current Canvas app also maintains multiple module-specific HTML columns to assemble its document output; these HTML values duplicate information held in activities, goals, notes, student details, assessments, and other structured records.
 
-## Decision
+## ⚖️ Decision
 
 Nexus will permit at most one annual plan per student and school year. IEP and IPP are classifications of that shared plan rather than separate annual records.
 
@@ -23,7 +38,7 @@ The API, not the browser, owns parsing, validation, defaulting, de-duplication, 
 
 Nexus will not introduce new per-module HTML columns. Interactive rendering and print/export generation will use structured module data. Existing HTML columns may remain temporarily for Canvas compatibility and migration comparison but are not authoritative Nexus data.
 
-## Consequences
+## 🔄 Consequences
 
 - Student plan history follows the established assessment-history navigation pattern.
 - Student and school-year uniqueness must be enforced by the API and a Dataverse alternate key or equivalent constraint.
@@ -34,15 +49,19 @@ Nexus will not introduce new per-module HTML columns. Interactive rendering and 
 - A related allocation table will be reconsidered if repeated instances, per-allocation metadata, cross-plan queries, or capacity requirements emerge.
 - The automatic rule that displays IEP versus IPP remains a separate business decision.
 
-## Alternatives considered
+## ⚖️ Alternatives considered
 
 - **Add a plan-module allocation table immediately:** deferred because the current requirement is distinct module membership without per-allocation data, and the existing audited field is sufficient and already used successfully.
 - **Store module membership in individual Boolean columns:** rejected because every Dossier module would require a schema change.
 - **Store module content as HTML or generic JSON:** rejected because it weakens validation, querying, auditing, migration, accessible rendering, and reuse.
 - **Create separate IEP and IPP annual records:** rejected because both classifications use the same workflow and a student must have only one plan per school year.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [IEP/IPP capability](../../capabilities/ipp/README.md)
 - [Data and integrations](../../architecture/data-and-integrations.md)
 - [ADR-0001: Dataverse operational truth](0001-dataverse-operational-truth.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Decisions*

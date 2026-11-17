@@ -1,8 +1,22 @@
-# Data and integrations
+---
+title: Data and integrations
+description: Data and integrations for FVSD Nexus.
+type: architecture
+status: current
+icon: 🔌
+area: architecture
+audience: [architects, developers, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/architecture]
+updated: 2026-11-05
+related: ["[[architecture/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Data and integrations
+# 🔌 Data and integrations
 
-## Ownership model
+[🏠 Home](../README.md) › [🏗️ Architecture](README.md) › Data and integrations
+
+## 🗄️ Ownership model
 
 | Information | Authoritative source | Nexus usage |
 |---|---|---|
@@ -16,7 +30,7 @@
 | Information protection and compliance | Microsoft Purview | Apply sensitivity, DLP, audit, risk, and compliance controls. Any FVSD use of Purview Unified Catalog is an enterprise-governance decision, separate from Fabric source authorization. |
 | Data-product workflow and documentation orchestration | Existing FVSD Data Product Agent and Fabric Documentation Agent | Phase 3 integration through bounded contracts; these assets retain their own governance and authorization boundaries. |
 
-## Dataverse
+## 🗄️ Dataverse
 
 Dataverse is the de facto truth store for Nexus operational capabilities.
 
@@ -30,13 +44,13 @@ Existing assets include:
 
 IEP/IPP composition is modular. `fvsd_ippsection` is the governed module-definition catalogue, while `fvsd_studentipp.fvsd_ippsections` stores the selected definition GUIDs as a canonical pipe-delimited membership list. Module content remains in structured related records; Nexus does not create another per-module HTML column. Additional module-specific tables will be introduced only where Dossier migration identifies a genuinely distinct structured-data requirement.
 
-## PowerSchool
+## 🔌 PowerSchool
 
 Nexus should not repeatedly call the PowerSchool Web API to render ordinary forms. The existing synchronization provides the required data locally in Dataverse, improving responsiveness and reducing external runtime dependencies.
 
 The interface should make data freshness understandable where a synchronized attribute materially affects a workflow.
 
-## OneLake and Fabric
+## 🛡️ OneLake and Fabric
 
 The Dataverse-to-OneLake connection is established and uses the newer low-latency model. FVSD currently observes approximately 15 minutes for operational changes to appear in the analytical layer.
 
@@ -47,7 +61,7 @@ Consequences:
 - Clearly distinguish immediate operational values from asynchronously refreshed analytics.
 - Test analytics refresh expectations independently from transaction correctness.
 
-## Semantic model
+## 🧮 Semantic model
 
 - Workspace: `Assessment Screening`
 - Semantic model: `FVSDAnalytics`
@@ -55,7 +69,7 @@ Consequences:
 - Calculations: existing model measures remain authoritative.
 - Security: signed-in Fabric identity and RLS remain effective.
 
-## Examples by layer
+## 🧩 Examples by layer
 
 The layers answer different questions. Nexus should show the connection between them without presenting them as one undifferentiated store.
 
@@ -74,7 +88,7 @@ The Fabric Documentation Agent retrieves authoritative technical descriptions an
 
 This separation is deliberate. The Documentation Agent explains technical truth; the Data Product Agent coordinates a controlled process. Neither agent becomes the source of student records, semantic calculations, permissions, or policy.
 
-## Assessment scoring
+## 🧮 Assessment scoring
 
 Scoring is intentionally reference-driven:
 
@@ -88,7 +102,7 @@ Validate inputs
 
 This keeps scoring visible and maintainable as governed data rather than distributing assessment mathematics through client code.
 
-## Historical integrity
+## 🗄️ Historical integrity
 
 Operational records must preserve sufficient scoring and context values to explain the historical result even if:
 
@@ -97,18 +111,22 @@ Operational records must preserve sufficient scoring and context values to expla
 - Assessment reference tables are revised.
 - Analytical classifications evolve.
 
-## Documentation to complete
+## ❓ Documentation to complete
 
 This page should eventually link to a Dataverse table catalogue, relationship diagram, synchronization inventory, and semantic-model query catalogue. Those artifacts must not contain student records or credentials.
 
-## Phase 4 PASI integration
+## 🚀 Phase 4 PASI integration
 
 An FVSD-owned PASI connector is Phase 4. The connector will commit the Nexus operation to Dataverse first, process provincial exchange asynchronously through a durable outbox/queue, and return acceptance, version, validation, alert, retry, or reconciliation status to Dataverse.
 
 The Phase 4 design keeps the registered PASI client certificate in a server-side governed store, isolates generated provincial contracts behind an adapter, applies PASI optimistic-concurrency rules, and prevents student payloads from entering telemetry. See the [PASI capability](../capabilities/pasi-connector/README.md), [connector architecture](pasi-connector.md), and [official reference index](../reference/pasi-resources.md).
 
-## Phase 3 Purview and governance-agent integration
+## 🤖 Phase 3 Purview and governance-agent integration
 
 The Data Analyst workspace can compose the existing FVSD Data Product Agent and Fabric Documentation Agent with Microsoft Purview. Fabric's OneLake catalog is the primary discovery and governance surface inside Fabric. Purview adds information protection and compliance capabilities across the estate. If FVSD adopts Purview Unified Catalog for enterprise data products and glossary, that catalogue remains a separate metadata plane; Microsoft Graph Purview APIs may also evaluate approved Nexus text or file activities for a known signed-in user.
 
 Nexus must not treat its Data Analyst experience role as permission to administer Purview, read source data, or publish catalog changes. Entra, Fabric, Dataverse, Purview, and the external agent contracts remain authoritative. See the [Purview capability](../capabilities/purview-governance/README.md), [agent architecture](purview-governance.md), and [reference index](../reference/purview-resources.md).
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Architecture*

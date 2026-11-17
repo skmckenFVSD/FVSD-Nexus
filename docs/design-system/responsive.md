@@ -1,14 +1,28 @@
-# Responsive behaviour and breakpoints
+---
+title: Responsive behaviour and breakpoints
+description: FVSD Nexus uses viewport breakpoints to coordinate the application shell and container queries to adapt individual workspaces. This mirrors the intent of the existing Power Apps size/orientation logic without…
+type: design-system
+status: confirmed
+icon: 📐
+area: design-system
+audience: [designers, developers]
+owner: Scott McKenzie
+tags: [nexus, nexus/design-system]
+updated: 2026-11-13
+related: ["[[design-system/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Design system](README.md) / Responsive behaviour
+# 📐 Responsive behaviour and breakpoints
 
-**Status:** Confirmed contract — November 13, 2026
+[🏠 Home](../README.md) › [🎨 Design system](README.md) › Responsive behaviour and breakpoints
+
+**Status:** 🔵 Confirmed contract — November 13, 2026
 
 FVSD Nexus uses viewport breakpoints to coordinate the application shell and container queries to adapt individual workspaces. This mirrors the intent of the existing Power Apps size/orientation logic without shrinking required content below accessible reading sizes.
 
 ![Responsive viewport bands and workspace behaviour](assets/previews/responsive-breakpoints.svg)
 
-## Viewport bands
+## 📐 Viewport bands
 
 The confirmed breakpoint values are:
 
@@ -24,7 +38,7 @@ The confirmed breakpoint values are:
 
 Breakpoints are inclusive at their lower bound. Tests must cover both sides of every boundary.
 
-## Fluid sizing first
+## 📐 Fluid sizing first
 
 The layout is fluid between breakpoints. Breakpoints do not assign a fixed page width; they change the composition when the available space can no longer support the current arrangement.
 
@@ -43,7 +57,7 @@ Percentage sizing alone does not determine when a table should become cards, a n
 
 Avoid fixed pixel widths for main content. Fixed or bounded values remain appropriate for touch targets, icons, borders, the compact navigation rail, and panels that would otherwise become too narrow or too wide to use.
 
-## Application response matrix
+## 📐 Application response matrix
 
 | Concern | Compact | Small | Medium | Large | Wide |
 |---|---|---|---|---|---|
@@ -58,7 +72,7 @@ Avoid fixed pixel widths for main content. Fixed or bounded values remain approp
 
 The matrix defines intended outcomes, not blanket CSS hiding. Each component contract identifies which information is essential and which has a shorter representation.
 
-## Component container states
+## 📐 Component container states
 
 Viewport size alone is insufficient. A 1400 px viewport can leave a module with less than 800 px after the rail, context drawer and document panel are open.
 
@@ -72,7 +86,7 @@ The initial workspace container states are:
 
 These thresholds are component-level starting points and may be refined through the IEP/IPP prototype. A chart or goal matrix may define its own named container query when the visual cannot sensibly follow the generic table rule.
 
-## Typography by responsive state
+## 📐 Typography by responsive state
 
 Required information does not become less readable on smaller screens. Layout and content priority change before font size.
 
@@ -87,7 +101,7 @@ Required information does not become less readable on smaller screens. Layout an
 
 The 16 px compact form-control size prevents unwanted mobile-browser zoom. Six-to-ten-pixel sizes from the Power Apps example are not carried into Nexus web content.
 
-## Buttons and action width
+## 📐 Buttons and action width
 
 The Power Apps global button widths become semantic CSS behaviours rather than fixed widths everywhere:
 
@@ -100,7 +114,7 @@ The Power Apps global button widths become semantic CSS behaviours rather than f
 
 Text must not be truncated merely to preserve a fixed button width. Use a shorter approved label or allow the control to grow.
 
-## Full and compact labels
+## 📐 Full and compact labels
 
 When a shorter label is needed, both values are intentional content rather than text sliced with JavaScript. The accessible name remains complete.
 
@@ -123,7 +137,7 @@ When a shorter label is needed, both values are intentional content rather than 
 
 Course and section names should use explicit `fullLabel`, `shortLabel`, and optional `code` values from the presentation model where possible. Responsive presentation should not repeatedly parse display strings such as text inside parentheses.
 
-## CSS implementation pattern
+## 📐 CSS implementation pattern
 
 ```css
 html,
@@ -226,7 +240,7 @@ Use logical properties such as `inline-size` and `block-size` in shared layout p
 
 CSS controls visual presentation. React should use `matchMedia` only when the interaction itself changes, such as choosing between an anchored drawer and a modal bottom sheet. Avoid maintaining a JavaScript copy of purely visual conditions.
 
-## Orientation and height
+## 📐 Orientation and height
 
 Orientation is a secondary modifier rather than a duplicate breakpoint tree. Width and container space choose the primary layout. Orientation/height rules may:
 
@@ -239,7 +253,7 @@ They must not reduce required text below the documented type scale.
 
 The `dvh` unit is used so the shell follows changes to mobile browser chrome and the on-screen keyboard. Persistent controls must remain inside the resulting visible shell; content absorbs the reduced height through its assigned scroll region.
 
-## Verification matrix
+## 🧪 Verification matrix
 
 Every shared shell and School Administration screen is checked at:
 
@@ -257,3 +271,7 @@ Every shared shell and School Administration screen is checked at:
 At every size, verification confirms that the root document has no horizontal or vertical scrollbar, all persistent controls remain visible, and each overflow area scrolls only within its assigned shell region.
 
 Functional tests verify that changing presentation does not change authorization, selected context, unsaved form state, record ordering or document inclusion state.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Design system*

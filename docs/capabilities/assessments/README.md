@@ -1,12 +1,26 @@
-# Assessment entry and scoring
+---
+title: Assessment entry and scoring
+description: Assessment entry is expected to be primarily a UX modernization rather than a data-platform rebuild.
+type: capability
+status: current
+icon: 📋
+area: capabilities
+audience: [leadership, product, architects]
+owner: Scott McKenzie
+tags: [nexus, nexus/capabilities, nexus/assessments]
+updated: 2026-11-05
+related: ["[[architecture/data-and-integrations]]", "[[architecture/identity-licensing-security]]", "[[delivery/phase-1-product-build]]"]
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Assessment entry and scoring
+# 📋 Assessment entry and scoring
 
-**Status:** Current Class Assignment and TOSREC lifecycle capability; additional Phase 1 assessment adapters remain
+[🏠 Home](../../README.md) › [🧩 Capabilities](../README.md) › Assessment entry and scoring
+
+**Status:** 🟢 Current Class Assignment and TOSREC lifecycle capability; additional Phase 1 assessment adapters remain
 
 Assessment entry is expected to be primarily a UX modernization rather than a data-platform rebuild.
 
-## Existing foundation
+## 🗄️ Existing foundation
 
 - Assessment Dataverse tables and relationships are built, working, and stable.
 - Existing Canvas forms contain the correct field and form visibility behaviour.
@@ -14,7 +28,7 @@ Assessment entry is expected to be primarily a UX modernization rather than a da
 - Reference tables contain governed assessment scoring results.
 - Most runtime behaviour is query-and-fetch orchestration rather than complex calculation logic.
 
-## Current Nexus vertical slice
+## 🧩 Current Nexus vertical slice
 
 The first Class Assignment slice translates the existing Canvas collection logic into a secured React and ASP.NET Core flow:
 
@@ -43,7 +57,7 @@ Signed-in User Role
 
 This foundation now continues into a governed TOSREC create, view, edit, and delete lifecycle while preserving the same identity, role, section, and student scope.
 
-## Section Group capability routing
+## 🔄 Section Group capability routing
 
 The selected Section Group determines which student histories and actions are available:
 
@@ -56,7 +70,7 @@ The selected Section Group determines which student histories and actions are av
 
 The Foundations course design may change, but its current routing intentionally permits both assessment and annual-plan work. IEP/IPP history reads the selected student's `fvsd_studentipp` records through the same authorized teacher-section boundary used by assessment history. Intervention Focus is a plan module rather than a separate operational history panel.
 
-## TOSREC history and record lifecycle
+## 🗄️ TOSREC history and record lifecycle
 
 The locked slice adds TOSREC as the first assessment-history adapter:
 
@@ -70,7 +84,7 @@ The locked slice adds TOSREC as the first assessment-history adapter:
 
 The same typed adapter pattern will be extended to TOSWRF, TOWRE, CTOPP, LeNS, ADLOF, NLM, CELF-P, WRAT-5, and PNSA after their field variants are documented.
 
-## End-to-end TOSREC proof
+## 🧪 End-to-end TOSREC proof
 
 The modal uses a shared assessment-detail stage followed by an assessment-specific scoring stage:
 
@@ -86,7 +100,7 @@ The modal uses a shared assessment-detail stage followed by an assessment-specif
 
 The API treats section number as business-recommended rather than required, matching the valid Dataverse cases where a student-section record has no section number.
 
-## Authenticated school-year context
+## 🧭 Authenticated school-year context
 
 FVSD Nexus establishes one operational school year when the user signs in:
 
@@ -98,7 +112,7 @@ FVSD Nexus establishes one operational school year when the user signs in:
 
 This operational context is separate from the analytics school-year filter, which may intentionally include one or more historical years.
 
-## Primary journey
+## 🔄 Primary journey
 
 ```text
 Select student
@@ -113,7 +127,7 @@ Select student
 
 The interaction deliberately mirrors the working analytics pattern in which selecting TOSREC changes the matrix and chart beneath the selector.
 
-## Shared form capabilities
+## 🧩 Shared form capabilities
 
 - Student, school, school year, and period context.
 - Assessment-specific form rendering.
@@ -127,7 +141,7 @@ The interaction deliberately mirrors the working analytics pattern in which sele
 
 Critical validation must also be enforced by Dataverse or the backend. Interface visibility is not a security or integrity boundary.
 
-## Scoring pattern
+## 🧮 Scoring pattern
 
 | Assessment | Calculation and reference lookup |
 |---|---|
@@ -139,7 +153,7 @@ Critical validation must also be enforced by Dataverse or the backend. Interface
 
 CTOPP and numeracy assessments can use the same form-and-reference adapter pattern once their fields and lookup keys are documented.
 
-## Historical scoring integrity
+## 🧮 Historical scoring integrity
 
 Each saved result should preserve the inputs and context used when it was scored:
 
@@ -152,7 +166,7 @@ Each saved result should preserve the inputs and context used when it was scored
 
 A later PowerSchool sync or reference-table update must not silently alter a historical assessment.
 
-## Record lifecycle
+## 🗄️ Record lifecycle
 
 ```text
 Current-period record -> Create or edit permitted
@@ -165,7 +179,7 @@ Editability is determined from the record's actual period and authoritative curr
 
 An administrative correction should retain the requester, reason, original and proposed values, approval decision, administrator completing the correction, and final before/after history.
 
-## Initial acceptance direction
+## 🧪 Initial acceptance direction
 
 - A permitted user can select a student and see only applicable assessments.
 - The correct form and visibility rules are applied.
@@ -174,7 +188,7 @@ An administrative correction should retain the requester, reason, original and p
 - Historical records remain read-only outside the administrative correction workflow.
 - Every write is attributable to the signed-in user.
 
-## Implemented assessment boundary — September 2, 2026
+## ✅ Implemented assessment boundary — September 2, 2026
 
 Included in this release:
 
@@ -198,8 +212,12 @@ Explicitly excluded from this release:
 - Historical correction requests and approval workflow.
 - Additional assessment-history adapters.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [Data and integrations](../../architecture/data-and-integrations.md)
 - [Identity, licensing, and security](../../architecture/identity-licensing-security.md)
 - [Phase 1 product build](../../delivery/phase-1-product-build.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Capabilities*

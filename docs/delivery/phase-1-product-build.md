@@ -1,12 +1,26 @@
-# Phase 1 product build
+---
+title: Phase 1 product build
+description: Phase 1 establishes the supported Nexus application foundation and completes the capabilities already approved for the next school year. It turns the validated vertical slices into a coherent product rather than a…
+type: delivery
+status: confirmed
+icon: ✅
+area: delivery
+audience: [leadership, product]
+owner: Scott McKenzie
+tags: [nexus, nexus/delivery]
+updated: 2026-11-05
+related: ["[[delivery/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Delivery](README.md) / Phase 1 product build
+# ✅ Phase 1 product build
 
-**Status:** Active implementation
+[🏠 Home](../README.md) › [🚀 Delivery](README.md) › Phase 1 product build
+
+**Status:** 🔵 Active implementation
 
 Phase 1 establishes the supported Nexus application foundation and completes the capabilities already approved for the next school year. It turns the validated vertical slices into a coherent product rather than a collection of demonstrations.
 
-## Outcomes completed to date
+## ✅ Outcomes completed to date
 
 - FVSD Entra sign-in and named-user delegated access to Fabric and Dataverse.
 - Role-aware, responsive application shell and navigation.
@@ -19,7 +33,7 @@ Phase 1 establishes the supported Nexus application foundation and completes the
 - Governed modular IEP/IPP selection using `fvsd_ippsection` definitions.
 - Live Student Details, Screener Results, Signatures, and Intervention Focus plan sections.
 
-## Remaining Phase 1 work
+## 🚀 Remaining Phase 1 work
 
 ### Fabric integration and analytics design
 
@@ -51,7 +65,7 @@ Phase 1 establishes the supported Nexus application foundation and completes the
 - Conduct representative school and role testing while incumbent workflows remain available.
 - Prepare deployment, migration, training, support, and rollback runbooks.
 
-## Phase 1 acceptance evidence
+## 🧪 Phase 1 acceptance evidence
 
 - Critical journeys pass automated and representative user testing.
 - Named-user authorization is enforced by Nexus and the destination service.
@@ -61,6 +75,10 @@ Phase 1 establishes the supported Nexus application foundation and completes the
 - Keyboard, screen-reader, responsive, privacy, security, failure, and recovery behaviour meet the agreed readiness threshold.
 - Leadership, school administrators, teachers, and support owners understand the release boundary and unresolved items.
 
-## Phase boundary
+## 🚀 Phase boundary
 
 Phase 1 does not silently include the full Dossier migration, Microsoft 365 Copilot integration, or the PASI connector. Those are explicit later phases with their own authorization, contracts, testing, privacy, and operational gates.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Delivery*

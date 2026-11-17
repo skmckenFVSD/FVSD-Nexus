@@ -1,6 +1,19 @@
-# Product capabilities
+---
+title: Product capabilities
+description: FVSD Nexus is being delivered as a set of related capabilities built on common identity, Dataverse, Fabric, design, and security foundations.
+type: hub
+status: current
+icon: 🧩
+area: capabilities
+audience: [leadership, product, architects]
+owner: Scott McKenzie
+tags: [nexus, nexus/capabilities]
+updated: 2026-11-12
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Capabilities
+# 🧩 Product capabilities
+
+[🏠 Home](../README.md) › Product capabilities
 
 FVSD Nexus is being delivered as a set of related capabilities built on common identity, Dataverse, Fabric, design, and security foundations.
 
@@ -15,7 +28,7 @@ FVSD Nexus is being delivered as a set of related capabilities built on common i
 | Purview governance and Data Analyst workspace | Phase 3; existing external agent and Fabric governance foundation identified | [Purview governance](purview-governance/README.md) |
 | Platform administration | Partially present; expansion required | [Administration](administration/README.md) |
 
-## Shared experience principles
+## 💡 Shared experience principles
 
 The canonical visual foundations, shared components, and layout patterns are maintained in the [FVSD Nexus design system](../design-system/README.md).
 
@@ -29,9 +42,9 @@ Every capability should:
 - Remain usable for staff who are only occasional Power BI or Power Apps users.
 - Meet accessibility and responsive-design expectations.
 
-## Navigation structure
+## 🗺️ Navigation structure
 
-**Status:** Current shell pattern as of September 3, 2026
+**Status:** 🟢 Current shell pattern as of September 3, 2026
 
 The application shell uses role-aware capability headings and can be collapsed manually on wider screens. It enters the same icon-first compact presentation automatically at narrower breakpoints.
 
@@ -44,7 +57,7 @@ The application shell uses role-aware capability headings and can be collapsed m
 
 Analytics and School Administration are initially expanded. Parent headings use stronger uppercase styling, while destination labels use title case. The compact state retains icons and the FVSD Nexus identity without overlaying the logo. Grouping and page visibility remain role-aware UX concerns; backend and destination-service authorization remain authoritative.
 
-## Capability lifecycle
+## 🔄 Capability lifecycle
 
 Each landing page should eventually contain:
 
@@ -56,3 +69,7 @@ Each landing page should eventually contain:
 6. Acceptance criteria.
 7. Open questions and exclusions.
 8. Related decisions and implementation links.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Capabilities*

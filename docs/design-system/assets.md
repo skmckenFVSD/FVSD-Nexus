@@ -1,10 +1,24 @@
-# Asset library and iconography
+---
+title: Asset library and iconography
+description: This register identifies canonical production assets and exploratory candidates. The linked source file remains the single asset; documentation should not create duplicate production copies.
+type: design-system
+status: current
+icon: 🖼️
+area: design-system
+audience: [designers, developers]
+owner: Scott McKenzie
+tags: [nexus, nexus/design-system]
+updated: 2026-11-13
+related: ["[[design-system/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Design system](README.md) / Assets
+# 🖼️ Asset library and iconography
+
+[🏠 Home](../README.md) › [🎨 Design system](README.md) › Asset library and iconography
 
 This register identifies canonical production assets and exploratory candidates. The linked source file remains the single asset; documentation should not create duplicate production copies.
 
-## Current production assets
+## 🎨 Current production assets
 
 | Asset | Canonical path | Format / dimensions | Status | Use |
 |---|---|---|---|---|
@@ -15,7 +29,7 @@ This register identifies canonical production assets and exploratory candidates.
 | Apple touch icon | [`src/FVSDNexus.Web/public/apple-touch-icon.png`](../../src/FVSDNexus.Web/public/apple-touch-icon.png) | PNG, 256 × 256 | Current | Installed/mobile shortcut. |
 | SVG symbol sheet | [`src/FVSDNexus.Web/public/icons.svg`](../../src/FVSDNexus.Web/public/icons.svg) | SVG sprite | Current | Existing application symbols. |
 
-## Confirmed replacement assets
+## 🎨 Confirmed replacement assets
 
 | Asset | Path | Status | Decision required |
 |---|---|---|---|
@@ -24,7 +38,7 @@ This register identifies canonical production assets and exploratory candidates.
 
 The supplied logo confirms the asset, not the use of its bright blue as the general application action colour. That remains a separate design-token decision.
 
-## Interface icons
+## 🎨 Interface icons
 
 `lucide-react` is the current interface-icon dependency and should be the default icon source.
 
@@ -38,7 +52,7 @@ Proposed icon rules:
 - File-type icons may use recognizable PDF, Word, Excel and image treatments, but must also include a text file type or filename.
 - Navigation icons identify destinations; status dots and badges communicate attention separately.
 
-## Asset acceptance checklist
+## 🧪 Asset acceptance checklist
 
 Before an asset becomes Current:
 
@@ -48,3 +62,7 @@ Before an asset becomes Current:
 4. Provide accessible alternative text or mark it decorative.
 5. Optimize file size and remove unnecessary metadata.
 6. Record its canonical path and replacement impact here.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Design system*

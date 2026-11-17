@@ -1,10 +1,24 @@
-# Testing strategy
+---
+title: Testing strategy
+description: FVSD Nexus requires evidence at the UX, API, service-security, data-integrity, and analytical layers.
+type: delivery
+status: current
+icon: 🧪
+area: delivery
+audience: [leadership, product]
+owner: Scott McKenzie
+tags: [nexus, nexus/delivery]
+updated: 2026-08-31
+related: ["[[delivery/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Delivery](README.md) / Testing strategy
+# 🧪 Testing strategy
+
+[🏠 Home](../README.md) › [🚀 Delivery](README.md) › Testing strategy
 
 FVSD Nexus requires evidence at the UX, API, service-security, data-integrity, and analytical layers.
 
-## Test layers
+## 🧪 Test layers
 
 | Layer | Primary evidence |
 |---|---|
@@ -19,7 +33,7 @@ FVSD Nexus requires evidence at the UX, API, service-security, data-integrity, a
 | Performance | Interactive response, reference lookups, large grids, publish output, and service dependency timing. |
 | Security/privacy | Authorization bypass attempts, token handling, telemetry review, and least-privilege access. |
 
-## Parity testing
+## 🧪 Parity testing
 
 ### Assessment
 
@@ -41,7 +55,7 @@ FVSD Nexus requires evidence at the UX, API, service-security, data-integrity, a
 - Verify chronological order, ownership, status, evidence, and printable output.
 - Re-run migration to prove that it is controlled and repeatable.
 
-## Pilot testing
+## 🧪 Pilot testing
 
 The March-June pilot should include:
 
@@ -52,7 +66,7 @@ The March-June pilot should include:
 - Documented decisions for accepted limitations.
 - Parallel-system comparison before retirement decisions.
 
-## Current baseline
+## 🧩 Current baseline
 
 At repository migration:
 
@@ -62,3 +76,7 @@ At repository migration:
 - ASP.NET publish successfully bundles the React application.
 
 These checks are a baseline, not a complete operational test suite.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Delivery*

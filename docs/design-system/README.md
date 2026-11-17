@@ -1,14 +1,27 @@
-# FVSD Nexus design system
+---
+title: FVSD Nexus design system
+description: This section is the canonical product record for the visual language and reusable user-experience patterns of FVSD Nexus. It exists before the screen-by-screen styling work so that each capability is built from…
+type: hub
+status: confirmed
+icon: 🎨
+area: design-system
+audience: [designers, developers]
+owner: Scott McKenzie
+tags: [nexus, nexus/design-system]
+updated: 2026-11-13
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Design system
+# 🎨 FVSD Nexus design system
 
-**Status:** Stage 1 foundations Confirmed November 13, 2026; implementation begins in Stage 2
+[🏠 Home](../README.md) › FVSD Nexus design system
+
+**Status:** 🔵 Stage 1 foundations Confirmed November 13, 2026; implementation begins in Stage 2
 
 This section is the canonical product record for the visual language and reusable user-experience patterns of FVSD Nexus. It exists before the screen-by-screen styling work so that each capability is built from agreed foundations rather than adding another local variant.
 
 The exploratory UX audits and artboards informed this section, but they are reference material rather than implementation instructions. Nexus retains its current functionality, full role-aware navigation, and governed data behaviour unless a separately recorded decision changes them.
 
-## Confirmed direction
+## 🎯 Confirmed direction
 
 - IEP/IPP workspaces need materially more body space than the current page-header and horizontal-module layout provides.
 - High-density workspaces should use a simplified heading and compact context presentation.
@@ -18,7 +31,7 @@ The exploratory UX audits and artboards informed this section, but they are refe
 - Interactive module views and compiled documents will use the same structured records, terminology, module descriptions, value formatting, and semantic presentation rules. Print-specific layout remains a separate renderer concern.
 - Existing navigation destinations remain available. Exploratory concepts that show fewer destinations do not authorize their removal.
 
-## Source-of-truth hierarchy
+## 🗺️ Source-of-truth hierarchy
 
 ```text
 Design-system documentation (decisions and status)
@@ -58,7 +71,7 @@ src/FVSDNexus.Web/src/design-system/
 
 These locations are **Confirmed** and established by Stage 2. The current feature stylesheet remains in place during controlled screen migration and uses compatibility aliases from the semantic token layer.
 
-## Library map
+## 🗺️ Library map
 
 | Area | Canonical document |
 |---|---|
@@ -70,7 +83,7 @@ These locations are **Confirmed** and established by Stage 2. The current featur
 | Standard pages, compact workspaces, navigation rail and context drawer | [Layouts](layouts.md) |
 | Migration sequence and review gates | [Adoption plan](adoption-plan.md) |
 
-## Status and change control
+## 📌 Status and change control
 
 The documentation-wide status model applies:
 
@@ -83,3 +96,7 @@ The documentation-wide status model applies:
 | Reference only | Preserved exploratory material that is not an approved application default. |
 
 No Proposed asset or colour becomes the application default merely because it is stored in this library. A design-system change should identify affected components and screens, include visual and accessibility evidence, and be reviewed before broad migration.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Design system*

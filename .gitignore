@@ -19,3 +19,8 @@ coverage/
 *.pfx
 *.pem
 *.key
+
+# Obsidian personal state (shared vault settings in docs/.obsidian are committed)
+docs/.obsidian/workspace*.json
+docs/.obsidian/cache
+docs/.trash/

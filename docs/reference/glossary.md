@@ -1,6 +1,19 @@
-# Glossary
+---
+title: Glossary
+description: Add terms when they become important to understanding product behaviour. Do not use the glossary to define rules that belong in a capability or architecture document.
+type: reference
+status: current
+icon: 📚
+area: reference
+audience: [staff, architects, developers]
+owner: Scott McKenzie
+tags: [nexus, nexus/reference]
+updated: 2026-11-05
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Glossary
+# 📚 Glossary
+
+[🏠 Home](../README.md) › Glossary
 
 | Term | Meaning in FVSD Nexus |
 |---|---|
@@ -37,3 +50,7 @@
 | WRAT-5 | Wide Range Achievement Test, Fifth Edition. The documented scoring pattern currently covers Math Computation. |
 
 Add terms when they become important to understanding product behaviour. Do not use the glossary to define rules that belong in a capability or architecture document.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Reference*

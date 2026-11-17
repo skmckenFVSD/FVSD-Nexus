@@ -1,16 +1,30 @@
-# App-native document and PDF generation
+---
+title: App-native document and PDF generation
+description: App-native document and PDF generation for FVSD Nexus.
+type: architecture
+status: confirmed
+icon: 📄
+area: architecture
+audience: [architects, developers, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/architecture]
+updated: 2026-11-05
+related: ["[[architecture/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Document generation
+# 📄 App-native document and PDF generation
 
-**Status:** Confirmed product requirement; Playwright rendering service recommended for a Phase 1 implementation spike
+[🏠 Home](../README.md) › [🏗️ Architecture](README.md) › App-native document and PDF generation
 
-## Objective
+**Status:** 🔵 Confirmed product requirement; Playwright rendering service recommended for a Phase 1 implementation spike
+
+## 🎯 Objective
 
 Nexus will generate IEP/IPP and other governed PDFs directly from the application. The target flow removes the current Power Automate, OneDrive HTML-file, and OneDrive PDF-conversion dependency.
 
 The PDF is an output derived from structured Dataverse records. Stored HTML is not the operational source of truth.
 
-## Recommended architecture
+## 🧩 Recommended architecture
 
 Use a small internal document-rendering service built with ASP.NET Core, Playwright for .NET, and headless Chromium. Playwright's `Page.PdfAsync` produces a PDF byte array from controlled HTML and print CSS and supports page size, background, margins, and tagged-PDF options.
 
@@ -38,7 +52,7 @@ sequenceDiagram
     A-->>N: Download or completed export record
 ```
 
-## Rendering contract
+## 📄 Rendering contract
 
 The renderer receives only a controlled request from the Nexus API:
 
@@ -57,7 +71,7 @@ It returns:
 
 The renderer must not accept a user-supplied URL, arbitrary remote assets, scripts, or unsanitized client HTML. Network access should be denied or allow-listed because the service is rendering trusted Nexus content, not browsing the internet.
 
-## Export record
+## 📝 Export record
 
 Each completed export should retain enough metadata to reproduce and defend the document:
 
@@ -71,7 +85,7 @@ Each completed export should retain enough metadata to reproduce and defend the 
 - correlation identifier, status, warning, and failure detail;
 - signature-envelope or DocuSign relationship where applicable.
 
-## Storage choice
+## 🗄️ Storage choice
 
 The first implementation should assess two governed options:
 
@@ -82,7 +96,7 @@ The first implementation should assess two governed options:
 
 Do not use temporary OneDrive files as the production integration boundary. Temporary local/container files, if required by a rendering library, must be isolated and deleted immediately after the response.
 
-## Layout and accessibility
+## 📐 Layout and accessibility
 
 - Use semantic HTML as the shared basis for the on-screen plan and the exported document.
 - Maintain a dedicated print stylesheet using `@page`, controlled page breaks, repeated headings, and print-safe colour contrast.
@@ -91,7 +105,7 @@ Do not use temporary OneDrive files as the production integration boundary. Temp
 - Validate long names, long notes, tables, signatures, attachments, empty sections, and modules spanning multiple pages.
 - Preserve required DocuSign anchors without making visible layout depend on hidden uncontrolled content.
 
-## Reliability and security
+## 🔐 Reliability and security
 
 - Enforce request size, render time, memory, page-count, and concurrency limits.
 - Use an internal authenticated endpoint and managed identity where supported.
@@ -102,7 +116,7 @@ Do not use temporary OneDrive files as the production integration boundary. Temp
 - Scan uploaded attachments before they are incorporated and never execute attachment content in the browser renderer.
 - Monitor success rate, duration, memory, queue depth, timeouts, and document-size distributions.
 
-## Phase 1 implementation spike
+## 🚀 Phase 1 implementation spike
 
 1. Render the existing Student Details, Screener Results, Intervention Focus, and Signatures modules from a fixed test plan.
 2. Compare the generated PDF visually with the Nexus plan view and the existing Canvas/Power Automate output.
@@ -112,7 +126,7 @@ Do not use temporary OneDrive files as the production integration boundary. Temp
 6. Confirm retention, historical immutability, regeneration, and signature-envelope requirements.
 7. Select synchronous versus queued generation and approve the production hosting option.
 
-## References
+## 🔗 References
 
 - [Playwright .NET `Page.PdfAsync`](https://playwright.dev/dotnet/docs/api/class-page#page-pdf-async)
 - [Playwright .NET Docker guidance](https://playwright.dev/dotnet/docs/docker)
@@ -120,3 +134,7 @@ Do not use temporary OneDrive files as the production integration boundary. Temp
 - [Azure Container Apps scaling](https://learn.microsoft.com/en-us/azure/container-apps/scale-app)
 - [Dataverse file columns](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/file-column-data)
 - [Azure Blob immutable storage](https://learn.microsoft.com/en-us/azure/storage/blobs/immutable-storage-overview)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Architecture*

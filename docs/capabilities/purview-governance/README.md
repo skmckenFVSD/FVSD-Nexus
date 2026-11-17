@@ -1,14 +1,28 @@
-# Purview governance and Data Analyst workspace
+---
+title: Purview governance and Data Analyst workspace
+description: FVSD Nexus can provide a Data Analyst workspace that brings governed Fabric documentation, data-product lifecycle orchestration, Microsoft Purview catalog context, and application-level policy enforcement into one…
+type: capability
+status: proposed
+icon: 🛡️
+area: capabilities
+audience: [leadership, product, architects]
+owner: Scott McKenzie
+tags: [nexus, nexus/capabilities, nexus/purview-governance]
+updated: 2026-11-05
+related: ["[[architecture/purview-governance]]", "[[reference/purview-resources]]", "[[architecture/data-and-integrations]]", "[[architecture/identity-licensing-security]]", "[[capabilities/administration/README]]", "[[decisions/decision-register]]"]
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Purview governance
+# 🛡️ Purview governance and Data Analyst workspace
 
-**Status:** Phase 3 architecture; substantial related agent and Fabric documentation assets already exist outside this repository
+[🏠 Home](../../README.md) › [🧩 Capabilities](../README.md) › Purview governance and Data Analyst workspace
+
+**Status:** 🟠 Phase 3 architecture; substantial related agent and Fabric documentation assets already exist outside this repository
 
 FVSD Nexus can provide a Data Analyst workspace that brings governed Fabric documentation, data-product lifecycle orchestration, Microsoft Purview catalog context, and application-level policy enforcement into one role-aware experience.
 
 This is the approved Phase 3 direction, not a claim that the integration is already implemented. No Purview permissions, policies, API calls, agent integration, or Nexus interface have been added.
 
-## Existing FVSD foundation
+## 🗄️ Existing FVSD foundation
 
 The separate [FVSD Data Product Agent repository](https://github.com/skmckenFVSD/FVSDDataProductAgent) already establishes much of the governance model:
 
@@ -22,7 +36,7 @@ The separate [FVSD Data Product Agent repository](https://github.com/skmckenFVSD
 
 Nexus should consume or deep-link to these governed capabilities. It should not duplicate their agent instructions, silently reinterpret their contracts, or become a second source of truth for data-product metadata.
 
-## Fabric governance and Purview protection
+## 🛡️ Fabric governance and Purview protection
 
 The capability must keep Fabric governance, enterprise cataloguing, and protection/compliance responsibilities explicit.
 
@@ -55,7 +69,7 @@ The Microsoft Purview APIs in Microsoft Graph let an Entra-registered applicatio
 
 Microsoft explicitly states that the policy APIs send activity/content into Purview and do not provide an API for extracting Purview analytics. Nexus analytics and documentation therefore remain grounded in Fabric, Dataverse, and approved catalog sources.
 
-## Executive value
+## 🎯 Executive value
 
 Within the Data Analyst role, this capability could demonstrate:
 
@@ -68,7 +82,7 @@ Within the Data Analyst role, this capability could demonstrate:
 
 The strongest story is not simply "Nexus connects to Purview." It is that a Data Analyst can move from technical truth to governed enterprise publication through bounded, auditable steps, while Purview policies protect content crossing the application boundary.
 
-## Planned Data Analyst experiences
+## 📊 Planned Data Analyst experiences
 
 ### Discover and explain
 
@@ -105,7 +119,7 @@ Where Nexus later supports text/file upload, export, generated documents, or AI-
 - Enforce returned policy actions and provide an accessible, non-sensitive explanation.
 - Never bypass evaluation because the content originated from an FVSD agent.
 
-## Role and authorization boundary
+## 🔐 Role and authorization boundary
 
 The Data Analyst role controls the Nexus experience, not the underlying authority:
 
@@ -115,7 +129,7 @@ The Data Analyst role controls the Nexus experience, not the underlying authorit
 - Purview catalog access does not grant access to the underlying Fabric or Azure data.
 - Agent operations must retain their existing tool scopes and constitutional limits.
 
-## Who uses Purview at FVSD
+## 👥 Who uses Purview at FVSD
 
 Purview affects many users, but only a smaller group administers it.
 
@@ -129,11 +143,11 @@ Purview affects many users, but only a smaller group administers it.
 
 Named owners, role assignments, and the exact tenant configuration must be confirmed during the Phase 3 inventory. Until then, Nexus documentation describes a target operating model rather than assigning authority to an individual.
 
-## From governance to understanding
+## 💡 From governance to understanding
 
 Nexus should translate governance into questions that matter to staff: What does this mean? Where did it come from? How current is it? Who owns it? Who may change it? What happens if it is wrong? Purview and Fabric provide controls and metadata, while Nexus presents the result in language appropriate to the user's task.
 
-## Planned integration boundary
+## 🗺️ Planned integration boundary
 
 ```text
 Data Analyst in Nexus
@@ -149,7 +163,7 @@ Data Analyst in Nexus
 
 See the [reference architecture](../../architecture/purview-governance.md) for system boundaries and trust decisions.
 
-## Phase 3 staged delivery
+## 🚀 Phase 3 staged delivery
 
 | Stage | Outcome | Evidence |
 |---|---|---|
@@ -159,7 +173,7 @@ See the [reference architecture](../../architecture/purview-governance.md) for s
 | 3. Purview policy proof | Apply protection-scope and content-processing APIs to one approved Nexus text or file activity. | No-policy, offline, inline-block, policy-change, and failure cases verified. |
 | 4. Operational hardening | Add health, permission diagnostics, policy/configuration runbooks, audit retention, and support ownership. | Security, privacy, accessibility, failure/recovery, and operational acceptance. |
 
-## Executive demonstration
+## 🧪 Executive demonstration
 
 A high-value demonstration could show a Data Analyst:
 
@@ -172,7 +186,7 @@ A high-value demonstration could show a Data Analyst:
 7. Seeing an allowed activity complete and a restricted activity block with a safe explanation.
 8. Reconstructing the complete workflow through one correlation identifier without exposing sensitive payloads.
 
-## Open decisions
+## ❓ Open decisions
 
 - Which current Data Product Agent and Copilot capabilities are production-ready, pilot-ready, or still placeholders?
 - Should Nexus invoke the M365 Copilot orchestrator, individual agents, a stable API facade, or initially provide deep links?
@@ -184,7 +198,7 @@ A high-value demonstration could show a Data Analyst:
 - How will policy outages, timeouts, and unavailable inline evaluation be handled?
 - Which audit events belong in Nexus, the agent audit chain, Purview, or all three with shared correlation?
 
-## Explicit exclusions
+## ⚠️ Explicit exclusions
 
 - No Purview tenant configuration or DLP policy creation.
 - No new Entra or Graph permissions.
@@ -193,7 +207,7 @@ A high-value demonstration could show a Data Analyst:
 - No assumption that Purview catalog permissions grant source-data access.
 - No expansion of Data Analyst rights beyond existing destination permissions.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [Purview and agent architecture](../../architecture/purview-governance.md)
 - [Purview and FVSD agent references](../../reference/purview-resources.md)
@@ -201,3 +215,7 @@ A high-value demonstration could show a Data Analyst:
 - [Identity, licensing, and security](../../architecture/identity-licensing-security.md)
 - [Platform administration](../administration/README.md)
 - [Decision register](../../decisions/decision-register.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Capabilities*

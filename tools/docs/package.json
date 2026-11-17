@@ -1,0 +1,24 @@
+{
+  "name": "fvsd-nexus-docs",
+  "version": "1.0.0",
+  "description": "Builds and checks the FVSD Nexus documentation layer: staff guide, presentation decks and icon registry.",
+  "scripts": {
+    "docs:guide": "node build-guide.mjs",
+    "docs:deck": "node build-deck.mjs",
+    "docs:site": "node build-deck.mjs --site",
+    "docs:icons": "node build-icons.mjs",
+    "docs:build": "node build-icons.mjs && node build-guide.mjs && node build-deck.mjs",
+    "docs:check": "node check-docs.mjs"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "js-yaml": "^5.5.0",
+    "lucide-static": "^1.74.0",
+    "marked": "^15.0.12"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  }
+}

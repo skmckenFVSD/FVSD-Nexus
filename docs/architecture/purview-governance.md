@@ -1,10 +1,24 @@
-# Purview governance and agent architecture
+---
+title: Purview governance and agent architecture
+description: Purview governance and agent architecture for FVSD Nexus.
+type: architecture
+status: proposed
+icon: 🛡️
+area: architecture
+audience: [architects, developers, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/architecture]
+updated: 2026-11-05
+related: ["[[capabilities/purview-governance/README]]", "[[reference/purview-resources]]", "[[architecture/data-and-integrations]]", "[[architecture/identity-licensing-security]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Purview governance
+# 🛡️ Purview governance and agent architecture
 
-**Status:** Phase 3 reference architecture; documentation only
+[🏠 Home](../README.md) › [🏗️ Architecture](README.md) › Purview governance and agent architecture
 
-## Architectural intent
+**Status:** 🟠 Phase 3 reference architecture; documentation only
+
+## 🎯 Architectural intent
 
 The Data Analyst workspace should compose existing governed FVSD capabilities without collapsing their boundaries. Fabric documentation explains technical truth, Dataverse records the data-product lifecycle, Fabric catalog capabilities describe and govern Fabric assets, Purview provides protection and compliance, and the Data Product Agent coordinates bounded agent workflows.
 
@@ -31,7 +45,7 @@ flowchart LR
 
 The exact invocation path is open. Nexus might initially deep-link to the existing Copilot experience, later call a stable orchestration facade, or invoke approved agents through a supported agent-to-agent mechanism. Nexus must not depend directly on internal child-agent identifiers or free-form prompts as an integration contract.
 
-## Authoritative ownership
+## 🗄️ Authoritative ownership
 
 | Concern | Authority or planned authority |
 |---|---|
@@ -45,7 +59,7 @@ The exact invocation path is open. Nexus might initially deep-link to the existi
 | In-app text/file policy decision | Microsoft Purview policies evaluated through Microsoft Graph |
 | Workflow trace | Shared correlation across Nexus plus the established agent audit contracts |
 
-## Integration adapters
+## 🔌 Integration adapters
 
 ### Agent orchestration adapter
 
@@ -71,7 +85,7 @@ The exact invocation path is open. Nexus might initially deep-link to the existi
 - Support text/file upload and download activities only when the Nexus feature actually performs them.
 - Return a safe policy outcome without exposing sensitive information, policy internals, or submitted content in logs.
 
-## Policy decision sequence
+## 🔄 Policy decision sequence
 
 ```mermaid
 sequenceDiagram
@@ -96,7 +110,7 @@ sequenceDiagram
     end
 ```
 
-## Security and privacy boundaries
+## 🔐 Security and privacy boundaries
 
 - Data Analyst is an experience role, not a Purview administrator role.
 - Destination permissions are evaluated for every underlying operation.
@@ -106,7 +120,7 @@ sequenceDiagram
 - Apply data minimization and confirm Canadian/tenant processing expectations before enabling content submission.
 - Agent-generated content receives the same policy treatment as user-created content when it crosses an applicable upload/download boundary.
 
-## Reliability behaviour
+## 🔄 Reliability behaviour
 
 - An inline policy-evaluation outage should fail closed for the protected action unless FVSD policy explicitly defines another compliant outcome.
 - Offline evaluation failures require a durable retry and operational alert without retroactively claiming evaluation succeeded.
@@ -114,7 +128,7 @@ sequenceDiagram
 - Agent or catalog unavailability should degrade to a clear unavailable state; Nexus must not fabricate documentation or publication status.
 - Duplicate commands must not create duplicate Dataverse or Purview catalog changes.
 
-## Contract and test requirements
+## 🧪 Contract and test requirements
 
 - Contract tests for every supported Data Product Agent intent and terminal result.
 - Grounding tests showing documentation exactly matches the Fabric agent contract.
@@ -124,7 +138,7 @@ sequenceDiagram
 - Audit tests proving one correlation chain across Nexus and agent events without sensitive payloads.
 - Accessibility tests for policy-block messages, review actions, and unavailable states.
 
-## Explicit exclusions at this stage
+## ⚠️ Explicit exclusions at this stage
 
 - No selection of an agent invocation technology.
 - No Purview Graph permissions or tenant policy changes.
@@ -132,9 +146,13 @@ sequenceDiagram
 - No automatic catalog publication based solely on an AI recommendation.
 - No extraction of Purview analytics through the policy APIs; Microsoft states that capability is not available through this API surface.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [Purview Data Analyst capability](../capabilities/purview-governance/README.md)
 - [Purview and FVSD agent references](../reference/purview-resources.md)
 - [Data and integrations](data-and-integrations.md)
 - [Identity, licensing, and security](identity-licensing-security.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Architecture*

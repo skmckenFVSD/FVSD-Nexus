@@ -1,10 +1,24 @@
-# Adoption and engagement
+---
+title: Adoption and engagement
+description: FVSD's implementation strength is not a technology choice. It is the way leadership, educators, operational staff, data specialists, and platform owners work through real problems together. Nexus should preserve…
+type: delivery
+status: current
+icon: 🤝
+area: delivery
+audience: [leadership, product]
+owner: Scott McKenzie
+tags: [nexus, nexus/delivery]
+updated: 2026-11-05
+related: ["[[delivery/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Delivery](README.md) / Adoption and engagement
+# 🤝 Adoption and engagement
+
+[🏠 Home](../README.md) › [🚀 Delivery](README.md) › Adoption and engagement
 
 FVSD's implementation strength is not a technology choice. It is the way leadership, educators, operational staff, data specialists, and platform owners work through real problems together. Nexus should preserve that approach as its functional scope grows.
 
-## FVSD approach
+## 🤝 FVSD approach
 
 1. **Start with real work.** Build from the assessment, annual-plan, intervention, analytics, and reporting work staff already perform.
 2. **Show working slices early.** Use representative student and class workflows so educators can react to something concrete.
@@ -14,7 +28,7 @@ FVSD's implementation strength is not a technology choice. It is the way leaders
 6. **Validate in parallel.** Compare Nexus with established systems before retiring a form, report, or vendor workflow.
 7. **Turn feedback into visible changes.** Record decisions, adjust the product, and return the result to the people who raised the issue.
 
-## Engagement groups
+## 🤝 Engagement groups
 
 | Group | Contribution | What Nexus must make clear |
 |---|---|---|
@@ -25,7 +39,7 @@ FVSD's implementation strength is not a technology choice. It is the way leaders
 | Data analyst and data stewards | Definitions, quality, lineage, semantic measures, and governed publication | Source, transformation, ownership, freshness, sensitivity, and approval status |
 | IT, privacy, security, and records staff | Identity, platform operation, protection, audit, retention, and incident response | System boundaries, data movement, access decisions, and support ownership |
 
-## Governance and understanding
+## 🤝 Governance and understanding
 
 For non-technical audiences, Nexus should introduce governance through practical questions:
 
@@ -38,7 +52,7 @@ For non-technical audiences, Nexus should introduce governance through practical
 
 The formal governance controls remain important, but the interface and training should lead with understanding. A user should not need to know Purview terminology to recognize an owner, a definition, a freshness warning, or a restricted action.
 
-## Feedback cycle
+## 🤝 Feedback cycle
 
 ```mermaid
 flowchart LR
@@ -50,7 +64,7 @@ flowchart LR
     F --> A
 ```
 
-## Adoption evidence
+## 🤝 Adoption evidence
 
 Adoption should be measured using a small set of meaningful signals:
 
@@ -63,3 +77,7 @@ Adoption should be measured using a small set of meaningful signals:
 - safe fallbacks and recovery when an integration is unavailable.
 
 These signals are more useful than page views alone because they show whether Nexus is helping staff complete governed work accurately.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Delivery*

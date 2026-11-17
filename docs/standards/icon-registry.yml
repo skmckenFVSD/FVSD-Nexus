@@ -1,0 +1,78 @@
+# FVSD Nexus icon registry
+#
+# The single source for documentation iconography.
+#   emoji  — written in markdown headings (renders on GitHub and in Obsidian)
+#   lucide — the matching Lucide icon (the set the Nexus app uses) that the HTML
+#            builds substitute for the emoji
+#   use    — what the icon means; use it for that meaning only
+#
+# Add a concept here before using a new emoji in a heading.
+# `npm run docs:check` fails on heading emoji that are not registered.
+
+concepts:
+  # ── Navigation and structure ─────────────────────────────────────────
+  home:          { emoji: "🏠", lucide: house,             use: "Documentation home and breadcrumb root" }
+  overview:      { emoji: "🧭", lucide: compass,           use: "Overview, orientation, context, where to start" }
+  audience:      { emoji: "👥", lucide: users,             use: "Who a page or capability is for; roles" }
+  user:          { emoji: "👤", lucide: user,              use: "A single person, signed-in user, student context" }
+  map:           { emoji: "🗺️", lucide: map,               use: "Maps, registries, journeys, repository structure" }
+  related:       { emoji: "🔗", lucide: link,              use: "Related documentation and quick navigation" }
+  section:       { emoji: "🔹", lucide: diamond,           use: "General section with no more specific concept" }
+
+  # ── Product areas ────────────────────────────────────────────────────
+  architecture:  { emoji: "🏗️", lucide: layers,            use: "Architecture, system design, platform structure" }
+  capability:    { emoji: "🧩", lucide: puzzle,            use: "Product capabilities and plan modules" }
+  analytics:     { emoji: "📊", lucide: chart-no-axes-combined, use: "Leadership analytics, measures, charts" }
+  assessments:   { emoji: "📋", lucide: file-check-2,      use: "Assessment entry, screeners, completion" }
+  classes:       { emoji: "🏫", lucide: school,            use: "School Administration, Class Assignments, schools" }
+  plans:         { emoji: "🎓", lucide: graduation-cap,    use: "IEP / IPP annual plans" }
+  interventions: { emoji: "🩺", lucide: activity,          use: "Intervention tracking and Intervention Focus" }
+  profiles:      { emoji: "🪪", lucide: id-card,           use: "School and student profiles; identity (Entra)" }
+  province:      { emoji: "🏛️", lucide: landmark,          use: "PASI and provincial exchange" }
+  agents:        { emoji: "🤖", lucide: bot,               use: "Copilot, Foundry, agents, MCP" }
+  documents:     { emoji: "📄", lucide: file-text,         use: "Generated documents, PDFs, exports" }
+  admin:         { emoji: "⚙️", lucide: settings,          use: "Settings and platform administration" }
+
+  # ── Sources of truth and governance ──────────────────────────────────
+  record:        { emoji: "🗄️", lucide: database,          use: "Dataverse — where the record lives" }
+  calculation:   { emoji: "🧮", lucide: calculator,        use: "Semantic model — how a number is calculated" }
+  catalogue:     { emoji: "🏷️", lucide: tag,               use: "Purview — meaning, ownership and sensitivity" }
+  governance:    { emoji: "🛡️", lucide: shield-check,      use: "Governance framework and controls" }
+  security:      { emoji: "🔐", lucide: lock-keyhole,      use: "Security, authorization, privacy, secrets" }
+  residency:     { emoji: "🍁", lucide: map-pinned,        use: "Canadian data residency" }
+  audit:         { emoji: "📝", lucide: notebook-pen,      use: "Audit, history, records of change, contributing" }
+  integration:   { emoji: "🔌", lucide: plug,              use: "Integrations, connectors, data flow" }
+
+  # ── Reasoning and delivery ───────────────────────────────────────────
+  philosophy:    { emoji: "📖", lucide: book-open,         use: "Philosophy and design rationale" }
+  principle:     { emoji: "💡", lucide: lightbulb,         use: "Principles, insights, tips" }
+  purpose:       { emoji: "🎯", lucide: target,            use: "Purpose, objectives, intent, value" }
+  decision:      { emoji: "⚖️", lucide: scale,             use: "Decisions, ADRs, alternatives" }
+  delivery:      { emoji: "🚀", lucide: rocket,            use: "Delivery, roadmap, phases, releases" }
+  lifecycle:     { emoji: "🔄", lucide: refresh-cw,        use: "Lifecycles, workflows, consequences, change" }
+  testing:       { emoji: "🧪", lucide: flask-conical,     use: "Testing, verification, acceptance" }
+  adoption:      { emoji: "🤝", lucide: handshake,         use: "Adoption, engagement, training" }
+  risk:          { emoji: "⚠️", lucide: triangle-alert,    use: "Risks, cautions, warnings, exclusions" }
+  open:          { emoji: "❓", lucide: circle-help,       use: "Open questions and unresolved decisions" }
+  done:          { emoji: "✅", lucide: circle-check,      use: "Completed work, acceptance, implemented scope" }
+  status:        { emoji: "📌", lucide: pin,               use: "Status, current position, change control" }
+
+  # ── Design and documentation ─────────────────────────────────────────
+  design:        { emoji: "🎨", lucide: palette,           use: "Design system, colour, visual language" }
+  layout:        { emoji: "📐", lucide: ruler,             use: "Layouts, spacing, responsive behaviour, standards" }
+  reference:     { emoji: "📚", lucide: library,           use: "Reference material and glossary" }
+  screenshot:    { emoji: "🖼️", lucide: image,             use: "Screenshots, images and visual evidence" }
+  signature:     { emoji: "✍️", lucide: signature,         use: "Signatures and sign-off" }
+  voice:         { emoji: "🗣️", lucide: speech,            use: "Voice, tone and wording" }
+  language:      { emoji: "🔤", lucide: spell-check,       use: "Spelling, terminology style and language" }
+  vault:         { emoji: "🗃️", lucide: archive,           use: "Obsidian vault and file organization" }
+  guide:         { emoji: "🧑‍🏫", lucide: book-open-check,   use: "Staff user guide" }
+  presentation:  { emoji: "🎤", lucide: presentation,      use: "Presentation layer and decks" }
+
+# Status markers. In markdown write the emoji followed by a bold label,
+# for example `🟢 **Current**`. The HTML builds render these as status pills.
+status:
+  current:   { emoji: "🟢", pill: live, labels: [Current, Live, Partial, Complete, Accepted, Implemented, Conservative] }
+  confirmed: { emoji: "🔵", pill: next, labels: [Confirmed, Planned, Extending, Next, Active build, Approved] }
+  proposed:  { emoji: "🟠", pill: prop, labels: [Proposed, To define, Eyes open, Candour, Caveat, Boundary, Draft] }
+  open:      { emoji: "⚪", pill: open, labels: [Open, Superseded, Retired] }

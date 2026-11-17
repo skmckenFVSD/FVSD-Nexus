@@ -1,12 +1,26 @@
-# Individual Education and Individual Program Plans
+---
+title: Individual Education and Individual Program Plans
+description: The IEP/IPP capability will replace the current third-party user experience while retaining Dataverse as the FVSD operational truth store. IEP and IPP use the same underlying plan workflow. The displayed…
+type: capability
+status: confirmed
+icon: 🎓
+area: capabilities
+audience: [leadership, product, architects]
+owner: Scott McKenzie
+tags: [nexus, nexus/capabilities, nexus/ipp]
+updated: 2026-11-05
+related: ["[[capabilities/profiles/README]]", "[[architecture/data-and-integrations]]", "[[decisions/adr/0006-modular-annual-student-plans]]", "[[architecture/document-generation]]", "[[delivery/roadmap]]", "[[capabilities/pasi-connector/README]]"]
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Individual Education and Individual Program Plans
+# 🎓 Individual Education and Individual Program Plans
 
-**Status:** Approved for implementation; Class Assignment plan history, annual-plan creation, and governed module composition are implemented as the first operational slice
+[🏠 Home](../../README.md) › [🧩 Capabilities](../README.md) › Individual Education and Individual Program Plans
+
+**Status:** 🔵 Approved for implementation; Class Assignment plan history, annual-plan creation, and governed module composition are implemented as the first operational slice
 
 The IEP/IPP capability will replace the current third-party user experience while retaining Dataverse as the FVSD operational truth store. IEP and IPP use the same underlying plan workflow. The displayed classification is expected to depend on the plan's selected modules and goals: a curriculum-only plan can be identified as an IEP, while a plan containing broader program modules can be identified as an IPP. The final classification rule remains to be confirmed before it becomes an enforced business rule.
 
-## Confirmed entry point and annual plan rule
+## 🎓 Confirmed entry point and annual plan rule
 
 - Plans are opened from the selected student's context, following the same interaction pattern as Student Assessment History and Intervention History.
 - The student view lists the student's available plans and opens the selected plan without rebuilding school, teacher, or student filters.
@@ -16,7 +30,7 @@ The IEP/IPP capability will replace the current third-party user experience whil
 - Historical school years remain available from the student plan list and are distinct from the current editable plan.
 - Student-level intervention work is represented by the existing **Intervention Focus** plan module rather than a separate School Administration intervention page. Aggregate intervention analytics can remain a separate governed analytics concern.
 
-## Functional source baseline
+## 🧩 Functional source baseline
 
 The working **Educational Framework** Canvas app is the current functional reference. Its `conIPP` layout container contains the principal plan editor: section navigation, student context, SPED coding, goals and rubric levels, ORF and Word Study, writing snapshots, comments and next steps, intervention and screener evidence, signatures, document compilation, and export history.
 
@@ -24,7 +38,7 @@ Nexus will preserve the functional rules and structured Dataverse records withou
 
 Nexus will also replace the Canvas/Power Automate/OneDrive HTML-to-PDF chain with app-native server-side document generation. The plan screen and PDF will share semantic templates derived from the same structured records; see [App-native document and PDF generation](../../architecture/document-generation.md).
 
-## Modular plan model
+## 🎓 Modular plan model
 
 `fvsd_ippsection` (`IPP Sections`) is the module-definition catalogue. It is not a fixed list of pages that every student receives.
 
@@ -78,7 +92,7 @@ Module content remains structured. Shared module data should use existing plan, 
 
 Nexus will not add a dedicated multi-line HTML column for each module. Existing `IPP Section - ...` HTML columns can remain temporarily for Canvas compatibility and migration comparison, but they are legacy output caches rather than authoritative module data. Nexus will render the interactive plan and generate print/export output from structured records at request time.
 
-## Current Dataverse foundation
+## 🗄️ Current Dataverse foundation
 
 | Table | Role in Nexus |
 |---|---|
@@ -93,7 +107,7 @@ Nexus will not add a dedicated multi-line HTML column for each module. Existing 
 
 No new allocation table is required for the initial Nexus design. Additional module-specific tables will be introduced only when a migrated Dossier module has a distinct structured data requirement.
 
-## Dossier migration direction
+## 🎯 Dossier migration direction
 
 Dossier migration will be incremental and module-led:
 
@@ -106,7 +120,7 @@ Dossier migration will be incremental and module-led:
 
 This permits new modules to enter Nexus without redesigning the annual plan or creating a separate page for each plan type.
 
-## Current Nexus implementation
+## 🧩 Current Nexus implementation
 
 The first operational plan slice is available from the selected student in Class Assignment:
 
@@ -124,14 +138,14 @@ The first operational plan slice is available from the selected student in Class
 
 The earlier static Foundations 1 document remains the print/design reference when no Class Assignment plan context is supplied. Its values are illustrative and are not written to Dataverse.
 
-## Current premise
+## 💡 Current premise
 
 - Existing Dataverse structures and the working Canvas implementation cover most of the currently understood IEP/IPP information and behaviour.
 - The modular model retains the audited pipe-delimited allocation field and may add bounded module-specific tables as Dossier discovery proceeds; table count is not treated as a fixed design target.
 - Required PowerSchool demographic context already synchronizes to Dataverse.
 - The principal delivery work is expected to be UX, workflow, and controlled migration rather than foundational integration.
 
-## Capability areas
+## 🧩 Capability areas
 
 - Student plan history and annual-plan creation, with one plan per student per school year.
 - Modular plan composition using governed `fvsd_ippsection` definitions.
@@ -144,7 +158,7 @@ The earlier static Foundations 1 document remains the print/design reference whe
 - Role-aware student and school access.
 - Incremental, provenance-preserving migration from Dossier.
 
-## Experience direction
+## 🎯 Experience direction
 
 - Start from the authorized student's profile or staff caseload.
 - Allow an authorized Class Assignment user to open the selected student's current plan without rebuilding the student context as a separate filter workflow.
@@ -153,7 +167,7 @@ The earlier static Foundations 1 document remains the print/design reference whe
 - Reuse the same form, validation, audit, and status patterns established for assessment entry.
 - Separate current operational values from Fabric analytics that update through OneLake.
 
-## Discovery priorities
+## 🎯 Discovery priorities
 
 1. Inventory every current vendor workflow, including less-visible administrative behaviour.
 2. Confirm the remaining Dataverse tables and relationships.
@@ -163,7 +177,7 @@ The earlier static Foundations 1 document remains the print/design reference whe
 6. Define the staff, school, student, and administrative access matrix.
 7. Establish parallel-run and migration acceptance criteria.
 
-## Primary risks
+## ⚠️ Primary risks
 
 - Incomplete vendor exports or undocumented workflows.
 - Historical plan and progress versioning.
@@ -172,7 +186,7 @@ The earlier static Foundations 1 document remains the print/design reference whe
 - Reproducing printable outputs relied upon by staff.
 - Support and product ownership after vendor retirement.
 
-## PASI relationship
+## 🔌 PASI relationship
 
 The Phase 4 [PASI connector](../pasi-connector/README.md) can support replacement of overlapping third-party student-support functions, but the boundaries must remain explicit:
 
@@ -182,7 +196,7 @@ The Phase 4 [PASI connector](../pasi-connector/README.md) can support replacemen
 - No assumption has been made that an IPP document or every IPP field is submitted to PASI.
 - PASI connector tables and IPP tables should be designed only after the provincial operation and retention requirements are confirmed.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [Profiles](../profiles/README.md)
 - [Data and integrations](../../architecture/data-and-integrations.md)
@@ -190,3 +204,7 @@ The Phase 4 [PASI connector](../pasi-connector/README.md) can support replacemen
 - [App-native document and PDF generation](../../architecture/document-generation.md)
 - [Phased delivery plan](../../delivery/roadmap.md)
 - [PASI provincial connector](../pasi-connector/README.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Capabilities*

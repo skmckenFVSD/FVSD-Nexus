@@ -1,12 +1,26 @@
-# Identity, licensing, and security
+---
+title: Identity, licensing, and security
+description: Identity, licensing, and security for FVSD Nexus.
+type: architecture
+status: current
+icon: 🔐
+area: architecture
+audience: [architects, developers, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/architecture]
+updated: 2026-11-17
+related: ["[[architecture/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Identity, licensing, and security
+# 🔐 Identity, licensing, and security
 
-## Identity premise
+[🏠 Home](../README.md) › [🏗️ Architecture](README.md) › Identity, licensing, and security
+
+## 🪪 Identity premise
 
 Users act as themselves. Interactive student-data access must use the named FVSD identity rather than a pooled system identity.
 
-## Intended operational sign-in sequence
+## 🪪 Intended operational sign-in sequence
 
 1. Authenticate the user with FVSD Entra ID.
 2. Establish that the user has the required Power Apps entitlement.
@@ -14,7 +28,7 @@ Users act as themselves. Interactive student-data access must use the named FVSD
 4. Confirm that the Dataverse user is enabled and has the required security roles.
 5. Permit only the records and operations authorized for that identity.
 
-## Licensing
+## 🪪 Licensing
 
 FVSD currently uses Power Apps pay-as-you-go.
 
@@ -30,7 +44,7 @@ A Graph licence check establishes entitlement; it does not grant record access. 
 
 Analytics-only Fabric access and operational Dataverse access may be gated separately.
 
-## Authorization layers
+## 🔐 Authorization layers
 
 | Layer | Responsibility |
 |---|---|
@@ -41,7 +55,7 @@ Analytics-only Fabric access and operational Dataverse access may be gated separ
 
 Access is not granted merely because a control is visible. Conversely, hiding a control does not secure the underlying data.
 
-## Nexus role scopes
+## 🔐 Nexus role scopes
 
 | Role | Governed visibility | Assignment source | Implementation |
 |---|---|---|---|
@@ -54,11 +68,11 @@ Access is not granted merely because a control is visible. Conversely, hiding a 
 
 Legacy labels such as `Data Analyst (Administrator)` and `Class Room Support` are normalized at the application boundary while Dataverse values are migrated. They are not new authorization scopes.
 
-## Role simulation
+## 🔐 Role simulation
 
 The developer-only role switcher exists to test experience variations. It does not change the signed-in identity or override Fabric RLS. The server-side developer allowlist remains authoritative; during the current build it contains only Scott McKenzie. Student-name obfuscation is also a preview control and does not change the underlying record authorization.
 
-## Operational integrity
+## 📝 Operational integrity
 
 - Normal assessment records are editable only in the current operational period.
 - Historical correction requires a controlled administrative request.
@@ -66,13 +80,13 @@ The developer-only role switcher exists to test experience variations. It does n
 - Dataverse audit history should be enabled for applicable operational tables and columns.
 - Concurrency behaviour must prevent unnoticed overwrites.
 
-## Secret management
+## 🔐 Secret management
 
 - Local secrets belong in the .NET user-secret store or ignored environment configuration.
 - Azure secrets belong in Key Vault and should be referenced by the application.
 - Never commit access tokens, client secrets, certificates, connection strings, or student data.
 
-## Telemetry
+## 📝 Telemetry
 
 Application telemetry may include route, duration, result status, dependency type, and correlation identifiers. It must not intentionally include:
 
@@ -82,9 +96,13 @@ Application telemetry may include route, duration, result status, dependency typ
 - Raw Dataverse payloads.
 - DAX results containing student-level information.
 
-## Open decisions
+## ❓ Open decisions
 
 - Supported pay-as-you-go metering or Power Apps Premium adoption.
 - Final Entra group, Dataverse role, Fabric role, and Nexus experience-role mapping for the two planned support roles.
 - Licence verification permissions, refresh interval, and failure behaviour.
 - Administrative correction approval roles.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Architecture*

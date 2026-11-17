@@ -1,14 +1,28 @@
-# Architecture overview
+---
+title: Architecture overview
+description: Architecture overview for FVSD Nexus.
+type: architecture
+status: current
+icon: 🏗️
+area: architecture
+audience: [architects, developers, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/architecture]
+updated: 2026-11-05
+related: ["[[architecture/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Overview
+# 🏗️ Architecture overview
 
-## Direction
+[🏠 Home](../README.md) › [🏗️ Architecture](README.md) › Architecture overview
+
+## 🎯 Direction
 
 FVSD Nexus is an Azure-hosted application over FVSD's existing Microsoft data, identity, analytics, and governance platforms. The React and ASP.NET Core application remains the primary operational experience. Microsoft Foundry supplies the API, service, model, evaluation, agent, toolbox, and MCP component plane; it does not replace the application or the authoritative domain systems.
 
 Phase 3 adds the Microsoft 365 Copilot harness and Work IQ as another governed way to reach approved Nexus skills and agents. The same authorization, privacy, audit, and human-confirmation rules apply regardless of entry point.
 
-## Moving parts
+## 🧩 Moving parts
 
 ```mermaid
 flowchart TB
@@ -77,7 +91,7 @@ The diagram separates three concerns that are easy to blur:
 - **Truth:** Dataverse owns operational records; the Fabric semantic model owns governed analytical calculations.
 - **Understanding and protection:** Fabric catalog capabilities describe assets inside Fabric, while Purview supplies broader information-protection and compliance controls. Exact FVSD Purview catalogue usage remains a tenant configuration decision.
 
-## Responsibilities
+## 🧩 Responsibilities
 
 | Component | Responsibility |
 |---|---|
@@ -93,7 +107,7 @@ The diagram separates three concerns that are easy to blur:
 | Entra ID | Named identity, authentication, groups, and delegated access context. |
 | Azure operations | Canadian hosting, Key Vault, telemetry, monitoring, deployment, and recovery controls. |
 
-## Trust boundaries
+## 🔐 Trust boundaries
 
 - The browser calls same-origin, purpose-built endpoints and never receives reusable service tokens or arbitrary DAX capability.
 - Analytics endpoints map approved questions to predefined DAX; operational endpoints map approved workflows to validated Dataverse reads and writes.
@@ -102,7 +116,7 @@ The diagram separates three concerns that are easy to blur:
 - Consequential writes and publication actions require deterministic validation and the appropriate human confirmation.
 - Dataverse confirms an operational save immediately; Fabric analytics update asynchronously.
 
-## Delivery relationship
+## 🚀 Delivery relationship
 
 - **Phase 1:** Azure App, Fabric integration, Class Assignments, Assessments, and core IEP/IPP.
 - **Phase 2:** IEP/IPP expansion and Dossier transition.
@@ -111,6 +125,10 @@ The diagram separates three concerns that are easy to blur:
 
 See the [phased delivery plan](../delivery/roadmap.md) and [ADR-0007](../decisions/adr/0007-azure-app-and-microsoft-foundry.md).
 
-## Compatibility
+## 🏗️ Compatibility
 
 The source solution is named `FVSDNexus`, while existing deployed Azure resources retain `fvsd-insights` identifiers. Keeping those identifiers avoids infrastructure replacement that provides no product value.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Architecture*

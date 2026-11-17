@@ -1,8 +1,22 @@
-# Rendered component gallery
+---
+title: Rendered component gallery
+description: Each example pairs implementation-shaped markup with a rendered SVG reference so the appearance remains visible in GitHub Markdown and other documentation viewers that remove custom CSS from raw HTML.
+type: design-system
+status: current
+icon: 🖼️
+area: design-system
+audience: [designers, developers]
+owner: Scott McKenzie
+tags: [nexus, nexus/design-system]
+updated: 2026-11-13
+related: ["[[design-system/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Design system](README.md) / Component gallery
+# 🖼️ Rendered component gallery
 
-**Status:** Stage 2 foundation implemented; screen migration pending
+[🏠 Home](../README.md) › [🎨 Design system](README.md) › Rendered component gallery
+
+**Status:** 🟢 Stage 2 foundation implemented; screen migration pending
 
 Each example pairs implementation-shaped markup with a rendered SVG reference so the appearance remains visible in GitHub Markdown and other documentation viewers that remove custom CSS from raw HTML.
 
@@ -10,7 +24,7 @@ Each example pairs implementation-shaped markup with a rendered SVG reference so
 
 The source-backed example is available locally at `http://localhost:5173/?design-system`. It contains no student or production data and exposes `data-visual-regression="design-system-foundations"` as a stable screenshot-test target.
 
-## Buttons
+## 🎨 Buttons
 
 ```tsx
 <Button variant="primary">Save changes</Button>
@@ -28,7 +42,7 @@ Equivalent semantic HTML:
 <button class="ui-button ui-button--primary" disabled aria-busy="true">Saving…</button>
 ```
 
-## Field
+## 🎨 Field
 
 ```tsx
 <Field
@@ -50,7 +64,7 @@ Equivalent semantic HTML:
 </div>
 ```
 
-## Status badges
+## 🎨 Status badges
 
 ```tsx
 <Badge tone="success">Signed</Badge>
@@ -61,7 +75,7 @@ Equivalent semantic HTML:
 
 Status text is always present; colour is supplementary.
 
-## Notices
+## 🎨 Notices
 
 ```tsx
 <Notice tone="info">Plan details were refreshed.</Notice>
@@ -69,7 +83,7 @@ Status text is always present; colour is supplementary.
 <Notice tone="warning">A signature is still outstanding.</Notice>
 ```
 
-## Document-aligned record card
+## 🎨 Document-aligned record card
 
 ```tsx
 <PlanRecordCard
@@ -84,7 +98,7 @@ Status text is always present; colour is supplementary.
 
 The same view model can render a compact card on a narrow screen, a table row on desktop, and a non-interactive record in the compiled document. Edit controls exist only in screen mode.
 
-## Gallery maintenance
+## 🎨 Gallery maintenance
 
 When a component is approved:
 
@@ -92,3 +106,7 @@ When a component is approved:
 2. Update the rendered SVG reference.
 3. Add or update the real React component example.
 4. Confirm the implementation through accessibility and visual-regression tests.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Design system*

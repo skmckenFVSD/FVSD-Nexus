@@ -1,20 +1,34 @@
-# Residency and platform options
+---
+title: Residency and platform options
+description: Residency and platform options for FVSD Nexus.
+type: architecture
+status: current
+icon: 🍁
+area: architecture
+audience: [architects, developers, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/architecture]
+updated: 2026-11-05
+related: ["[[architecture/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Residency and platform options
+# 🍁 Residency and platform options
 
-## Confirmed boundary
+[🏠 Home](../README.md) › [🏗️ Architecture](README.md) › Residency and platform options
+
+## 🍁 Confirmed boundary
 
 Identifiable student data, assessment records, IPP information, and student-identifiable AI context must remain inside the approved Canadian geography.
 
 FVSD will not create a US-hosted production copy of student information solely to gain access to preview development tools.
 
-## Current hosting
+## 🍁 Current hosting
 
 - Azure region: `canadacentral`
 - Operational truth store: existing Canadian Dataverse environment
 - Analytical platform: existing Canadian Fabric capacity and workspace
 
-## Platform options as of August 31, 2026
+## 🍁 Platform options as of August 31, 2026
 
 ### Azure-hosted React and ASP.NET Core
 
@@ -32,7 +46,7 @@ It remains a future option for rapid application development when production sup
 
 Fabric Apps/Rayfin is strategically relevant because it uses a TypeScript-oriented web application model and direct Fabric integration. The current React architecture preserves a practical migration path if it becomes appropriate.
 
-## Evaluation gate
+## 🍁 Evaluation gate
 
 A future platform change should require evidence for:
 
@@ -46,3 +60,7 @@ A future platform change should require evidence for:
 - Migration cost from the current React and ASP.NET Core implementation.
 
 Synthetic data may be used to evaluate tools outside Canada, but the evaluation must not connect to production student data or production student-identifiable semantic-model results.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Architecture*
