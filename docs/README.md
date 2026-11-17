@@ -17,6 +17,8 @@ related: ["[[philosophy/README]]", "[[governance/README]]", "[[architecture/over
 
 > Governed, role-aware software that moves Fort Vermilion School Division from evidence to action, documented once, read everywhere.
 
+![FVSD Nexus above its three sources of truth: Dataverse, the record; FVSDAnalytics, the calculation; Entra ID, the identity; with Purview as the catalogue around them.](design-system/assets/illustrations/three-sources-of-truth.svg)
+
 [⬅️ Repository](../README.md) · [📖 Philosophy](philosophy/README.md) · [🏗️ Architecture](architecture/README.md) · [🧩 Capabilities](capabilities/README.md) · [🧑‍🏫 Staff guide](user-guide/README.md) · [🎤 Presentation](presentation/README.md)
 
 ---

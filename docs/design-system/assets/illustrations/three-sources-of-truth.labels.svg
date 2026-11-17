@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Label layer for the "Three sources of truth" illustration.
+  Edit the words here; the art is three-sources-of-truth.base.webp.
+  Build: npm run docs:illustrations (tools/docs) → three-sources-of-truth.svg
+  Coordinates match the 2304 × 1296 base image.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2304 1296" role="img" aria-labelledby="t d">
+  <title id="t">FVSD Nexus: three sources of truth</title>
+  <desc id="d">FVSD Nexus floats above three plinths: Dataverse, the record; the FVSDAnalytics semantic model, the calculation; and Entra ID, the identity. A dashed ring around them is Purview, the catalogue, which describes meaning, ownership and sensitivity but is not a fourth source of truth.</desc>
+  <image href="three-sources-of-truth.base.webp" x="0" y="0" width="2304" height="1296"/>
+  <style>
+    text { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+    .kicker { font-size: 24px; font-weight: 700; letter-spacing: 4px; }
+    .name { font-size: 46px; font-weight: 750; fill: #F4F7FC; }
+    .sub { font-size: 25px; fill: #B9C6DC; }
+    .panel { fill: #04102B; fill-opacity: .74; }
+  </style>
+
+  <!-- FVSD Nexus: the floating platform -->
+  <g text-anchor="middle">
+    <text class="name" x="1152" y="112" style="font-size:54px">FVSD Nexus</text>
+    <text class="sub" x="1152" y="150">Where the work happens — never where the truth lives</text>
+  </g>
+
+  <!-- Record -->
+  <g text-anchor="middle">
+    <rect class="panel" x="410" y="948" width="460" height="148" rx="16"/>
+    <text class="kicker" x="640" y="988" fill="#6FB1F5">RECORD</text>
+    <text class="name" x="640" y="1038">Dataverse</text>
+    <text class="sub" x="640" y="1077">Where it is created and managed</text>
+  </g>
+
+  <!-- Calculation -->
+  <g text-anchor="middle">
+    <rect class="panel" x="920" y="958" width="460" height="148" rx="16"/>
+    <text class="kicker" x="1150" y="998" fill="#B8E986">CALCULATION</text>
+    <text class="name" x="1150" y="1048">FVSDAnalytics</text>
+    <text class="sub" x="1150" y="1087">How a number is calculated</text>
+  </g>
+
+  <!-- Identity -->
+  <g text-anchor="middle">
+    <rect class="panel" x="1435" y="948" width="460" height="148" rx="16"/>
+    <text class="kicker" x="1665" y="988" fill="#F5A623">IDENTITY</text>
+    <text class="name" x="1665" y="1038">Entra ID</text>
+    <text class="sub" x="1665" y="1077">Who someone is, what they may use</text>
+  </g>
+
+  <!-- Purview: the catalogue ring -->
+  <g text-anchor="middle">
+    <rect x="692" y="1162" width="920" height="96" rx="48" fill="#04102B" fill-opacity=".8" stroke="#B9C6DC" stroke-width="2" stroke-dasharray="14 10"/>
+    <text class="kicker" x="1152" y="1200" fill="#B9C6DC" style="font-size:21px">PURVIEW · THE CATALOGUE</text>
+    <text class="sub" x="1152" y="1238" style="fill:#F4F7FC;font-size:26px">Meaning, ownership and sensitivity — not a fourth source of truth</text>
+  </g>
+</svg>

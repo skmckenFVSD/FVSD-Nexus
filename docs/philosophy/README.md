@@ -30,6 +30,10 @@ This page explains the principles that answer that problem. They are not slogans
 
 Three questions have three permanent answers. Nothing in Nexus is allowed to become a fourth.
 
+![FVSD Nexus floating above three plinths: Dataverse, the record; FVSDAnalytics, the calculation; Entra ID, the identity. Purview surrounds them as the catalogue, not a fourth source of truth.](../design-system/assets/illustrations/three-sources-of-truth.svg)
+
+The same structure, precisely:
+
 ```mermaid
 flowchart TB
     Q1["Where is the record<br>created and managed?"] --> DV["🗄️ Dataverse<br>the record"]

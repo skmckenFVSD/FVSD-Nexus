@@ -7,8 +7,9 @@
     "docs:deck": "node build-deck.mjs",
     "docs:site": "node build-deck.mjs --site",
     "docs:icons": "node build-icons.mjs",
-    "docs:build": "node build-icons.mjs && node build-guide.mjs && node build-deck.mjs",
-    "docs:check": "node check-docs.mjs"
+    "docs:build": "node build-icons.mjs && node build-illustrations.mjs && node build-guide.mjs && node build-deck.mjs",
+    "docs:check": "node check-docs.mjs",
+    "docs:illustrations": "node build-illustrations.mjs"
   },
   "license": "UNLICENSED",
   "dependencies": {
