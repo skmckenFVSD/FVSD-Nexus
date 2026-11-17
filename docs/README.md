@@ -13,7 +13,7 @@ updated: 2026-11-17
 related: ["[[philosophy/README]]", "[[governance/README]]", "[[architecture/overview]]", "[[capabilities/README]]", "[[user-guide/README]]", "[[presentation/README]]", "[[standards/README]]"]
 ---
 
-# 🏠 FVSD Nexus Documentation
+# 🏠 FVSD Nexus Documentation - Adding Info to Heading
 
 > Governed, role-aware software that moves Fort Vermilion School Division from evidence to action, documented once, read everywhere.
 
