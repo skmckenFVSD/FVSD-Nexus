@@ -6,5 +6,7 @@
   "showFrontmatter": true,
   "propertiesInDocument": "visible",
   "readableLineLength": true,
-  "userIgnoreFilters": ["standards/templates/"]
+  "userIgnoreFilters": [
+    "standards/templates/"
+  ]
 }
