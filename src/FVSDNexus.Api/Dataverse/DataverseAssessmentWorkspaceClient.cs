@@ -25,7 +25,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         CancellationToken cancellationToken = default)
     {
         var policy = AssessmentAccessPolicy.Create(accessContext, developmentRole, isDeveloper);
-        var schools = await GetPermittedSchoolsAsync(policy, cancellationToken);
+        var schools = await GetPermittedSchoolsAsync(policy, accessContext, cancellationToken);
         var defaultSchoolId = GetDefaultSchoolId(policy, schools);
 
         return new AssessmentWorkspaceContext(
@@ -44,20 +44,20 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         CancellationToken cancellationToken = default)
     {
         var policy = AssessmentAccessPolicy.Create(accessContext, developmentRole, isDeveloper);
-        var schools = await GetPermittedSchoolsAsync(policy, cancellationToken);
+        var schools = await GetPermittedSchoolsAsync(policy, accessContext, cancellationToken);
         if (!policy.AllowsSchool(schoolId, schools))
         {
             throw new AssessmentWorkspaceAccessException("The selected school is outside the signed-in user's assessment scope.");
         }
 
-        var teacherEntraObjectId = GetScopedTeacherObjectId(policy, accessContext);
-        if (policy.TeacherLockedToSignedInUser && teacherEntraObjectId is null)
+        var teacherIdentity = GetScopedTeacherIdentity(policy, accessContext);
+        if (policy.TeacherLockedToSignedInUser && !teacherIdentity.IsAvailable)
         {
             return [];
         }
 
         using var document = await GetJsonAsync(
-            BuildSectionGroupsQuery(schoolId, teacherEntraObjectId),
+            BuildSectionGroupsQuery(schoolId, teacherIdentity.Upn, teacherIdentity.EntraObjectId),
             cancellationToken);
         return ParseSectionGroups(document.RootElement);
     }
@@ -71,14 +71,14 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         CancellationToken cancellationToken = default)
     {
         var policy = AssessmentAccessPolicy.Create(accessContext, developmentRole, isDeveloper);
-        var schools = await GetPermittedSchoolsAsync(policy, cancellationToken);
+        var schools = await GetPermittedSchoolsAsync(policy, accessContext, cancellationToken);
         if (!policy.AllowsSchool(schoolId, schools))
         {
             throw new AssessmentWorkspaceAccessException("The selected school is outside the signed-in user's assessment scope.");
         }
 
-        var teacherEntraObjectId = GetScopedTeacherObjectId(policy, accessContext);
-        if (policy.TeacherLockedToSignedInUser && teacherEntraObjectId is null)
+        var teacherIdentity = GetScopedTeacherIdentity(policy, accessContext);
+        if (policy.TeacherLockedToSignedInUser && !teacherIdentity.IsAvailable)
         {
             return [];
         }
@@ -87,7 +87,8 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             BuildTeacherSectionsQuery(
                 schoolId,
                 GetSectionGroupValue(sectionGroup),
-                teacherEntraObjectId),
+                teacherIdentity.Upn,
+                teacherIdentity.EntraObjectId),
             cancellationToken);
         using var mappingsDocument = await GetJsonAsync(BuildSectionMappingsQuery(), cancellationToken);
 
@@ -103,7 +104,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         CancellationToken cancellationToken = default)
     {
         var policy = AssessmentAccessPolicy.Create(accessContext, developmentRole, isDeveloper);
-        var schools = await GetPermittedSchoolsAsync(policy, cancellationToken);
+        var schools = await GetPermittedSchoolsAsync(policy, accessContext, cancellationToken);
         using var sectionDocument = await GetJsonAsync(
             BuildTeacherSectionValidationQuery(teacherSectionId),
             cancellationToken);
@@ -115,13 +116,13 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
 
         var sectionRow = section[0];
         var schoolId = ReadGuid(sectionRow, "_fvsd_school_value");
+        var teacherUpn = ReadString(sectionRow, "fvsd_teacher", "fvsd_upn");
         var teacherEntraObjectId = ReadString(sectionRow, "fvsd_teacher", "fvsd_azureadobjectid");
         var teacherAllowed = !policy.TeacherLockedToSignedInUser
+            || (!string.IsNullOrWhiteSpace(accessContext.Email)
+                && string.Equals(teacherUpn, accessContext.Email.Trim(), StringComparison.OrdinalIgnoreCase))
             || (accessContext.EntraObjectId is not null
-                && string.Equals(
-                    teacherEntraObjectId,
-                    accessContext.EntraObjectId.Value.ToString(),
-                    StringComparison.OrdinalIgnoreCase));
+                && string.Equals(teacherEntraObjectId, accessContext.EntraObjectId.Value.ToString(), StringComparison.OrdinalIgnoreCase));
         if (schoolId is null || !policy.AllowsSchool(schoolId.Value, schools) || !teacherAllowed)
         {
             throw new AssessmentWorkspaceAccessException("The selected teacher section is outside the signed-in user's assessment scope.");
@@ -2194,7 +2195,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         if (!subject.Policy.CanDeleteAssessments)
         {
             throw new AssessmentWorkspaceAccessException(
-                "Only School Administration and Data Analyst roles can delete assessments.");
+                "Only School Administrator and Data Administrator roles can delete assessments.");
         }
 
         using var existingDocument = await GetJsonAsync(
@@ -2222,29 +2223,35 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
     internal static string BuildTeacherSectionsQuery(
         Guid schoolId,
         int sectionGroupValue,
-        Guid? teacherEntraObjectId)
+        string? teacherUpn,
+        Guid? teacherEntraObjectId = null)
     {
         var filter = $"statecode eq 0 and _fvsd_school_value eq {schoolId:D} and fvsd_sectiongrouping eq {sectionGroupValue}";
-        if (teacherEntraObjectId is not null)
+        var teacherIdentityFilter = BuildTeacherIdentityFilter(teacherUpn, teacherEntraObjectId);
+        if (teacherIdentityFilter is not null)
         {
-            filter += $" and fvsd_teacher/fvsd_azureadobjectid eq '{teacherEntraObjectId.Value:D}'";
+            filter += $" and {teacherIdentityFilter}";
         }
 
         return "fvsd_teachersections?" +
             "$select=fvsd_teachersectionid,fvsd_name,fvsd_coursename,fvsd_courseno,fvsd_sectiongrouping," +
             "_fvsd_school_value,_fvsd_teacher_value&" +
             $"$filter={Uri.EscapeDataString(filter)}&" +
-            "$expand=fvsd_teacher($select=fvsd_teacherdetailid,fvsd_name,fvsd_azureadobjectid)," +
+            "$expand=fvsd_teacher($select=fvsd_teacherdetailid,fvsd_name,fvsd_upn,fvsd_azureadobjectid)," +
             "fvsd_studentsection_teachersection($select=fvsd_studentsectionid;$filter=statecode eq 0)&" +
             "$top=5000";
     }
 
-    internal static string BuildSectionGroupsQuery(Guid schoolId, Guid? teacherEntraObjectId)
+    internal static string BuildSectionGroupsQuery(
+        Guid schoolId,
+        string? teacherUpn,
+        Guid? teacherEntraObjectId = null)
     {
         var filter = $"statecode eq 0 and _fvsd_school_value eq {schoolId:D} and fvsd_sectiongrouping ne 4";
-        if (teacherEntraObjectId is not null)
+        var teacherIdentityFilter = BuildTeacherIdentityFilter(teacherUpn, teacherEntraObjectId);
+        if (teacherIdentityFilter is not null)
         {
-            filter += $" and fvsd_teacher/fvsd_azureadobjectid eq '{teacherEntraObjectId.Value:D}'";
+            filter += $" and {teacherIdentityFilter}";
         }
 
         return "fvsd_teachersections?" +
@@ -2252,11 +2259,21 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             $"$filter={Uri.EscapeDataString(filter)}&$top=5000";
     }
 
+    internal static string BuildTeacherSchoolsQuery(string? teacherUpn, Guid? teacherEntraObjectId = null)
+    {
+        var teacherIdentityFilter = BuildTeacherIdentityFilter(teacherUpn, teacherEntraObjectId)
+            ?? throw new ArgumentException("A teacher UPN or Entra object ID is required.");
+        var filter = $"statecode eq 0 and {teacherIdentityFilter}";
+        return "fvsd_teachersections?" +
+            "$select=_fvsd_school_value&" +
+            $"$filter={Uri.EscapeDataString(filter)}&$top=5000";
+    }
+
     internal static string BuildTeacherSectionValidationQuery(Guid teacherSectionId) =>
         "fvsd_teachersections?" +
         "$select=fvsd_teachersectionid,_fvsd_school_value&" +
         $"$filter={Uri.EscapeDataString($"statecode eq 0 and fvsd_teachersectionid eq {teacherSectionId:D}")}&" +
-        "$expand=fvsd_teacher($select=fvsd_azureadobjectid)&$top=1";
+        "$expand=fvsd_teacher($select=fvsd_upn,fvsd_azureadobjectid)&$top=1";
 
     internal static string BuildStudentsQuery(Guid teacherSectionId) =>
         "fvsd_studentsections?" +
@@ -5137,7 +5154,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         CancellationToken cancellationToken)
     {
         var policy = AssessmentAccessPolicy.Create(accessContext, developmentRole, isDeveloper);
-        var schools = await GetPermittedSchoolsAsync(policy, cancellationToken);
+        var schools = await GetPermittedSchoolsAsync(policy, accessContext, cancellationToken);
         using var sectionDocument = await GetJsonAsync(
             BuildAssessmentSectionQuery(teacherSectionId),
             cancellationToken);
@@ -5314,8 +5331,23 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
 
     private async Task<IReadOnlyList<AssessmentSchoolOption>> GetPermittedSchoolsAsync(
         AssessmentAccessPolicy policy,
+        DataverseAccessContext accessContext,
         CancellationToken cancellationToken)
     {
+        if (policy.Role == "Teacher")
+        {
+            var teacherIdentity = GetScopedTeacherIdentity(policy, accessContext);
+            if (!teacherIdentity.IsAvailable)
+            {
+                return [];
+            }
+
+            using var teacherSchools = await GetJsonAsync(
+                BuildTeacherSchoolsQuery(teacherIdentity.Upn, teacherIdentity.EntraObjectId),
+                cancellationToken);
+            return ParseTeacherSchools(teacherSchools.RootElement);
+        }
+
         if (!policy.CanViewAllSelectableSchools)
         {
             return policy.AssignedSchools
@@ -5336,6 +5368,16 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             .OrderBy(school => school.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
+
+    internal static IReadOnlyList<AssessmentSchoolOption> ParseTeacherSchools(JsonElement root) =>
+        root.GetProperty("value").EnumerateArray()
+            .Select(row => new AssessmentSchoolOption(
+                ReadGuid(row, "_fvsd_school_value") ?? Guid.Empty,
+                ReadFormattedString(row, "_fvsd_school_value") ?? "School"))
+            .Where(school => school.Id != Guid.Empty)
+            .DistinctBy(school => school.Id)
+            .OrderBy(school => school.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
     private static Guid? GetDefaultSchoolId(
         AssessmentAccessPolicy policy,
@@ -5722,10 +5764,40 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         _ => null
     };
 
-    private static Guid? GetScopedTeacherObjectId(
+    private static TeacherIdentity GetScopedTeacherIdentity(
         AssessmentAccessPolicy policy,
         DataverseAccessContext accessContext) =>
-        policy.TeacherLockedToSignedInUser ? accessContext.EntraObjectId : null;
+        policy.TeacherLockedToSignedInUser
+            ? new TeacherIdentity(
+                string.IsNullOrWhiteSpace(accessContext.Email) ? null : accessContext.Email.Trim(),
+                accessContext.EntraObjectId)
+            : default;
+
+    private static string? BuildTeacherIdentityFilter(string? teacherUpn, Guid? teacherEntraObjectId)
+    {
+        var filters = new List<string>(2);
+        if (!string.IsNullOrWhiteSpace(teacherUpn))
+        {
+            filters.Add($"fvsd_teacher/fvsd_upn eq '{EscapeODataString(teacherUpn.Trim())}'");
+        }
+
+        if (teacherEntraObjectId is not null)
+        {
+            filters.Add($"fvsd_teacher/fvsd_azureadobjectid eq '{teacherEntraObjectId.Value:D}'");
+        }
+
+        return filters.Count switch
+        {
+            0 => null,
+            1 => filters[0],
+            _ => $"({string.Join(" or ", filters)})"
+        };
+    }
+
+    private readonly record struct TeacherIdentity(string? Upn, Guid? EntraObjectId)
+    {
+        public bool IsAvailable => !string.IsNullOrWhiteSpace(Upn) || EntraObjectId is not null;
+    }
 
     private static int ParseSortOrder(string? value) =>
         int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var sortOrder)

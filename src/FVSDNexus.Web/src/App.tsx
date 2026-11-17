@@ -123,7 +123,7 @@ const commonAnalyticsItems: SidebarNavItem[] = [
 
 function getNavGroups(role: string | null | undefined): SidebarNavGroup[] {
   const executiveRole = role === 'Executive'
-  const dataAnalystRole = role === 'Data Analyst (Administrator)'
+  const dataAnalystRole = role === 'Data Administrator' || role === 'Data Analyst (Administrator)'
   const analyticsItems = executiveRole
     ? commonAnalyticsItems
     : [
@@ -263,6 +263,7 @@ export function App() {
   }
 
   const canSelectSchool = user?.activeDevelopmentRole === 'Executive'
+    || user?.activeDevelopmentRole === 'Data Administrator'
     || user?.activeDevelopmentRole === 'Data Analyst (Administrator)'
   const navGroups = getNavGroups(user?.activeDevelopmentRole)
 
@@ -742,7 +743,10 @@ function ConnectionBadge({ connected, label }: { connected: boolean; label: stri
 }
 
 function formatRoleLabel(role: string) {
-  return role === 'Class Room Support' ? 'Classroom Support' : role
+  if (role === 'Class Room Support') return 'Student Support'
+  if (role === 'Data Analyst (Administrator)' || role === 'Data Analyst') return 'Data Administrator'
+  if (role === 'Administrator') return 'School Administrator'
+  return role
 }
 
 function describeFilters(filters: FilterState) {

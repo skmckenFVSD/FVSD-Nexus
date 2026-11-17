@@ -149,7 +149,7 @@ FVSD-Nexus/
 
 ### Prerequisites
 
-- .NET 8 SDK
+- .NET 10 SDK
 - Node.js 20 or later
 - Azure CLI
 - Azure Developer CLI

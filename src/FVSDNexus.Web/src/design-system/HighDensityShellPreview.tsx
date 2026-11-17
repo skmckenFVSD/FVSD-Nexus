@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
+import { ClassAssignmentWorkspaceV2 } from '../ClassAssignmentWorkspaceV2'
 import {
   Activity,
   AlertTriangle,
@@ -23,6 +24,8 @@ import {
   FileText,
   FileX2,
   LockKeyhole,
+  LogIn,
+  Mail,
   Menu,
   NotebookPen,
   PanelsTopLeft,
@@ -34,12 +37,14 @@ import {
   School,
   Settings,
   Shield,
+  ShieldCheck,
   Signature,
   SlidersHorizontal,
   Sparkles,
   Target,
   Trash2,
   UsersRound,
+  Wrench,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -61,6 +66,43 @@ type ScreenersAudience = 'executive' | 'school-admin' | 'teacher'
 type ProgramPlansAudience = 'executive' | 'school-admin' | 'teacher'
 type ProgramPlanStatus = 'All statuses' | 'Draft' | 'Principal Review' | 'Awaiting Signatures' | 'Signed' | 'Archived'
 type AnalyticsFocus = 'Literacy' | 'Numeracy' | 'Wellbeing'
+type StudentDisplayMode = 'real' | 'obfuscated'
+
+type ShellUser = {
+  name: string
+  email?: string
+  isDeveloper: boolean
+  activeDevelopmentRole: string | null
+  activeDevelopmentUserEmail: string | null
+  availableDevelopmentRoles: string[]
+  rlsIdentity: string
+  rlsEvaluation: string
+  currentSchoolYear: string
+}
+
+type ShellRoleChangeResponse = {
+  activeDevelopmentRole: string
+  rlsIdentity: string
+  rlsEvaluation: string
+}
+
+type ShellConnectionStatus = {
+  status: string
+  workspace: string
+  semanticModel: string
+  checkedAtUtc: string
+}
+
+type ShellAccessContext = {
+  roleRecordFound: boolean
+  email: string
+  storedRole: string
+  effectiveRole: string
+  pocEnabled: boolean
+  continuumAdministrator: boolean
+  primarySchool: { id: string; name: string } | null
+  alternativeSchool: { id: string; name: string } | null
+}
 
 const screenerTermScale = [
   { level: 1, label: 'Very Poor' },
@@ -82,7 +124,7 @@ function getScreenerTerm(score: number) {
   return screenerTermScale[6]
 }
 
-const navigationGroups: NavigationGroup[] = [
+const allNavigationGroups: NavigationGroup[] = [
   {
     id: 'administration',
     label: 'Administration',
@@ -114,11 +156,94 @@ const navigationGroups: NavigationGroup[] = [
     icon: Shield,
     items: [
       { id: 'data-quality', label: 'Data Quality', icon: ClipboardCheck },
-      { id: 'data-catalog', label: 'Data Catalog', icon: Database },
+      { id: 'data-catalog', label: 'OneLake Catalog', icon: Database },
       { id: 'data-administration', label: 'Data Administration', icon: Settings },
     ],
   },
 ]
+
+function getNavigationGroups(role: string): NavigationGroup[] {
+  return allNavigationGroups.filter((group) => group.id !== 'governance' || normalizeRoleName(role) === 'Data Administrator')
+}
+
+function normalizeRoleName(role: string) {
+  if (role === 'Class Room Support') return 'Student Support'
+  if (role === 'Data Analyst (Administrator)' || role === 'Data Analyst') return 'Data Administrator'
+  if (role === 'Administrator') return 'School Administrator'
+  return role
+}
+
+function formatRoleLabel(role: string) {
+  return normalizeRoleName(role)
+}
+
+const roleScopeDefinitions = [
+  {
+    role: 'Executive',
+    scope: 'All schools, sections, and students',
+    source: 'Division-wide governed scope',
+    state: 'active',
+  },
+  {
+    role: 'School Administrator',
+    scope: 'All data within assigned schools',
+    source: 'User Role · Assignment One and Assignment Two',
+    state: 'active',
+  },
+  {
+    role: 'Teacher',
+    scope: 'Own teacher sections and their students',
+    source: 'Teacher Section · teacher system-user UPN',
+    state: 'active',
+  },
+  {
+    role: 'Student Support',
+    scope: 'Assigned support sections and their students',
+    source: 'Support Staff Sections table',
+    state: 'planned',
+  },
+  {
+    role: 'Specialist Support',
+    scope: 'Students individually assigned to the specialist',
+    source: 'Specialist-to-student assignment table',
+    state: 'planned',
+  },
+  {
+    role: 'Data Administrator',
+    scope: 'Full Dataverse and Microsoft Fabric visibility',
+    source: 'Data administration role and Fabric security',
+    state: 'active',
+  },
+] as const
+
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'FV'
+}
+
+async function getShellJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, { credentials: 'include', cache: 'no-store' })
+  if (!response.ok) {
+    const problem = await response.json().catch(() => null) as { title?: string; reauthorizeUrl?: string } | null
+    throw Object.assign(new Error(problem?.title ?? `${response.status}`), {
+      status: response.status,
+      reauthorizeUrl: problem?.reauthorizeUrl,
+    })
+  }
+  const contentType = response.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) throw new Error('AUTH_REQUIRED')
+  return response.json() as Promise<T>
+}
+
+function getReauthorizeUrl(error: unknown) {
+  if (!error || typeof error !== 'object' || !('reauthorizeUrl' in error)) return null
+  const reauthorizeUrl = (error as { reauthorizeUrl?: unknown }).reauthorizeUrl
+  return typeof reauthorizeUrl === 'string' && reauthorizeUrl.startsWith('/') ? reauthorizeUrl : null
+}
 
 const literacySections: CourseSection[] = [
   {
@@ -217,6 +342,8 @@ const programPlanModules = [
 ]
 
 const programPlanModuleGroups = ['General', 'English Language Arts and Literature', 'Mathematics']
+const shellSignInHref = '/api/auth/signin?returnUrl=%2F%3Fshell-preview'
+const shellSignOutHref = '/api/auth/signout?returnUrl=%2F%3Fshell-preview'
 
 const programPlanDescriptions: Record<string, string> = {
   'Student Details': 'Review the student demographic, enrolment, school, and attendance information used throughout the plan.',
@@ -266,8 +393,388 @@ function getSectionsForGroup(sectionGroup: string) {
 }
 
 export function HighDensityShellPreview() {
+  const [user, setUser] = useState<ShellUser | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
+  const [accessContext, setAccessContext] = useState<ShellAccessContext | null>(null)
+  const [developmentAccessContext, setDevelopmentAccessContext] = useState<ShellAccessContext | null>(null)
+  const [developmentAccessChecked, setDevelopmentAccessChecked] = useState(true)
+  const [securityChecked, setSecurityChecked] = useState(false)
+  const [securityError, setSecurityError] = useState(false)
+  const [fabricConnection, setFabricConnection] = useState<ShellConnectionStatus | null>(null)
+  const [fabricChecked, setFabricChecked] = useState(false)
+  const [fabricError, setFabricError] = useState(false)
+  const [reauthorizeUrl, setReauthorizeUrl] = useState<string | null>(null)
+  const [roleChanging, setRoleChanging] = useState<string | null>(null)
+  const [roleChangeError, setRoleChangeError] = useState('')
+  const [developmentUserChanging, setDevelopmentUserChanging] = useState(false)
+  const [developmentUserError, setDevelopmentUserError] = useState('')
+  const [studentDisplayMode, setStudentDisplayMode] = useState<StudentDisplayMode>('real')
+
+  useEffect(() => {
+    let cancelled = false
+    getShellJson<ShellUser>('/api/me')
+      .then((currentUser) => {
+        if (!cancelled) setUser(currentUser)
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null)
+      })
+      .finally(() => {
+        if (!cancelled) setAuthChecked(true)
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    if (!user) {
+      setAccessContext(null)
+      setSecurityChecked(false)
+      return
+    }
+    let cancelled = false
+    setSecurityChecked(false)
+    setSecurityError(false)
+    setReauthorizeUrl(null)
+    getShellJson<ShellAccessContext>('/api/dataverse/access-context')
+      .then((context) => {
+        if (!cancelled) setAccessContext(context)
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        const reconnectUrl = getReauthorizeUrl(error)
+        if (reconnectUrl) setReauthorizeUrl(reconnectUrl)
+        else setSecurityError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setSecurityChecked(true)
+      })
+    return () => { cancelled = true }
+  }, [user?.email])
+
+  useEffect(() => {
+    if (!user?.activeDevelopmentUserEmail) {
+      setDevelopmentAccessContext(null)
+      setDevelopmentAccessChecked(true)
+      return
+    }
+
+    let cancelled = false
+    setDevelopmentAccessChecked(false)
+    setDevelopmentUserError('')
+    getShellJson<ShellAccessContext>('/api/development/user-context')
+      .then((context) => {
+        if (!cancelled) setDevelopmentAccessContext(context)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDevelopmentAccessContext(null)
+          setDevelopmentUserError('The selected user’s Dataverse scope could not be loaded.')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDevelopmentAccessChecked(true)
+      })
+    return () => { cancelled = true }
+  }, [user?.activeDevelopmentUserEmail])
+
+  useEffect(() => {
+    if (!user) {
+      setFabricConnection(null)
+      setFabricChecked(false)
+      return
+    }
+    let cancelled = false
+    setFabricChecked(false)
+    setFabricError(false)
+    getShellJson<ShellConnectionStatus>('/api/semantic-model/status')
+      .then((connection) => {
+        if (!cancelled) setFabricConnection(connection)
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        const reconnectUrl = getReauthorizeUrl(error)
+        if (reconnectUrl) setReauthorizeUrl(reconnectUrl)
+        else setFabricError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setFabricChecked(true)
+      })
+    return () => { cancelled = true }
+  }, [user?.email])
+
+  const changeDevelopmentRole = async (role: string) => {
+    if (!user?.isDeveloper || user.activeDevelopmentUserEmail || role === user.activeDevelopmentRole) return
+    setRoleChanging(role)
+    setRoleChangeError('')
+    try {
+      const response = await fetch('/api/development/role', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-FVSD-Development-Request': 'role-switcher',
+        },
+        body: JSON.stringify({ role }),
+      })
+      if (!response.ok) throw new Error(`${response.status}`)
+      const update = await response.json() as ShellRoleChangeResponse
+      setUser((current) => current ? {
+        ...current,
+        activeDevelopmentRole: update.activeDevelopmentRole,
+        rlsIdentity: update.rlsIdentity,
+        rlsEvaluation: update.rlsEvaluation,
+      } : current)
+    } catch {
+      setRoleChangeError('The simulated role could not be changed. Your governed identity was not altered.')
+    } finally {
+      setRoleChanging(null)
+    }
+  }
+
+  const changeDevelopmentUser = async (email: string) => {
+    if (!user?.isDeveloper) return
+    setDevelopmentUserChanging(true)
+    setDevelopmentUserError('')
+    try {
+      const response = await fetch('/api/development/user', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-FVSD-Development-Request': 'user-switcher',
+        },
+        body: JSON.stringify({ email }),
+      })
+      if (!response.ok) throw new Error(`${response.status}`)
+      window.location.reload()
+    } catch {
+      setDevelopmentUserError('The user preview could not be started. Confirm the email address and try again.')
+      setDevelopmentUserChanging(false)
+    }
+  }
+
+  const clearDevelopmentUser = async () => {
+    if (!user?.isDeveloper) return
+    setDevelopmentUserChanging(true)
+    setDevelopmentUserError('')
+    try {
+      const response = await fetch('/api/development/user', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'X-FVSD-Development-Request': 'user-switcher' },
+      })
+      if (!response.ok) throw new Error(`${response.status}`)
+      window.location.reload()
+    } catch {
+      setDevelopmentUserError('The simulated user could not be cleared. Please try again.')
+      setDevelopmentUserChanging(false)
+    }
+  }
+
+  if (!authChecked) {
+    return <ShellOpeningState mode="loading" />
+  }
+
+  if (!user) {
+    return <ShellOpeningState mode="signed-out" />
+  }
+
+  if (!securityChecked || !fabricChecked || !developmentAccessChecked) {
+    return <ShellOpeningState mode="loading-access" user={user} accessContext={accessContext} fabricConnection={fabricConnection} />
+  }
+
+  if (reauthorizeUrl) {
+    return <ShellOpeningState mode="reconnect" user={user} accessContext={accessContext} fabricConnection={fabricConnection} reauthorizeUrl={reauthorizeUrl} />
+  }
+
+  if (securityError || fabricError) {
+    return <ShellOpeningState mode="security-error" user={user} accessContext={accessContext} fabricConnection={fabricConnection} dataverseFailed={securityError} fabricFailed={fabricError} />
+  }
+
+  const fabricConnected = fabricConnection?.status.toLowerCase() === 'connected'
+  if (!accessContext?.roleRecordFound || !accessContext.pocEnabled || accessContext.effectiveRole === 'No Access' || !fabricConnected) {
+    return <ShellOpeningState mode="access-denied" user={user} accessContext={accessContext} fabricConnection={fabricConnection} dataverseFailed={!accessContext?.roleRecordFound || !accessContext.pocEnabled || accessContext.effectiveRole === 'No Access'} fabricFailed={!fabricConnected} />
+  }
+
+  const workspaceAccessContext = developmentAccessContext ?? accessContext
+  const effectiveRole = normalizeRoleName(user.isDeveloper
+    ? user.activeDevelopmentUserEmail
+      ? workspaceAccessContext.effectiveRole
+      : user.activeDevelopmentRole ?? accessContext.effectiveRole
+    : accessContext.effectiveRole)
+
+  return (
+    <HighDensityShellWorkspace
+      user={user}
+      accessContext={workspaceAccessContext}
+      fabricConnection={fabricConnection}
+      effectiveRole={effectiveRole}
+      roleChanging={roleChanging}
+      roleChangeError={roleChangeError}
+      onRoleChange={changeDevelopmentRole}
+      developmentUserChanging={developmentUserChanging}
+      developmentUserError={developmentUserError}
+      onDevelopmentUserChange={changeDevelopmentUser}
+      onDevelopmentUserClear={clearDevelopmentUser}
+      studentDisplayMode={studentDisplayMode}
+      onStudentDisplayModeChange={setStudentDisplayMode}
+    />
+  )
+}
+
+function buildAccessSupportMailto(user: ShellUser, accessContext?: ShellAccessContext | null, fabricConnection?: ShellConnectionStatus | null) {
+  const schoolAssignments = [accessContext?.primarySchool?.name, accessContext?.alternativeSchool?.name].filter(Boolean).join(' / ') || 'Not available'
+  const body = [
+    'Hello FVSD Helpdesk,',
+    '',
+    'I am unable to complete the FVSD Nexus access verification. Please confirm my Dataverse and Microsoft Fabric licensing, access, and role assignment.',
+    '',
+    `Name: ${user.name}`,
+    `Email: ${user.email ?? accessContext?.email ?? 'Not available'}`,
+    'Microsoft Entra ID: Authenticated',
+    `Dataverse role record: ${accessContext?.roleRecordFound ? 'Found' : 'Not verified'}`,
+    `Nexus application enabled: ${accessContext ? (accessContext.pocEnabled ? 'Yes' : 'No') : 'Not verified'}`,
+    `Effective Nexus role: ${accessContext?.effectiveRole ?? 'Not available'}`,
+    `School assignment: ${schoolAssignments}`,
+    `Microsoft Fabric: ${fabricConnection?.status ?? 'Not verified'}`,
+    `Fabric workspace/model: ${fabricConnection ? `${fabricConnection.workspace} / ${fabricConnection.semanticModel}` : 'Not available'}`,
+    '',
+    'Please contact me if any additional information is required.',
+  ].join('\n')
+  const subject = `FVSD Nexus access and licensing request - ${user.name}`
+  return `mailto:helpdesk@fvsd.ab.ca?cc=${encodeURIComponent('scottm@fvsd.ab.ca')}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
+function ShellOpeningState({ mode, user, accessContext, fabricConnection, dataverseFailed = false, fabricFailed = false, reauthorizeUrl }: {
+  mode: 'loading' | 'signed-out' | 'loading-access' | 'reconnect' | 'security-error' | 'access-denied'
+  user?: ShellUser
+  accessContext?: ShellAccessContext | null
+  fabricConnection?: ShellConnectionStatus | null
+  dataverseFailed?: boolean
+  fabricFailed?: boolean
+  reauthorizeUrl?: string
+}) {
+  const loading = mode === 'loading' || mode === 'loading-access'
+  const firstName = user?.name.split(/\s+/).filter(Boolean)[0]
+  const title = mode === 'signed-out'
+    ? 'Welcome back'
+    : mode === 'access-denied'
+      ? 'Your Nexus access needs attention'
+      : mode === 'reconnect'
+        ? 'Reconnect Microsoft services'
+      : mode === 'security-error'
+        ? 'We could not finish verification'
+        : mode === 'loading-access'
+          ? `Welcome${firstName ? `, ${firstName}` : ''}`
+          : 'Opening FVSD Nexus'
+  const description = mode === 'signed-out'
+    ? 'Continue with your FVSD Microsoft account. Your governed role and school assignments decide what you can see.'
+    : mode === 'access-denied'
+      ? 'Your Microsoft identity is valid, but one or more governed service prerequisites could not be confirmed.'
+      : mode === 'reconnect'
+        ? 'Your FVSD identity is still signed in, but the delegated Dataverse and Fabric session needs to be renewed.'
+      : mode === 'security-error'
+        ? 'Nexus could not confirm all required service connections. You can retry or prepare a Helpdesk request with your identity and verification details.'
+        : mode === 'loading-access'
+          ? 'Your Microsoft sign-in is complete. Nexus is now confirming Dataverse access, role assignments, and Microsoft Fabric access.'
+          : 'Checking for an existing FVSD Microsoft session.'
+  const supportHref = user ? buildAccessSupportMailto(user, accessContext, fabricConnection) : undefined
+  const dataverseReady = Boolean(accessContext?.roleRecordFound && accessContext.pocEnabled && accessContext.effectiveRole !== 'No Access')
+  const fabricReady = fabricConnection?.status.toLowerCase() === 'connected'
+
+  return (
+    <main className="hd-opening-screen" data-state={mode}>
+      <section className="hd-opening-story" aria-label="FVSD Nexus">
+        <header><img src={nexusLogo} alt="" /><div><strong>FVSD Nexus</strong><span>Fort Vermilion School Division</span></div></header>
+        <div className="hd-opening-story__content">
+          <img src={nexusLogo} alt="FVSD Nexus" />
+          <h1>From insights to action.</h1>
+          <p>One place for literacy and numeracy screening, class assignments, and Student Program Plans—built on the division’s governed data.</p>
+          <ul>
+            <li><BarChart3 aria-hidden="true" /><span>Division and school achievement signals</span></li>
+            <li><ClipboardCheck aria-hidden="true" /><span>Assessment entry and completion tracking</span></li>
+            <li><GraduationCap aria-hidden="true" /><span>Individual Education and Program Plans</span></li>
+          </ul>
+        </div>
+        <footer>Fort Vermilion School Division · Internal staff application</footer>
+      </section>
+
+      <section className="hd-opening-panel" aria-live="polite">
+        <div className="hd-opening-card">
+          <span className="hd-opening-card__eyebrow">{user ? 'Secure access check' : 'Staff sign-in'}</span>
+          <h2>{title}</h2>
+          <p>{description}</p>
+
+          {user ? (
+            <div className="hd-opening-identity">
+              <span aria-hidden="true">{getInitials(user.name)}</span>
+              <div><strong>{user.name}</strong><small>{user.email ?? accessContext?.email}</small></div>
+              <ShieldCheck aria-label="Microsoft identity verified" />
+            </div>
+          ) : null}
+
+          {mode !== 'signed-out' && user ? (
+            <div className="hd-opening-checks" aria-label="Access verification status">
+              <div className="is-ready"><CheckCircle2 aria-hidden="true" /><span><strong>Microsoft Entra ID</strong><small>Identity confirmed</small></span></div>
+              <div className={dataverseReady ? 'is-ready' : dataverseFailed ? 'is-error' : 'is-pending'}>
+                {dataverseReady ? <CheckCircle2 aria-hidden="true" /> : dataverseFailed ? <AlertTriangle aria-hidden="true" /> : <Clock3 aria-hidden="true" />}
+                <span><strong>Microsoft Dataverse</strong><small>{dataverseReady ? `${formatRoleLabel(accessContext?.effectiveRole ?? 'FVSD user')} · role and school scope confirmed` : dataverseFailed ? 'Access, licensing, or role assignment requires review' : 'Checking access and role assignment'}</small></span>
+              </div>
+              <div className={fabricReady ? 'is-ready' : fabricFailed ? 'is-error' : 'is-pending'}>
+                {fabricReady ? <CheckCircle2 aria-hidden="true" /> : fabricFailed ? <AlertTriangle aria-hidden="true" /> : <Clock3 aria-hidden="true" />}
+                <span><strong>Microsoft Fabric</strong><small>{fabricReady ? `${fabricConnection?.semanticModel} · delegated access confirmed` : fabricFailed ? 'Access or licensing requires review' : 'Checking governed analytics access'}</small></span>
+              </div>
+            </div>
+          ) : null}
+
+          {loading ? <div className="hd-opening-card__loading" role="status"><RefreshCw className="is-spinning" aria-hidden="true" /> {user ? 'Verifying governed services…' : 'Checking your session…'}</div> : null}
+          {mode === 'signed-out' ? <a className="hd-opening-card__primary" href={shellSignInHref}><LogIn aria-hidden="true" /> Continue with Microsoft</a> : null}
+          {mode === 'reconnect' ? <a className="hd-opening-card__primary" href={`${reauthorizeUrl ?? '/api/auth/signin'}?returnUrl=%2F%3Fshell-preview`}><RefreshCw aria-hidden="true" /> Reconnect Microsoft services</a> : null}
+          {mode === 'security-error' ? <button className="hd-opening-card__primary" type="button" onClick={() => window.location.reload()}><RefreshCw aria-hidden="true" /> Retry verification</button> : null}
+          {(mode === 'security-error' || mode === 'access-denied') && supportHref ? <a className="hd-opening-card__support" href={supportHref}><Mail aria-hidden="true" /> Prepare Helpdesk email</a> : null}
+          {mode === 'access-denied' ? <a className="hd-opening-card__secondary" href={shellSignOutHref}>Use a different account</a> : null}
+          <footer><ShieldCheck aria-hidden="true" /><span>Secured by FVSD Entra ID</span></footer>
+        </div>
+      </section>
+    </main>
+  )
+}
+
+type HighDensityShellWorkspaceProps = {
+  user: ShellUser
+  accessContext: ShellAccessContext
+  fabricConnection: ShellConnectionStatus
+  effectiveRole: string
+  roleChanging: string | null
+  roleChangeError: string
+  onRoleChange: (role: string) => void
+  developmentUserChanging: boolean
+  developmentUserError: string
+  onDevelopmentUserChange: (email: string) => Promise<void>
+  onDevelopmentUserClear: () => Promise<void>
+  studentDisplayMode: StudentDisplayMode
+  onStudentDisplayModeChange: (mode: StudentDisplayMode) => void
+}
+
+function HighDensityShellWorkspace({
+  user,
+  accessContext,
+  fabricConnection,
+  effectiveRole,
+  roleChanging,
+  roleChangeError,
+  onRoleChange,
+  developmentUserChanging,
+  developmentUserError,
+  onDevelopmentUserChange,
+  onDevelopmentUserClear,
+  studentDisplayMode,
+  onStudentDisplayModeChange,
+}: HighDensityShellWorkspaceProps) {
   const [navigationMode, setNavigationMode] = useState<'expanded' | 'rail'>('expanded')
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [developmentRailOpen, setDevelopmentRailOpen] = useState(false)
+  const [developmentUserEmail, setDevelopmentUserEmail] = useState(user.activeDevelopmentUserEmail ?? '')
   const [activeItem, setActiveItem] = useState('class-assignments')
   const [expandedGroup, setExpandedGroup] = useState<string | null>('administration')
   const [filtersOpen, setFiltersOpen] = useState(true)
@@ -300,13 +807,28 @@ export function HighDensityShellPreview() {
   const [analyticsFocus, setAnalyticsFocus] = useState<AnalyticsFocus>('Literacy')
   const [analyticsAssessment, setAnalyticsAssessment] = useState('TOSREC')
   const [collapsedAnalyticsSchools, setCollapsedAnalyticsSchools] = useState(() => new Set<string>())
+  const [liveClassAssignmentContext, setLiveClassAssignmentContext] = useState<{ breadcrumb: string[]; filterCount: number }>({
+    breadcrumb: [],
+    filterCount: 0,
+  })
   const mobileTriggerRef = useRef<HTMLButtonElement>(null)
   const filterTriggerRef = useRef<HTMLButtonElement>(null)
+  const navigationGroups = getNavigationGroups(effectiveRole)
+
+  const closeDevelopmentRail = () => {
+    setDevelopmentRailOpen(false)
+    if (user.activeDevelopmentUserEmail || user.activeDevelopmentRole) {
+      void onDevelopmentUserClear()
+    } else {
+      setDevelopmentUserEmail('')
+    }
+  }
 
   const availableSections = getSectionsForGroup(sectionGroupFilter)
   const isScreenersDashboard = activeItem === 'assessments'
   const isProgramPlansDashboard = activeItem === 'individual-plans'
   const isAnalyticsOverview = activeItem === 'overview'
+  const isSecuritySettings = activeItem === 'settings'
   const availableSectionCount = availableSections.reduce((total, course) => total + course.teachers.length, 0)
   const filterBreadcrumb = [schoolFilter, sectionGroupFilter, courseFilter, teacherFilter, studentFilter].filter(Boolean)
   const selectedFilterCount = filterBreadcrumb.length
@@ -327,15 +849,45 @@ export function HighDensityShellPreview() {
   const analyticsBreadcrumb = [analyticsFocus, analyticsAssessment, analyticsSchool === 'All permitted schools' ? '' : analyticsSchool, analyticsPeriod === 'All periods' ? '' : analyticsPeriod].filter(Boolean)
   const workspaceBreadcrumb = programPlanOpen && selectedStudent
     ? [selectedStudent.name, 'Student Program Plan']
-    : isScreenersDashboard ? screenersBreadcrumb : isProgramPlansDashboard ? programPlansBreadcrumb : isAnalyticsOverview ? analyticsBreadcrumb : filterBreadcrumb
+    : isSecuritySettings
+      ? []
+      : isScreenersDashboard
+      ? screenersBreadcrumb
+      : isProgramPlansDashboard
+        ? programPlansBreadcrumb
+        : isAnalyticsOverview
+          ? analyticsBreadcrumb
+          : activeItem === 'class-assignments'
+            ? liveClassAssignmentContext.breadcrumb
+            : filterBreadcrumb
   const activeFilterCount = isScreenersDashboard
     ? screenersBreadcrumb.length + (screenersAudience !== 'executive' ? 1 : 0) + (screenersPeriod !== 'Fall' ? 1 : 0)
     : isProgramPlansDashboard
       ? programPlansBreadcrumb.length + (programPlansAudience !== 'executive' ? 1 : 0) + (programPlanSchoolYear !== '2026 / 2027' ? 1 : 0)
       : isAnalyticsOverview
         ? analyticsBreadcrumb.length + (analyticsGrade !== 'All grades' ? 1 : 0) + (analyticsSchoolYear !== '2026 / 2027' ? 1 : 0)
-        : selectedFilterCount
+        : activeItem === 'class-assignments'
+          ? liveClassAssignmentContext.filterCount
+          : selectedFilterCount
+  const workspaceArea = isAnalyticsOverview ? 'Analytics' : isSecuritySettings ? 'Security' : 'Administration'
+  const workspaceTitle = isScreenersDashboard
+    ? 'Student Screeners'
+    : isProgramPlansDashboard
+      ? 'Student Program Plans'
+      : isAnalyticsOverview
+        ? 'Analytics Overview'
+        : isSecuritySettings
+          ? 'Security & Access'
+          : 'Class Assignment'
   const visiblePlanModules = programPlanModules.filter((module) => includedPlanModules.has(module.name))
+
+  useEffect(() => {
+    const permittedItems = new Set(navigationGroups.flatMap((group) => group.items.map((item) => item.id)))
+    permittedItems.add('settings')
+    if (!permittedItems.has(activeItem)) {
+      setActiveItem(navigationGroups[0]?.items[0]?.id ?? 'settings')
+    }
+  }, [activeItem, effectiveRole])
   const screenersView = screenersAudience === 'executive'
     ? {
         title: 'Division completion and recommended actions',
@@ -530,6 +1082,7 @@ export function HighDensityShellPreview() {
     }
     if (id === 'overview') setFiltersOpen(true)
     setMobileOpen(false)
+    setDevelopmentRailOpen(false)
   }
 
   const toggleGroup = (id: string) => {
@@ -637,9 +1190,16 @@ export function HighDensityShellPreview() {
           })}
           <section className="hd-navigation__group hd-navigation__settings">
             <div>
-              <button type="button" className="hd-navigation__item" aria-label="Settings" title="Settings">
+              <button
+                type="button"
+                className={isSecuritySettings ? 'hd-navigation__item is-active' : 'hd-navigation__item'}
+                aria-label="Security and access"
+                aria-current={isSecuritySettings ? 'page' : undefined}
+                title="Security and access"
+                onClick={() => chooseDestination('settings')}
+              >
                 <Settings aria-hidden="true" />
-                <span className="hd-navigation__item-label">Settings</span>
+                <span className="hd-navigation__item-label">Security &amp; Access</span>
               </button>
             </div>
           </section>
@@ -647,12 +1207,12 @@ export function HighDensityShellPreview() {
 
         <footer className="hd-navigation__footer">
           <div className="hd-navigation__role">
-            <Sparkles aria-hidden="true" />
-            <div><span>Current role</span><strong>Data Analyst</strong></div>
+            <ShieldCheck aria-hidden="true" />
+            <div><span>{user.isDeveloper ? 'Preview role' : 'Current role'}</span><strong>{formatRoleLabel(effectiveRole)}</strong></div>
           </div>
           <div className="hd-navigation__account">
-            <span aria-hidden="true">SM</span>
-            <div><strong>Scott McKenzie</strong><small>scottm@fvsd.ab.ca</small></div>
+            <span aria-hidden="true">{getInitials(user.name)}</span>
+            <div><strong>{user.name}</strong><small>{user.email ?? accessContext.email}</small></div>
           </div>
         </footer>
       </aside>
@@ -670,14 +1230,14 @@ export function HighDensityShellPreview() {
             <Menu aria-hidden="true" />
           </button>
           <div className="hd-workspace__heading">
-            <span>Administration</span>
-            <ol className="hd-workspace__breadcrumb" aria-label={`${isScreenersDashboard ? 'Student Screeners' : isProgramPlansDashboard ? 'Student Program Plans' : isAnalyticsOverview ? 'Analytics Overview' : 'Class Assignment'} filter context`}>
-              <li>{isScreenersDashboard ? 'Student Screeners' : isProgramPlansDashboard ? 'Student Program Plans' : isAnalyticsOverview ? 'Analytics Overview' : 'Class Assignment'}</li>
+            <span>{workspaceArea}</span>
+            <ol className="hd-workspace__breadcrumb" aria-label={`${workspaceTitle} context`}>
+              <li>{workspaceTitle}</li>
               {workspaceBreadcrumb.map((value, index) => <li key={`${index}-${value}`}>{value}</li>)}
             </ol>
           </div>
           <div className="hd-workspace__header-actions">
-            {!programPlanOpen ? (
+            {!programPlanOpen && !isSecuritySettings ? (
               <button
                 ref={filterTriggerRef}
                 type="button"
@@ -691,11 +1251,97 @@ export function HighDensityShellPreview() {
                 <strong aria-label={`${activeFilterCount} filters selected`}>{activeFilterCount}</strong>
               </button>
             ) : null}
+            <span className="hd-workspace__role-context">{user.isDeveloper ? 'Simulated: ' : ''}{formatRoleLabel(effectiveRole)}</span>
+            {user.isDeveloper ? (
+              <button
+                type="button"
+                className="hd-workspace__development-trigger"
+                aria-label="Open development controls"
+                title="Development controls"
+                aria-expanded={developmentRailOpen}
+                onClick={() => setDevelopmentRailOpen((open) => !open)}
+              >
+                <Wrench aria-hidden="true" />
+              </button>
+            ) : null}
             <span className="hd-workspace__environment">Local preview</span>
+            <a className="hd-workspace__signout" href={shellSignOutHref}>Sign out</a>
           </div>
         </header>
 
-        {programPlanOpen && selectedStudent ? (
+        {user.isDeveloper ? (
+          <>
+            <button
+              type="button"
+              className={developmentRailOpen ? 'hd-development-rail__backdrop is-open' : 'hd-development-rail__backdrop'}
+              aria-label="Close development controls"
+              tabIndex={developmentRailOpen ? 0 : -1}
+              onClick={closeDevelopmentRail}
+            />
+            <aside className={developmentRailOpen ? 'hd-development-rail is-open' : 'hd-development-rail'} aria-label="Development controls" aria-hidden={!developmentRailOpen}>
+              <header className="hd-filter-rail__header">
+                <div><span>Data administration</span><h2>Development Controls</h2></div>
+                <button type="button" aria-label="Close development controls and clear simulated user" onClick={closeDevelopmentRail}><X aria-hidden="true" /></button>
+              </header>
+              <div className="hd-development-rail__body">
+                <p>These controls affect this local preview only. User preview changes the Dataverse application scope; Fabric RLS continues to evaluate your signed-in identity.</p>
+                <form
+                  className="hd-development-rail__user"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    void onDevelopmentUserChange(developmentUserEmail)
+                  }}
+                >
+                  <label>
+                    <span>Preview as user</span>
+                    <input
+                      type="email"
+                      value={developmentUserEmail}
+                      placeholder="user@fvsd.ab.ca"
+                      autoComplete="off"
+                      disabled={developmentUserChanging}
+                      required
+                      onChange={(event) => setDevelopmentUserEmail(event.target.value)}
+                    />
+                  </label>
+                  {user.activeDevelopmentUserEmail ? <small>Currently previewing {user.activeDevelopmentUserEmail}</small> : <small>Uses the user’s Dataverse role, schools, sections, and student scope.</small>}
+                  <div>
+                    <button type="submit" disabled={developmentUserChanging || !developmentUserEmail.trim()}>{developmentUserChanging ? 'Applying…' : 'Apply user'}</button>
+                    <button type="button" className="is-clear" disabled={developmentUserChanging || (!user.activeDevelopmentUserEmail && !user.activeDevelopmentRole && !developmentUserEmail)} onClick={closeDevelopmentRail}>Clear &amp; close</button>
+                  </div>
+                </form>
+                <label>
+                  <span>{user.activeDevelopmentUserEmail ? 'User role' : 'Simulated role'}</span>
+                  {user.activeDevelopmentUserEmail ? (
+                    <input value={formatRoleLabel(effectiveRole)} disabled readOnly />
+                  ) : (
+                    <select value={user.activeDevelopmentRole ?? accessContext.effectiveRole} disabled={roleChanging !== null} onChange={(event) => onRoleChange(event.target.value)}>
+                      {user.availableDevelopmentRoles.map((role) => <option value={role} key={role}>{formatRoleLabel(role)}</option>)}
+                    </select>
+                  )}
+                </label>
+                <div className="hd-development-rail__scope">
+                  <span>Preview scope</span>
+                  <strong>{roleScopeDefinitions.find((definition) => definition.role === formatRoleLabel(effectiveRole))?.scope ?? 'Governed role scope'}</strong>
+                </div>
+                <div className="hd-development-rail__student-mode" role="group" aria-label="Student data display mode">
+                  <span>Student data</span>
+                  <div>
+                    <button type="button" className={studentDisplayMode === 'real' ? 'is-active' : undefined} aria-pressed={studentDisplayMode === 'real'} onClick={() => onStudentDisplayModeChange('real')}>Real</button>
+                    <button type="button" className={studentDisplayMode === 'obfuscated' ? 'is-active' : undefined} aria-pressed={studentDisplayMode === 'obfuscated'} onClick={() => onStudentDisplayModeChange('obfuscated')}>Obfuscated</button>
+                  </div>
+                  <small>{studentDisplayMode === 'real' ? 'Student names and ASNs are visible.' : 'Student names and ASNs are masked in the preview.'}</small>
+                </div>
+                {roleChangeError ? <p className="hd-development-rail__error" role="alert">{roleChangeError}</p> : null}
+                {developmentUserError ? <p className="hd-development-rail__error" role="alert">{developmentUserError}</p> : null}
+              </div>
+            </aside>
+          </>
+        ) : null}
+
+        {isSecuritySettings ? (
+          <SecurityAccessView user={user} accessContext={accessContext} fabricConnection={fabricConnection} effectiveRole={effectiveRole} studentDisplayMode={studentDisplayMode} />
+        ) : programPlanOpen && selectedStudent ? (
           <section className="hd-program-plan-workspace" data-rail={planRail ?? 'closed'} aria-label="Student Program Plan workspace">
             <div className="hd-program-plan-workspace__main">
               <header className="hd-program-plan__context">
@@ -920,7 +1566,7 @@ export function HighDensityShellPreview() {
                 <label>
                   <span>Dashboard View</span>
                   <select value={screenersAudience} onChange={(event) => setScreenersAudience(event.target.value as ScreenersAudience)}>
-                    <option value="executive">Executive / Data Analyst</option>
+                    <option value="executive">Executive / Data Administrator</option>
                     <option value="school-admin">School Administrator</option>
                     <option value="teacher">Teacher / Support Staff</option>
                   </select>
@@ -1074,7 +1720,7 @@ export function HighDensityShellPreview() {
                 <label>
                   <span>Dashboard View</span>
                   <select value={programPlansAudience} onChange={(event) => setProgramPlansAudience(event.target.value as ProgramPlansAudience)}>
-                    <option value="executive">Executive / Data Analyst</option>
+                    <option value="executive">Executive / Data Administrator</option>
                     <option value="school-admin">School Administrator</option>
                     <option value="teacher">Teacher / Support Staff</option>
                   </select>
@@ -1391,6 +2037,13 @@ export function HighDensityShellPreview() {
               </div>
             </section>
           </div>
+        ) : activeItem === 'class-assignments' ? (
+          <ClassAssignmentWorkspaceV2
+            filtersOpen={filtersOpen}
+            setFiltersOpen={setFiltersOpen}
+            onContextChange={setLiveClassAssignmentContext}
+            studentDisplayMode={studentDisplayMode}
+          />
         ) : (
         <div className="hd-class-assignment" data-filters={filtersOpen ? 'open' : 'closed'}>
           <aside className="hd-filter-rail" id="class-assignment-filter-rail" aria-label="Class Assignment filters">
@@ -1840,5 +2493,87 @@ export function HighDensityShellPreview() {
         ) : null}
       </Dialog>
     </div>
+  )
+}
+
+function SecurityAccessView({ user, accessContext, fabricConnection, effectiveRole, studentDisplayMode }: {
+  user: ShellUser
+  accessContext: ShellAccessContext
+  fabricConnection: ShellConnectionStatus
+  effectiveRole: string
+  studentDisplayMode: StudentDisplayMode
+}) {
+  const schools = [accessContext.primarySchool?.name, accessContext.alternativeSchool?.name].filter((value): value is string => Boolean(value))
+  const normalizedAssignedRole = formatRoleLabel(accessContext.storedRole || accessContext.effectiveRole)
+  const effectiveScope = roleScopeDefinitions.find((definition) => definition.role === formatRoleLabel(effectiveRole))
+  return (
+    <section className="hd-security-workspace" aria-labelledby="security-access-heading">
+      <header className="hd-security-workspace__intro">
+        <div><span>Identity and authorization</span><h1 id="security-access-heading">Roles &amp; Security</h1><p>Review the identity, role, school assignments, and data-security boundaries active for this Nexus session.</p></div>
+        <span className="hd-security-workspace__status"><ShieldCheck aria-hidden="true" /> Governed access verified</span>
+      </header>
+
+      <div className="hd-security-grid">
+        <article className="hd-security-card">
+          <header><ShieldCheck aria-hidden="true" /><div><span>Microsoft Entra ID</span><h2>Signed-in identity</h2></div></header>
+          <dl>
+            <div><dt>Name</dt><dd>{user.name}</dd></div>
+            <div><dt>Email</dt><dd>{user.email ?? accessContext.email}</dd></div>
+            <div><dt>Session</dt><dd>Authenticated</dd></div>
+          </dl>
+        </article>
+
+        <article className="hd-security-card">
+          <header><School aria-hidden="true" /><div><span>Dataverse</span><h2>Governed role assignment</h2></div></header>
+          <dl>
+            <div><dt>Assigned role</dt><dd>{formatRoleLabel(accessContext.storedRole || accessContext.effectiveRole)}</dd></div>
+            <div><dt>Effective role</dt><dd>{formatRoleLabel(accessContext.effectiveRole)}</dd></div>
+            <div><dt>Governed scope</dt><dd>{roleScopeDefinitions.find((definition) => definition.role === normalizedAssignedRole)?.scope ?? 'Role-defined data scope'}</dd></div>
+            <div><dt>School assignments</dt><dd>{schools.length ? schools.join(' · ') : normalizedAssignedRole === 'Executive' || normalizedAssignedRole === 'Data Administrator' ? 'All permitted schools' : 'No school assignment returned'}</dd></div>
+            <div><dt>Continuum administrator</dt><dd>{accessContext.continuumAdministrator ? 'Yes' : 'No'}</dd></div>
+          </dl>
+        </article>
+
+        <article className="hd-security-card">
+          <header><Database aria-hidden="true" /><div><span>Microsoft Fabric</span><h2>Row-level security</h2></div></header>
+          <dl>
+            <div><dt>Connection</dt><dd>{fabricConnection.status}</dd></div>
+            <div><dt>Semantic model</dt><dd>{fabricConnection.workspace} · {fabricConnection.semanticModel}</dd></div>
+            <div><dt>RLS identity</dt><dd>{user.rlsIdentity}</dd></div>
+            <div><dt>Evaluation</dt><dd>{user.rlsEvaluation}</dd></div>
+            <div><dt>School year</dt><dd>{user.currentSchoolYear}</dd></div>
+          </dl>
+        </article>
+
+        <article className="hd-security-card">
+          <header><Sparkles aria-hidden="true" /><div><span>Local development</span><h2>Preview controls</h2></div></header>
+          <dl>
+            <div><dt>Navigation role</dt><dd>{user.isDeveloper ? `Simulated: ${formatRoleLabel(effectiveRole)}` : formatRoleLabel(effectiveRole)}</dd></div>
+            <div><dt>Preview scope</dt><dd>{effectiveScope?.scope ?? 'Governed role scope'}</dd></div>
+            <div><dt>Student display</dt><dd>{studentDisplayMode === 'real' ? 'Real names and ASNs' : 'Obfuscated names and ASNs'}</dd></div>
+            <div><dt>Security effect</dt><dd>{user.isDeveloper ? 'UI role simulation only; Fabric continues to evaluate the signed-in identity.' : 'Governed role and identity are applied.'}</dd></div>
+          </dl>
+        </article>
+      </div>
+
+      <section className="hd-security-scopes" aria-labelledby="security-scope-heading">
+        <header>
+          <div><span>Authorization model</span><h2 id="security-scope-heading">Governed role scopes</h2><p>Record visibility is resolved from the signed-in identity and the assignment source shown below.</p></div>
+          <strong>{roleScopeDefinitions.length} roles</strong>
+        </header>
+        <div className="hd-security-scopes__list">
+          {roleScopeDefinitions.map((definition) => (
+            <article className={definition.role === formatRoleLabel(effectiveRole) ? 'is-current' : undefined} key={definition.role}>
+              <div><strong>{definition.role}</strong>{definition.role === formatRoleLabel(effectiveRole) ? <span>Current preview</span> : null}</div>
+              <p>{definition.scope}</p>
+              <small>{definition.source}</small>
+              <em className={definition.state === 'active' ? 'is-active' : 'is-planned'}>{definition.state === 'active' ? 'Scope available' : 'Assignment source planned · access closed'}</em>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <aside className="hd-security-notice"><LockKeyhole aria-hidden="true" /><div><strong>Security boundaries remain server-enforced</strong><p>Navigation adapts to the active role, while API authorization, Dataverse assignments, and Fabric RLS remain authoritative for every governed request. Data catalog and governance experiences will align to Microsoft Fabric and OneLake Catalog as Microsoft’s governance platform evolves.</p></div></aside>
+    </section>
   )
 }

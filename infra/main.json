@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.46.1.21595",
-      "templateHash": "13589630007737604182"
+      "templateHash": "15373782991918626504"
     }
   },
   "parameters": {
@@ -102,7 +102,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.46.1.21595",
-              "templateHash": "11381865253512866182"
+              "templateHash": "3703767980483051411"
             }
           },
           "parameters": {
@@ -238,7 +238,7 @@
                   "ftpsState": "Disabled",
                   "healthCheckPath": "/health",
                   "http20Enabled": true,
-                  "linuxFxVersion": "DOTNETCORE|8.0",
+                  "linuxFxVersion": "DOTNETCORE|10.0",
                   "minTlsVersion": "1.2",
                   "appSettings": [
                     {

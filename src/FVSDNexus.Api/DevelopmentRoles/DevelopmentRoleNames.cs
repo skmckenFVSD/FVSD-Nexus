@@ -5,18 +5,34 @@ public static class DevelopmentRoleNames
     public const string Executive = "Executive";
     public const string SchoolAdministration = "School Administration";
     public const string Teacher = "Teacher";
-    public const string ClassRoomSupport = "Class Room Support";
-    public const string DataAnalystAdministrator = "Data Analyst (Administrator)";
+    public const string StudentSupport = "Student Support";
+    public const string SpecialistSupport = "Specialist Support";
+    public const string DataAdministrator = "Data Administrator";
+
+    public const string LegacyClassRoomSupport = "Class Room Support";
+    public const string LegacyDataAnalystAdministrator = "Data Analyst (Administrator)";
 
     public static readonly IReadOnlyList<string> All =
     [
         Executive,
         SchoolAdministration,
         Teacher,
-        ClassRoomSupport,
-        DataAnalystAdministrator
+        StudentSupport,
+        SpecialistSupport,
+        DataAdministrator
     ];
 
     public static bool IsValid(string? role) =>
-        role is not null && All.Contains(role, StringComparer.Ordinal);
+        Normalize(role) is not null;
+
+    public static string? Normalize(string? role) => role switch
+    {
+        Executive => Executive,
+        SchoolAdministration or "Administrator" => SchoolAdministration,
+        Teacher => Teacher,
+        StudentSupport or LegacyClassRoomSupport => StudentSupport,
+        SpecialistSupport => SpecialistSupport,
+        DataAdministrator or LegacyDataAnalystAdministrator or "Data Analyst" => DataAdministrator,
+        _ => null
+    };
 }

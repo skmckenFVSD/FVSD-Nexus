@@ -5,6 +5,8 @@ public sealed record DevelopmentRoleContext(
     string? ActiveRole,
     IReadOnlyList<string> AvailableRoles,
     string RlsIdentity,
-    string RlsEvaluation);
+    string RlsEvaluation,
+    string? ActiveUserEmail = null);
 
 public sealed record DevelopmentRoleChange(string Role);
+public sealed record DevelopmentUserChange(string Email);

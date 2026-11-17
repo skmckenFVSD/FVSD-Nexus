@@ -41,9 +41,22 @@ Analytics-only Fabric access and operational Dataverse access may be gated separ
 
 Access is not granted merely because a control is visible. Conversely, hiding a control does not secure the underlying data.
 
+## Nexus role scopes
+
+| Role | Governed visibility | Assignment source | Implementation |
+|---|---|---|---|
+| Executive | All schools, sections, and students. | Division-wide scope. | Active. |
+| School Administrator | All data within the schools assigned to the user. | `fvsd_userrole.fvsd_assignmentone` and `fvsd_assignmenttwo`. | Active. |
+| Teacher | Teacher sections whose teacher system-user UPN matches the signed-in UPN, plus the students in those sections. | `fvsd_teachersection.fvsd_teacher`. | Active. |
+| Student Support | Support staff sections and the relevant student records contained in those sections. | Planned Support Staff Sections table. | Planned; access remains closed until the relationship is implemented. |
+| Specialist Support | Student records individually assigned to the specialist. | Planned specialist-to-student assignment table. | Planned; access remains closed until the relationship is implemented. |
+| Data Administrator | Full operational visibility and governed Microsoft Fabric access. | Nexus data-administration assignment plus Fabric authorization and RLS. | Active. |
+
+Legacy labels such as `Data Analyst (Administrator)` and `Class Room Support` are normalized at the application boundary while Dataverse values are migrated. They are not new authorization scopes.
+
 ## Role simulation
 
-The current developer-only role switcher exists to test experience variations. It does not change the signed-in identity or override Fabric RLS. Any future Dataverse simulation must retain the same principle.
+The developer-only role switcher exists to test experience variations. It does not change the signed-in identity or override Fabric RLS. The server-side developer allowlist remains authoritative; during the current build it contains only Scott McKenzie. Student-name obfuscation is also a preview control and does not change the underlying record authorization.
 
 ## Operational integrity
 
@@ -72,6 +85,6 @@ Application telemetry may include route, duration, result status, dependency typ
 ## Open decisions
 
 - Supported pay-as-you-go metering or Power Apps Premium adoption.
-- Final Entra group, Dataverse role, Fabric role, and Nexus experience-role mapping.
+- Final Entra group, Dataverse role, Fabric role, and Nexus experience-role mapping for the two planned support roles.
 - Licence verification permissions, refresh interval, and failure behaviour.
 - Administrative correction approval roles.

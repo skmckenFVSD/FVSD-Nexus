@@ -6,6 +6,43 @@ namespace FVSDNexus.Api.Tests;
 public sealed class DataverseAssessmentWorkspaceClientTests
 {
     [Theory]
+    [InlineData("Executive", true, false)]
+    [InlineData("Data Administrator", true, false)]
+    [InlineData("Teacher", false, true)]
+    [InlineData("Student Support", false, false)]
+    [InlineData("Specialist Support", false, false)]
+    public void Class_assignment_policy_applies_the_expected_role_boundary(
+        string role,
+        bool canViewAllSchools,
+        bool teacherLocked)
+    {
+        var policy = AssessmentAccessPolicy.Create(CreateAccessContext(role), null, false);
+
+        Assert.Equal(role, policy.Role);
+        Assert.Equal(canViewAllSchools, policy.CanViewAllSelectableSchools);
+        Assert.Equal(teacherLocked, policy.TeacherLockedToSignedInUser);
+    }
+
+    [Fact]
+    public void Class_assignment_policy_fails_closed_for_an_unconfigured_role()
+    {
+        var exception = Assert.Throws<AssessmentWorkspaceAccessException>(() =>
+            AssessmentAccessPolicy.Create(CreateAccessContext("Assessment Team"), null, false));
+
+        Assert.Contains("not configured", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void School_administrator_policy_uses_both_assigned_schools()
+    {
+        var policy = AssessmentAccessPolicy.Create(CreateAccessContext("Administrator"), null, false);
+
+        Assert.Equal("School Administrator", policy.Role);
+        Assert.Equal(2, policy.AssignedSchools.Count);
+        Assert.True(policy.SchoolSelectionEnabled);
+    }
+
+    [Theory]
     [InlineData(null)]
     [InlineData(0)]
     [InlineData(67)]
@@ -55,17 +92,23 @@ public sealed class DataverseAssessmentWorkspaceClientTests
     {
         var schoolId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var entraObjectId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        const string teacherUpn = "teacher@fvsd.ab.ca";
 
         var decoded = Uri.UnescapeDataString(
             DataverseAssessmentWorkspaceClient.BuildTeacherSectionsQuery(
                 schoolId,
                 sectionGroupValue: 1,
+                teacherUpn: teacherUpn,
                 teacherEntraObjectId: entraObjectId));
 
         Assert.Contains($"_fvsd_school_value eq {schoolId:D}", decoded, StringComparison.Ordinal);
         Assert.Contains("fvsd_sectiongrouping eq 1", decoded, StringComparison.Ordinal);
         Assert.Contains(
             $"fvsd_teacher/fvsd_azureadobjectid eq '{entraObjectId:D}'",
+            decoded,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            $"fvsd_teacher/fvsd_upn eq '{teacherUpn}'",
             decoded,
             StringComparison.Ordinal);
         Assert.Contains("fvsd_studentsection_teachersection", decoded, StringComparison.Ordinal);
@@ -76,9 +119,13 @@ public sealed class DataverseAssessmentWorkspaceClientTests
     {
         var schoolId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var entraObjectId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        const string teacherUpn = "teacher@fvsd.ab.ca";
 
         var decoded = Uri.UnescapeDataString(
-            DataverseAssessmentWorkspaceClient.BuildSectionGroupsQuery(schoolId, entraObjectId));
+            DataverseAssessmentWorkspaceClient.BuildSectionGroupsQuery(
+                schoolId,
+                teacherUpn,
+                entraObjectId));
 
         Assert.Contains("$select=fvsd_sectiongrouping", decoded, StringComparison.Ordinal);
         Assert.Contains($"_fvsd_school_value eq {schoolId:D}", decoded, StringComparison.Ordinal);
@@ -87,8 +134,79 @@ public sealed class DataverseAssessmentWorkspaceClientTests
             $"fvsd_teacher/fvsd_azureadobjectid eq '{entraObjectId:D}'",
             decoded,
             StringComparison.Ordinal);
+        Assert.Contains(
+            $"fvsd_teacher/fvsd_upn eq '{teacherUpn}'",
+            decoded,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("fvsd_studentsection_teachersection", decoded, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Teacher_school_query_is_scoped_to_the_signed_in_teacher_identity()
+    {
+        var entraObjectId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        const string teacherUpn = "teacher@fvsd.ab.ca";
+
+        var decoded = Uri.UnescapeDataString(
+            DataverseAssessmentWorkspaceClient.BuildTeacherSchoolsQuery(teacherUpn, entraObjectId));
+
+        Assert.Contains("$select=_fvsd_school_value", decoded, StringComparison.Ordinal);
+        Assert.Contains(
+            $"fvsd_teacher/fvsd_azureadobjectid eq '{entraObjectId:D}'",
+            decoded,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            $"fvsd_teacher/fvsd_upn eq '{teacherUpn}'",
+            decoded,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Teacher_schools_are_distinct_and_sorted()
+    {
+        using var document = JsonDocument.Parse("""
+            {
+              "value": [
+                {
+                  "_fvsd_school_value": "20000000-0000-0000-0000-000000000002",
+                  "_fvsd_school_value@OData.Community.Display.V1.FormattedValue": "Zulu School"
+                },
+                {
+                  "_fvsd_school_value": "20000000-0000-0000-0000-000000000001",
+                  "_fvsd_school_value@OData.Community.Display.V1.FormattedValue": "Alpha School"
+                },
+                {
+                  "_fvsd_school_value": "20000000-0000-0000-0000-000000000001",
+                  "_fvsd_school_value@OData.Community.Display.V1.FormattedValue": "Alpha School"
+                }
+              ]
+            }
+            """);
+
+        var schools = DataverseAssessmentWorkspaceClient.ParseTeacherSchools(document.RootElement);
+
+        Assert.Equal(2, schools.Count);
+        Assert.Equal("Alpha School", schools[0].Name);
+        Assert.Equal("Zulu School", schools[1].Name);
+    }
+
+    private static DataverseAccessContext CreateAccessContext(string role) => new(
+        RoleRecordFound: true,
+        UserRoleId: Guid.Parse("10000000-0000-0000-0000-000000000001"),
+        DataverseSystemUserId: Guid.Parse("10000000-0000-0000-0000-000000000002"),
+        Email: "user@fvsd.ab.ca",
+        EntraObjectId: Guid.Parse("10000000-0000-0000-0000-000000000003"),
+        StoredRole: role,
+        EffectiveRole: role,
+        AssessmentTeam: false,
+        PocEnabled: true,
+        ContinuumAdministrator: false,
+        PrimarySchool: new DataverseSchoolAssignment(
+            Guid.Parse("20000000-0000-0000-0000-000000000001"),
+            "Primary School"),
+        AlternativeSchool: new DataverseSchoolAssignment(
+            Guid.Parse("20000000-0000-0000-0000-000000000002"),
+            "Alternative School"));
 
     [Fact]
     public void Section_groups_are_distinct_ordered_and_exclude_other()
@@ -955,20 +1073,19 @@ public sealed class DataverseAssessmentWorkspaceClientTests
         var policy = AssessmentAccessPolicy.Create(accessContext, null, false);
 
         Assert.True(policy.TeacherLockedToSignedInUser);
-        Assert.False(policy.SchoolSelectionEnabled);
+        Assert.True(policy.SchoolSelectionEnabled);
     }
 
     [Fact]
-    public void Executive_uses_the_primary_assignment_without_a_school_picker()
+    public void Executive_can_select_from_all_available_schools()
     {
         var accessContext = CreateAccessContext("Executive", includeAlternativeSchool: true);
 
         var policy = AssessmentAccessPolicy.Create(accessContext, null, false);
 
-        Assert.False(policy.CanViewAllSelectableSchools);
-        Assert.False(policy.SchoolSelectionEnabled);
-        Assert.Single(policy.AssignedSchools);
-        Assert.Equal("Primary School", policy.AssignedSchools[0].Name);
+        Assert.True(policy.CanViewAllSelectableSchools);
+        Assert.True(policy.SchoolSelectionEnabled);
+        Assert.Empty(policy.AssignedSchools);
     }
 
     [Fact]
@@ -981,7 +1098,7 @@ public sealed class DataverseAssessmentWorkspaceClientTests
             "Data Analyst (Administrator)",
             isDeveloper: true);
 
-        Assert.Equal("Data Analyst", policy.Role);
+        Assert.Equal("Data Administrator", policy.Role);
         Assert.True(policy.CanViewAllSelectableSchools);
         Assert.True(policy.SchoolSelectionEnabled);
         Assert.False(policy.TeacherLockedToSignedInUser);
@@ -995,6 +1112,7 @@ public sealed class DataverseAssessmentWorkspaceClientTests
     [InlineData("Executive", false)]
     [InlineData("Teacher", false)]
     [InlineData("Class Room Support", false)]
+    [InlineData("Specialist Support", false)]
     public void Assessment_deletion_is_limited_to_governed_roles(string role, bool expected)
     {
         var policy = AssessmentAccessPolicy.Create(

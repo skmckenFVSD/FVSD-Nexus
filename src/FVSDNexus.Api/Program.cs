@@ -1,6 +1,7 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using FVSDNexus.Api.Dataverse;
 using FVSDNexus.Api.DevelopmentRoles;
+using FVSDNexus.Api.Authentication;
 using FVSDNexus.Api.SemanticModel;
 using FVSDNexus.Api.SessionContext;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -159,18 +160,28 @@ app.MapGet("/health", [AllowAnonymous] () => Results.Ok(new
     service = "FVSD Nexus"
 }));
 
-app.MapGet("/api/auth/signin", () => Results.Challenge(
-    new Microsoft.AspNetCore.Authentication.AuthenticationProperties
-    {
-        RedirectUri = postAuthenticationRedirect
-    },
-    [OpenIdConnectDefaults.AuthenticationScheme]))
+app.MapGet("/api/auth/signin", (HttpRequest request) =>
+{
+    var requestedRedirect = request.Query["returnUrl"].FirstOrDefault();
+    var redirectUri = AuthenticationRedirects.Resolve(
+        postAuthenticationRedirect,
+        requestedRedirect);
+
+    return Results.Challenge(
+        new Microsoft.AspNetCore.Authentication.AuthenticationProperties
+        {
+            RedirectUri = redirectUri
+        },
+        [OpenIdConnectDefaults.AuthenticationScheme]);
+})
     .AllowAnonymous();
 
-app.MapGet("/api/auth/signout", () => Results.SignOut(
+app.MapGet("/api/auth/signout", (HttpRequest request) => Results.SignOut(
     new Microsoft.AspNetCore.Authentication.AuthenticationProperties
     {
-        RedirectUri = postAuthenticationRedirect
+        RedirectUri = AuthenticationRedirects.Resolve(
+            postAuthenticationRedirect,
+            request.Query["returnUrl"].FirstOrDefault())
     },
     [CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme]))
     .AllowAnonymous();
@@ -188,6 +199,7 @@ app.MapGet("/api/me", (
             ?? context.User.FindFirst("email")?.Value,
         isDeveloper = roleContext.IsDeveloper,
         activeDevelopmentRole = roleContext.ActiveRole,
+        activeDevelopmentUserEmail = roleContext.ActiveUserEmail,
         availableDevelopmentRoles = roleContext.AvailableRoles,
         rlsIdentity = roleContext.RlsIdentity,
         rlsEvaluation = roleContext.RlsEvaluation,
@@ -237,13 +249,20 @@ app.MapGet("/api/assessments/context", async (
             statusCode: StatusCodes.Status403Forbidden);
     }
 
-    var developmentContext = developmentRoles.GetContext(context);
-    var workspaceContext = await assessments.GetWorkspaceContextAsync(
-        accessContext,
-        developmentContext.ActiveRole,
-        developmentContext.IsDeveloper,
-        cancellationToken);
-    return Results.Ok(workspaceContext);
+    try
+    {
+        var developmentContext = developmentRoles.GetContext(context);
+        var workspaceContext = await assessments.GetWorkspaceContextAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            cancellationToken);
+        return Results.Ok(workspaceContext);
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
 });
 
 app.MapGet("/api/assessments/teacher-sections", async (
@@ -2495,17 +2514,90 @@ app.MapPost("/api/development/role", (
         return Results.BadRequest(new { error = "The role change must originate from the FVSD Nexus role switcher." });
     }
 
-    if (!developmentRoles.TrySetRole(context, change.Role))
+    var normalizedRole = DevelopmentRoleNames.Normalize(change.Role);
+    if (normalizedRole is null || !developmentRoles.TrySetRole(context, normalizedRole))
     {
         return Results.BadRequest(new { error = "The selected development role is not supported." });
     }
 
     return Results.Ok(new
     {
-        activeDevelopmentRole = change.Role,
+        activeDevelopmentRole = normalizedRole,
         rlsIdentity = context.User.Identity?.Name ?? "Signed-in FVSD user",
         rlsEvaluation = "Fabric evaluates the signed-in Entra identity"
     });
+});
+
+app.MapPost("/api/development/user", (
+    DevelopmentUserChange change,
+    HttpContext context,
+    IDevelopmentRoleService developmentRoles) =>
+{
+    if (!developmentRoles.IsDeveloper(context.User))
+    {
+        return Results.Forbid();
+    }
+
+    if (!string.Equals(
+        context.Request.Headers["X-FVSD-Development-Request"],
+        "user-switcher",
+        StringComparison.Ordinal))
+    {
+        return Results.BadRequest(new { error = "The user change must originate from the FVSD Nexus development controls." });
+    }
+
+    if (!developmentRoles.TrySetUserEmail(context, change.Email))
+    {
+        return Results.BadRequest(new { error = "Enter a valid user email address." });
+    }
+
+    return Results.Ok(new { activeDevelopmentUserEmail = change.Email.Trim().ToLowerInvariant() });
+});
+
+app.MapDelete("/api/development/user", (
+    HttpContext context,
+    IDevelopmentRoleService developmentRoles) =>
+{
+    if (!developmentRoles.IsDeveloper(context.User))
+    {
+        return Results.Forbid();
+    }
+
+    if (!string.Equals(
+        context.Request.Headers["X-FVSD-Development-Request"],
+        "user-switcher",
+        StringComparison.Ordinal))
+    {
+        return Results.BadRequest(new { error = "The user change must originate from the FVSD Nexus development controls." });
+    }
+
+    return developmentRoles.TryClearSimulation(context)
+        ? Results.NoContent()
+        : Results.Forbid();
+});
+
+app.MapGet("/api/development/user-context", async (
+    HttpContext context,
+    IDevelopmentRoleService developmentRoles,
+    IDataverseAccessContextClient dataverse,
+    CancellationToken cancellationToken) =>
+{
+    var developmentContext = developmentRoles.GetContext(context);
+    if (!developmentContext.IsDeveloper)
+    {
+        return Results.Forbid();
+    }
+
+    if (string.IsNullOrWhiteSpace(developmentContext.ActiveUserEmail))
+    {
+        return Results.BadRequest(new { error = "No development user preview is active." });
+    }
+
+    var accessContext = await dataverse.GetAccessContextAsync(
+        developmentContext.ActiveUserEmail,
+        null,
+        cancellationToken);
+    return Results.Ok(accessContext);
 });
 
 app.MapGet("/api/semantic-model/status", async (
@@ -2681,16 +2773,23 @@ static async Task<DataverseAccessContext?> GetDataverseAccessContextAsync(
     IDataverseAccessContextClient accessContextClient,
     CancellationToken cancellationToken)
 {
-    var email = GetUserEmail(context.User);
+    var developmentContext = context.RequestServices
+        .GetRequiredService<IDevelopmentRoleService>()
+        .GetContext(context);
+    var email = developmentContext.ActiveUserEmail ?? GetUserEmail(context.User);
     if (string.IsNullOrWhiteSpace(email))
     {
         return null;
     }
 
-    return await accessContextClient.GetAccessContextAsync(
+    var accessContext = await accessContextClient.GetAccessContextAsync(
         email,
-        GetEntraObjectId(context.User),
+        developmentContext.ActiveUserEmail is null ? GetEntraObjectId(context.User) : null,
         cancellationToken);
+
+    return developmentContext.ActiveUserEmail is not null && accessContext.RoleRecordFound
+        ? accessContext with { PocEnabled = true }
+        : accessContext;
 }
 
 static async Task<(

@@ -74,6 +74,93 @@ public sealed class DevelopmentRoleServiceTests
         Assert.Equal(DevelopmentRoleNames.Executive, roleContext.ActiveRole);
     }
 
+    [Fact]
+    public void Developer_can_set_and_clear_a_protected_user_preview_email()
+    {
+        var service = CreateService();
+        var writeContext = CreateContext(DeveloperObjectId);
+
+        Assert.True(service.TrySetUserEmail(writeContext, "Teacher.One@FVSD.ab.ca"));
+        var cookie = SetCookieHeaderValue.Parse(writeContext.Response.Headers.SetCookie.ToString());
+        Assert.Equal(DevelopmentRoleService.UserCookieName, cookie.Name.ToString());
+        Assert.True(cookie.HttpOnly);
+        Assert.True(cookie.Secure);
+
+        var readContext = CreateContext(DeveloperObjectId);
+        readContext.Request.Headers.Cookie = $"{cookie.Name}={cookie.Value}";
+        Assert.Equal("teacher.one@fvsd.ab.ca", service.GetContext(readContext).ActiveUserEmail);
+
+        var clearContext = CreateContext(DeveloperObjectId);
+        Assert.True(service.TryClearUserEmail(clearContext));
+        Assert.Contains(
+            "expires=Thu, 01 Jan 1970",
+            clearContext.Response.Headers.SetCookie.ToString(),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Clearing_a_simulation_expires_both_the_user_and_role_cookies()
+    {
+        var service = CreateService();
+        var context = CreateContext(DeveloperObjectId);
+
+        Assert.True(service.TryClearSimulation(context));
+
+        var cookies = SetCookieHeaderValue.ParseList(context.Response.Headers.SetCookie);
+        Assert.Contains(cookies, cookie =>
+            cookie.Name == DevelopmentRoleService.UserCookieName
+            && cookie.Expires == DateTimeOffset.UnixEpoch);
+        Assert.Contains(cookies, cookie =>
+            cookie.Name == DevelopmentRoleService.CookieName
+            && cookie.Expires == DateTimeOffset.UnixEpoch);
+    }
+
+    [Fact]
+    public void Developer_without_a_role_cookie_uses_the_governed_access_role()
+    {
+        var service = CreateService();
+        var context = CreateContext(DeveloperObjectId);
+
+        var roleContext = service.GetContext(context);
+
+        Assert.Null(roleContext.ActiveRole);
+    }
+
+    [Fact]
+    public void User_preview_takes_precedence_over_a_persisted_role_simulation()
+    {
+        var service = CreateService();
+        var roleWriteContext = CreateContext(DeveloperObjectId);
+        var userWriteContext = CreateContext(DeveloperObjectId);
+
+        Assert.True(service.TrySetRole(roleWriteContext, DevelopmentRoleNames.Executive));
+        Assert.True(service.TrySetUserEmail(userWriteContext, "Teacher.One@FVSD.ab.ca"));
+
+        var roleCookie = SetCookieHeaderValue.Parse(roleWriteContext.Response.Headers.SetCookie.ToString());
+        var userCookie = SetCookieHeaderValue.Parse(userWriteContext.Response.Headers.SetCookie.ToString());
+        var readContext = CreateContext(DeveloperObjectId);
+        readContext.Request.Headers.Cookie =
+            $"{roleCookie.Name}={roleCookie.Value}; {userCookie.Name}={userCookie.Value}";
+
+        var roleContext = service.GetContext(readContext);
+
+        Assert.Equal("teacher.one@fvsd.ab.ca", roleContext.ActiveUserEmail);
+        Assert.Null(roleContext.ActiveRole);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-an-email")]
+    [InlineData("user@")]
+    public void Invalid_user_preview_email_is_rejected(string email)
+    {
+        var service = CreateService();
+        var context = CreateContext(DeveloperObjectId);
+
+        Assert.False(service.TrySetUserEmail(context, email));
+        Assert.False(context.Response.Headers.ContainsKey(HeaderNames.SetCookie));
+    }
+
     private static DevelopmentRoleService CreateService()
     {
         var options = Options.Create(new DevelopmentRoleOptions

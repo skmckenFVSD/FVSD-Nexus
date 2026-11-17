@@ -106,7 +106,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
       ftpsState: 'Disabled'
       healthCheckPath: '/health'
       http20Enabled: true
-      linuxFxVersion: 'DOTNETCORE|8.0'
+      linuxFxVersion: 'DOTNETCORE|10.0'
       minTlsVersion: '1.2'
       appSettings: [
         {

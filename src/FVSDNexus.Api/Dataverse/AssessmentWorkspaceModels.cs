@@ -594,34 +594,47 @@ internal sealed record AssessmentAccessPolicy(
             .Cast<DataverseSchoolAssignment>()
             .DistinctBy(school => school.Id)
             .ToArray();
-        var assignments = role is "Administrator" or "Data Analyst"
-            ? allAssignments
-            : allAssignments.Take(1).ToArray();
+        if (role is not ("Executive"
+            or "School Administrator"
+            or "Teacher"
+            or "Student Support"
+            or "Specialist Support"
+            or "Data Administrator"))
+        {
+            throw new AssessmentWorkspaceAccessException(
+                "The signed-in role is not configured for Class Assignment access.");
+        }
 
-        var broadSchoolAccess = role == "Data Analyst";
+        var assignments = role == "School Administrator"
+            ? allAssignments
+            : [];
+
+        var broadSchoolAccess = role is "Executive" or "Data Administrator";
         var schoolSelectionEnabled = broadSchoolAccess
-            || (role == "Administrator" && assignments.Length > 1);
+            || role == "Teacher"
+            || (role == "School Administrator" && assignments.Length > 1);
 
         return new AssessmentAccessPolicy(
             role,
             assignments,
             broadSchoolAccess,
             schoolSelectionEnabled,
-            role is "Teacher" or "Class Room Support");
+            role == "Teacher");
     }
 
     public bool AllowsSchool(Guid schoolId, IReadOnlyList<AssessmentSchoolOption> availableSchools) =>
         availableSchools.Any(school => school.Id == schoolId);
 
-    public bool CanManageHistoricalAssessments => Role is "Administrator" or "Data Analyst";
+    public bool CanManageHistoricalAssessments => Role is "School Administrator" or "Data Administrator";
 
-    public bool CanDeleteAssessments => Role is "Administrator" or "Data Analyst";
+    public bool CanDeleteAssessments => Role is "School Administrator" or "Data Administrator";
 
     private static string NormalizeRole(string role) => role switch
     {
-        "School Administration" => "Administrator",
-        "Student Support" => "Class Room Support",
-        "Data Analyst (Administrator)" => "Data Analyst",
+        "School Administration" or "Administrator" => "School Administrator",
+        "Class Room Support" or "Classroom Support" => "Student Support",
+        "Specialist" => "Specialist Support",
+        "Data Analyst (Administrator)" or "Data Analyst" => "Data Administrator",
         _ => role
     };
 }
