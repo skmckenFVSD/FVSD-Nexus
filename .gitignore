@@ -24,3 +24,7 @@ coverage/
 docs/.obsidian/workspace*.json
 docs/.obsidian/cache
 docs/.trash/
+
+docs/.obsidian/plugins/
+docs/.obsidian/appearance.json
+docs/.obsidian/community-plugins.json
