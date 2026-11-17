@@ -521,8 +521,8 @@ body.grid-on #grid{display:block}
       </div>
     </div>
     <div class="catalog">
-      <span class="ctag">Purview · the catalogue</span>
-      <p><b>Not a fourth source of truth, and that distinction is the point.</b> Purview holds none of the record, the calculation or the identity. It publishes what they <em>mean</em>, who owns them and how sensitive they are, so the answer can be found and trusted rather than merely returned.</p>
+      <span class="ctag">OneLake catalog · the catalogue</span>
+      <p><b>Not a fourth source of truth, and that distinction is the point.</b> The catalogue holds none of the record, the calculation or the identity. It publishes what they <em>mean</em>, who owns them and where they came from, beside the model they describe, so the answer can be found and trusted rather than merely returned.</p>
     </div>
   </section>
 
@@ -560,13 +560,13 @@ body.grid-on #grid{display:block}
   <section class="slide" data-title="Governed agents" data-group="Governance">
     <p class="eyebrow">The parallel build</p>
     <h2>Who owns this number, and can it be trusted?</h2>
-    <p>Our Data Product Agent governs the lifecycle of every measure across Fabric, Dataverse, Power BI and Purview. Four patterns carried the weight.</p>
+    <p>Our Data Product Agent governs the lifecycle of every measure across Fabric, Dataverse, Power BI and the OneLake catalog. Four patterns carried the weight.</p>
     <ul class="clean mint">
       <li><strong>Extract documentation, don&#39;t write it.</strong> Meaning is drawn from the model (logic, dependencies, lineage), not retyped into a document that starts drifting the moment it is saved.</li>
       <li><strong>Ownership is a gate.</strong> A measure moves forward only when a business owner, technical owner and data steward are named. Missing ownership stops registration.</li>
       <li><strong>Nothing both decides and writes.</strong> Each step hands a validated, typed contract to the next. No free-form instructions cross a boundary.</li>
       <li><strong>Exceptions route to a human.</strong> When something can&#39;t complete correctly, work stops and a named governance role reviews it. The system never guesses.</li>
-      <li><strong>It publishes to Purview.</strong> Governed products land in the enterprise catalogue, so discovery arrives with ownership and sensitivity already attached.</li>
+      <li><strong>It publishes to the catalogue.</strong> Governed products land in the OneLake catalog beside the model they describe, so discovery arrives with ownership, endorsement and lineage already attached.</li>
     </ul>
   </section>
 
@@ -578,7 +578,7 @@ body.grid-on #grid{display:block}
       <div class="card amber-edge"><div class="k">Small groups suppressed</div><p>Where five or fewer students sit behind a figure it is suppressed. Where subtraction could still reveal it, both sides are suppressed.</p></div>
       <div class="card amber-edge"><div class="k">Security never bypassed</div><p>The model enforces access. Users are told their scope limits a result; the system never infers what they cannot see.</p></div>
     </div>
-    <p>Sensitivity classification travels <em>with</em> the record (aggregate, school, division or restricted) and governs who may receive it.</p>
+    <p>Sensitivity classification and Purview labels travel <em>with</em> the record (aggregate, school, division or restricted) and govern who may receive it.</p>
   </section>
 
   <section class="slide" data-title="Residency" data-group="Governance">
@@ -593,7 +593,7 @@ body.grid-on #grid{display:block}
     <h2>AI is only as trustworthy as<br>what it stands on</h2>
     <p class="lead">Every discipline in this deck exists so that when someone asks a question in plain language, the answer can be trusted, and so that governance survives the asking.</p>
     <div class="cols">
-      <div class="card mint-edge"><div class="k">Ask where the work happens</div><p>Copilot, Teams and the tools staff already have, grounded in the same governed measures and catalogued meaning, not a separate copy of the data.</p></div>
+      <div class="card mint-edge"><div class="k">Ask where the work happens</div><p>Copilot, Teams, Excel and Foundry, grounded in the same governed measures and the meaning the OneLake catalog already carries into them, not a separate copy of the data.</p></div>
       <div class="card mint-edge"><div class="k">Permission-aware by construction</div><p>Work IQ runs every request <strong>user-scoped</strong>. It accesses only what that person is already allowed to see. The named-user principle we built on, enforced at the intelligence layer.</p></div>
       <div class="card mint-edge"><div class="k">Already speaking the protocol</div><p>Our documentation agent is an A2A connected tool today. The governed catalogue becomes something agents can reason over, not just something people read.</p></div>
     </div>
@@ -663,7 +663,8 @@ body.grid-on #grid{display:block}
         <tr><td>Intervention tracking</td><td><span class="pill p-next">Phase 1–2</span></td><td>Intervention Focus within the annual-plan workflow</td></tr>
         <tr><td>Microsoft 365 Copilot integration</td><td><span class="pill p-next">Phase 3</span></td><td>Work IQ, agents, skills and governed tools through the Copilot harness</td></tr>
         <tr><td>Provincial connector</td><td><span class="pill p-next">Phase 4</span></td><td>Division-owned exchange with the province</td></tr>
-        <tr><td>Purview protection and governance</td><td><span class="pill p-next">Phase 3</span></td><td>Meaning, ownership, sensitivity and compliance controls</td></tr>
+        <tr><td>OneLake catalog governance</td><td><span class="pill p-next">Phase 3</span></td><td>Meaning, ownership, endorsement and lineage beside the model</td></tr>
+        <tr><td>Purview protection</td><td><span class="pill p-next">Phase 3</span></td><td>Sensitivity labels, DLP and compliance for app content and AI</td></tr>
       </tbody>
     </table>
   </section>
@@ -681,9 +682,22 @@ body.grid-on #grid{display:block}
     <p>Microsoft Foundry will provide the approved API, model, agent, evaluation, toolbox and MCP components. The Azure application remains the structured operational experience, while the Microsoft 365 Copilot harness becomes an additional governed entry point in Phase 3.</p>
     <div class="cols">
       <div class="card"><div class="k">Reusable services</div><p>One governed tool or agent contract can support Nexus and Microsoft 365 Copilot.</p></div>
-      <div class="card"><div class="k">Clear authority</div><p>Dataverse remains operational truth and Fabric remains the governed analytical layer.</p></div>
+      <div class="card"><div class="k">Clear authority</div><p>Dataverse remains operational truth; Fabric remains the governed analytical layer and, through the OneLake catalog, where meaning is governed.</p></div>
       <div class="card"><div class="k">Same identity</div><p>Entra identity and destination permissions continue to follow the named user.</p></div>
     </div>
+  </section>
+
+  <section class="slide" data-title="Governance moves to Fabric" data-group="Where Next">
+    <p class="eyebrow">Validation, November 2026</p>
+    <h2>Governance moved to where<br>the measures live</h2>
+    <p class="lead">Microsoft is moving data governance into Fabric. The OneLake catalog becomes the single foundation for discovery, governance and protection; Purview Data Governance retires in November 2027.</p>
+    <ul class="clean mint">
+      <li><strong>The catalogue now sits beside the calculation.</strong> Meaning, ownership, endorsement and lineage live in the same platform as the semantic model they describe. <em>Extract, don&#39;t write</em> gets easier, not harder.</li>
+      <li><strong>Purview does what it does best.</strong> Labels, data-loss prevention and compliance across the estate and AI, without also being the catalogue.</li>
+      <li><strong>It travels to where people work.</strong> The catalog is embedded in Teams, Excel and Foundry, so the same permissions and lineage govern how AI uses the data.</li>
+      <li><strong>Our principle didn&#39;t move.</strong> The catalogue was never a fourth source of truth. Only its address changed.</li>
+    </ul>
+    <p><span class="pill p-prop">Eyes open</span> Our catalog agent still publishes to Purview. It gets re-pointed to the OneLake catalog well before support ends, and we confirm exactly what the retirement covers with Microsoft.</p>
   </section>
 
   <section class="slide" data-title="The Copilot harness" data-group="Where Next">
@@ -770,7 +784,7 @@ body.grid-on #grid{display:block}
   <button class="btn" id="btnMenu" type="button" title="Contents (N)" aria-label="Toggle contents menu">☰</button>
   <button class="btn" id="btnGrid" type="button" title="Overview (Esc)" aria-label="Toggle slide overview">▦</button>
   <button class="btn" id="btnPrev" type="button" title="Previous (←)" aria-label="Previous slide">‹</button>
-  <span id="count" aria-live="polite"><b>1</b> / 26</span>
+  <span id="count" aria-live="polite"><b>1</b> / 27</span>
   <button class="btn" id="btnNext" type="button" title="Next (→)" aria-label="Next slide">›</button>
   <button class="btn" id="btnFull" type="button" title="Fullscreen (F)" aria-label="Toggle fullscreen">⛶</button>
 </div>

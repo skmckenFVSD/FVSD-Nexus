@@ -36,7 +36,7 @@ concepts:
   # ── Sources of truth and governance ──────────────────────────────────
   record:        { emoji: "🗄️", lucide: database,          use: "Dataverse — where the record lives" }
   calculation:   { emoji: "🧮", lucide: calculator,        use: "Semantic model — how a number is calculated" }
-  catalogue:     { emoji: "🏷️", lucide: tag,               use: "Purview — meaning, ownership and sensitivity" }
+  catalogue:     { emoji: "🏷️", lucide: tag,               use: "OneLake catalog — meaning, ownership, endorsement and lineage" }
   governance:    { emoji: "🛡️", lucide: shield-check,      use: "Governance framework and controls" }
   security:      { emoji: "🔐", lucide: lock-keyhole,      use: "Security, authorization, privacy, secrets" }
   residency:     { emoji: "🍁", lucide: map-pinned,        use: "Canadian data residency" }

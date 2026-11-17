@@ -81,7 +81,7 @@ Place a component comment directly above the list it styles.
 | `<!-- cards edge=cyan -->` | `- **Label** — body` | Card grid with small-caps labels. `edge` = `cyan`, `mint` or `amber`. |
 | `<!-- cards cols=two title=h3 -->` | `- 🟢 **Live** **Title** — body` | Two-column cards with headings and optional pills. Add `number` to number the cards 01, 02… |
 | `<!-- truth -->` | `- 🗄️ **Record** — *Question?* **Answer** description` | The three-sources-of-truth cards. The icon picks the badge colour (🗄️ record, 🧮 calculation, 🪪 identity). |
-| `<!-- catalog tag="Purview · the catalogue" -->` | A paragraph | The dashed catalogue strip |
+| `<!-- catalog tag="OneLake catalog · the catalogue" -->` | A paragraph | The dashed catalogue strip |
 | `<!-- stats -->` | `- **$70** label` | Large statistics row |
 | `<!-- flow -->` | `- **Stage 0 · Discovery** — body` | Numbered stage flow |
 | `<!-- timeline -->` | `- [x] **When** — what` | Timeline; `[x]` marks completed steps |

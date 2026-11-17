@@ -55,11 +55,12 @@ The three sources of truth always keep their colours, in every diagram and slide
 | Record (Dataverse) | Blue / cyan | 🗄️ |
 | Calculation (semantic model) | Mint | 🧮 |
 | Identity (Entra) | Amber | 🪪 |
-| Catalogue (Purview, not a source of truth) | Dashed grey | 🏷️ |
+| Catalogue (OneLake catalog, not a source of truth) | Dashed grey | 🏷️ |
+| Protection (Purview) | Follows the protected item; use 🔐 | 🔐 |
 
 ## 🖼️ Imagery
 
-Architecture and concept illustrations use **house style A**: isometric 3D, luminous glass and stone on deep navy (`#04102B`) with a faint grid floor, cinematic soft light and floor reflections. The sources of truth keep their colours and forms in every image: record as blue database cylinders, calculation as a mint crystal lattice, identity as an amber card-shaped slab, Nexus as a floating navy glass platform with a cyan rim, Purview as a separate dashed pale halo.
+Architecture and concept illustrations use **house style A**: isometric 3D, luminous glass and stone on deep navy (`#04102B`) with a faint grid floor, cinematic soft light and floor reflections. The sources of truth keep their colours and forms in every image: record as blue database cylinders, calculation as a mint crystal lattice, identity as an amber card-shaped slab, Nexus as a floating navy glass platform with a cyan rim, the catalogue (OneLake catalog) as a separate dashed pale halo.
 
 - **Generated art never contains text.** Every prompt ends with *"Absolutely no text, no letters, no numbers, no logos, no people."* Labels are added as an editable SVG layer, so names are always spelled correctly and can change without regenerating the art.
 - **The diagram is the truth; the illustration presents it.** Keep the Mermaid version on the same page.

@@ -28,6 +28,7 @@ updated: 2026-11-05
 | Product build | The approved implementation of Nexus, delivered through phased scope and evidence-based release gates. |
 | IPP | Individual Program Plan. |
 | Nexus experience role | A role used to adapt navigation and UX. It cannot grant destination-service permission. |
+| OneLake catalog | The Fabric catalog for discovering and governing data: meaning, ownership, endorsement, domains, lineage, security and protection, across Fabric, Azure and connected third-party sources. FVSD's governance catalogue ([ADR-0008](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md)). Catalog access never grants access to the underlying data. |
 | OneLake link | The established Dataverse-to-Fabric integration used to make operational data available analytically. |
 | PASI | Provincial Approach to Student Information, Alberta Education's provincial student-information services and contracts. |
 | PASI client certificate | A certificate registered with Alberta Education and used by a PASI client for system authentication. It is separate from a Nexus user's interactive Entra identity. |
@@ -37,8 +38,8 @@ updated: 2026-11-05
 | Period | Fall, Winter, or Spring. Summer is not an active assessment period. |
 | Power Apps Premium | Per-user Power Apps licence proposed as a fallback if pay-as-you-go metering is unsuitable. |
 | Protection scope | A Microsoft Purview policy result describing whether and how a known user's application activity should be evaluated. |
-| Purview Data Map | Microsoft Purview's metadata map for discovered data assets, classifications, relationships, and lineage. It does not grant access to the underlying data. |
-| Purview Unified Catalog | Microsoft Purview's governed catalog experience for discovery, domains, data products, glossary concepts, ownership, and related governance workflows. |
+| Purview | Microsoft's data security and compliance solution: sensitivity labels, DLP, audit, retention and risk. At FVSD it is the protection layer, not the catalogue. |
+| Purview Data Map / Unified Catalog | Purview Data Governance capabilities for metadata, domains and data products. ⚪ **Retiring**: support ends November 12, 2027; replaced by the OneLake catalog and not used for new FVSD work. |
 | `processContent` | A Microsoft Graph Purview operation used by a policy-aware application to evaluate approved text or file activity for a known user and action. |
 | PR | Percentile Rank. |
 | RLS | Row-level security. |

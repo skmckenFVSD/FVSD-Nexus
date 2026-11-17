@@ -68,7 +68,7 @@ The table between the markers is generated from [`icon-registry.yml`](icon-regis
 | ⚙️ | `admin` | [`settings`](https://lucide.dev/icons/settings) | Settings and platform administration |
 | 🗄️ | `record` | [`database`](https://lucide.dev/icons/database) | Dataverse — where the record lives |
 | 🧮 | `calculation` | [`calculator`](https://lucide.dev/icons/calculator) | Semantic model — how a number is calculated |
-| 🏷️ | `catalogue` | [`tag`](https://lucide.dev/icons/tag) | Purview — meaning, ownership and sensitivity |
+| 🏷️ | `catalogue` | [`tag`](https://lucide.dev/icons/tag) | OneLake catalog — meaning, ownership, endorsement and lineage |
 | 🛡️ | `governance` | [`shield-check`](https://lucide.dev/icons/shield-check) | Governance framework and controls |
 | 🔐 | `security` | [`lock-keyhole`](https://lucide.dev/icons/lock-keyhole) | Security, authorization, privacy, secrets |
 | 🍁 | `residency` | [`map-pinned`](https://lucide.dev/icons/map-pinned) | Canadian data residency |

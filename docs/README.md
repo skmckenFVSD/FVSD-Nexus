@@ -17,7 +17,7 @@ related: ["[[philosophy/README]]", "[[governance/README]]", "[[architecture/over
 
 > Governed, role-aware software that moves Fort Vermilion School Division from evidence to action, documented once, read everywhere.
 
-![FVSD Nexus above its three sources of truth: Dataverse, the record; FVSDAnalytics, the calculation; Entra ID, the identity; with Purview as the catalogue around them.](design-system/assets/illustrations/three-sources-of-truth.svg)
+![FVSD Nexus above its three sources of truth: Dataverse, the record; FVSDAnalytics, the calculation; Entra ID, the identity; with the OneLake catalog around them as the catalogue.](design-system/assets/illustrations/three-sources-of-truth.svg)
 
 [⬅️ Repository](../README.md) · [📖 Philosophy](philosophy/README.md) · [🏗️ Architecture](architecture/README.md) · [🧩 Capabilities](capabilities/README.md) · [🧑‍🏫 Staff guide](user-guide/README.md) · [🎤 Presentation](presentation/README.md)
 
@@ -69,7 +69,8 @@ flowchart TB
         direction LR
         PS["PowerSchool<br>student context"]
         FND["🤖 Microsoft Foundry<br>intelligence services"]
-        PV["🏷️ Purview<br>meaning and protection"]
+        PV["🏷️ OneLake catalog<br>meaning and lineage"]
+        PUR["🔐 Purview<br>protection and compliance"]
         PASI["🏛️ PASI<br>Phase 4"]
     end
 
@@ -83,6 +84,7 @@ flowchart TB
     M365 --> FND
     PS -->|synchronization| DV
     PV -.->|describes| SM
+    PUR -.->|labels and DLP| NX
     DV -.->|durable connector| PASI
 
     classDef nexus fill:#071940,stroke:#4A90E2,color:#F4F7FC,font-weight:bold
@@ -99,7 +101,7 @@ flowchart TB
     class SM calc
     class ID identity
     class PV catalog
-    class PS,FND,PASI external
+    class PS,FND,PASI,PUR external
     class U person
     style EXP fill:#F7FAFF,stroke:#B7D3F2,color:#071940
     style TRUTH fill:#F7FAFF,stroke:#B7D3F2,color:#071940
@@ -118,7 +120,7 @@ The full component view, including the agent and governance services, is in the 
 | 🎓 IEP / IPP annual plans | 🔵 **Active build** | [IEP / IPP](capabilities/ipp/README.md) | [Chapter 5](user-guide/05-iep-ipp.md) |
 | 🩺 Intervention tracking | 🔵 **Phase 1–2** | [Interventions](capabilities/interventions/README.md) | Within chapter 5 |
 | 🪪 School and student profiles | 🟠 **Proposed** | [Profiles](capabilities/profiles/README.md) | — |
-| 🛡️ Purview governance and Data Analyst workspace | 🔵 **Phase 3** | [Purview governance](capabilities/purview-governance/README.md) | — |
+| 🛡️ Data governance (OneLake catalog) and Data Analyst workspace | 🔵 **Phase 3** | [Data governance](capabilities/purview-governance/README.md) | — |
 | 🤖 Microsoft 365 Copilot integration | 🔵 **Phase 3** | [Copilot interoperability](architecture/copilot-interoperability.md) | — |
 | 🏛️ PASI provincial connector | 🔵 **Phase 4** | [PASI connector](capabilities/pasi-connector/README.md) | — |
 | ⚙️ Platform administration | 🟢 **Partial** | [Administration](capabilities/administration/README.md) | [Chapter 6](user-guide/06-settings-and-support.md) |
@@ -204,6 +206,7 @@ Nexus is built for FVSD, but these patterns travel to any Microsoft 365 organiza
 - **Build vertical slices, not prototypes.** One narrow journey built completely earns more trust than a broad demo.
 - **Extract documentation from the system.** Anything written separately is already drifting; generate guides and decks from one source.
 - **Separate deciding from writing.** No component both makes a judgement and commits it.
+- **Let the catalogue describe, never hold.** Meaning and ownership live in a catalogue beside the model (the OneLake catalog); it is never a fourth source of truth.
 - **Treat residency as a boundary.** Decide what never leaves the country before choosing tools.
 
 Related work: the [FVSD Data Product Agent](https://github.com/skmckenFVSD/FVSDDataProductAgent) governs the lifecycle of the measures Nexus displays.

@@ -1,26 +1,27 @@
 ---
-title: Purview governance and agent architecture
-description: Purview governance and agent architecture for FVSD Nexus.
+title: Data governance and agent architecture
+description: Phase 3 reference architecture — the OneLake catalog for governance, Purview for protection, and the FVSD agents that connect them to Nexus.
 type: architecture
 status: proposed
 icon: 🛡️
 area: architecture
 audience: [architects, developers, leadership]
 owner: Scott McKenzie
-tags: [nexus, nexus/architecture]
-updated: 2026-11-05
-related: ["[[capabilities/purview-governance/README]]", "[[reference/purview-resources]]", "[[architecture/data-and-integrations]]", "[[architecture/identity-licensing-security]]"]
+tags: [nexus, nexus/architecture, nexus/governance]
+aliases: [Purview governance architecture, OneLake catalog architecture]
+updated: 2026-11-17
+related: ["[[decisions/adr/0008-onelake-catalog-governance-purview-protection]]", "[[capabilities/purview-governance/README]]", "[[reference/purview-resources]]", "[[architecture/data-and-integrations]]", "[[architecture/identity-licensing-security]]"]
 ---
 
-# 🛡️ Purview governance and agent architecture
+# 🛡️ Data governance and agent architecture
 
-[🏠 Home](../README.md) › [🏗️ Architecture](README.md) › Purview governance and agent architecture
+[🏠 Home](../README.md) › [🏗️ Architecture](README.md) › Data governance and agent architecture
 
-**Status:** 🟠 Phase 3 reference architecture; documentation only
+**Status:** 🟠 Phase 3 reference architecture; documentation only. Re-anchored on the OneLake catalog by [ADR-0008](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md) (November 17, 2026).
 
 ## 🎯 Architectural intent
 
-The Data Analyst workspace should compose existing governed FVSD capabilities without collapsing their boundaries. Fabric documentation explains technical truth, Dataverse records the data-product lifecycle, Fabric catalog capabilities describe and govern Fabric assets, Purview provides protection and compliance, and the Data Product Agent coordinates bounded agent workflows.
+The Data Analyst workspace should compose existing governed FVSD capabilities without collapsing their boundaries. Fabric documentation explains technical truth, Dataverse records the data-product lifecycle, the OneLake catalog describes and governs data across the estate, Purview provides protection and compliance only, and the Data Product Agent coordinates bounded agent workflows.
 
 ```mermaid
 flowchart LR
@@ -36,7 +37,7 @@ flowchart LR
     DOC --> FAB[(Fabric documentation lakehouse)]
     REG --> DV[(Dataverse data products)]
     CAT --> DV
-    ENT --> PUR[Enterprise catalog<br/>Purview when adopted]
+    ENT --> OLC[OneLake catalog<br/>publication and endorsement]
 
     BFF --> GRAPH[Microsoft Graph Purview policy APIs]
     GRAPH --> POLICY[Protection scope / content decision]
@@ -52,8 +53,8 @@ The exact invocation path is open. Nexus might initially deep-link to the existi
 | Fabric object identity, expression, and surfaced lineage | Fabric Analytics Documentation Agent and its Catalog/Lineage tables |
 | FVSD data-product registration and lifecycle | Dataverse `fvsd_dataproduct` and established agent contracts |
 | Business ownership and stewardship assignments | Confirmed Dataverse governance bindings |
-| Fabric item discovery, ownership, endorsement, and lineage | Fabric OneLake catalog and Fabric metadata |
-| Enterprise catalog domains, products, glossary, curation, and health | Microsoft Purview Unified Catalog where adopted and configured by FVSD |
+| Discovery, ownership, endorsement, domains, lineage and published data products | Fabric OneLake catalog (Fabric, Azure and third-party sources through shortcuts, mirroring and connectors) |
+| Sensitivity labels, DLP, audit, retention and compliance | Microsoft Purview (protection and compliance only; Purview Data Governance retires November 12, 2027) |
 | Source-data access | Fabric, Azure, Dataverse, or other source permissions; never inferred from catalog access |
 | Nexus experience visibility | Nexus role mapping, including Data Analyst |
 | In-app text/file policy decision | Microsoft Purview policies evaluated through Microsoft Graph |
@@ -69,10 +70,10 @@ The exact invocation path is open. Nexus might initially deep-link to the existi
 - Return structured success, warning, review-required, denied, unsupported, or failure results.
 - Never scrape conversational output as if it were a stable API contract.
 
-### Purview catalog adapter
+### OneLake catalog adapter
 
-- Keep Fabric catalog discovery, any Purview Data Map/Unified Catalog integration, and Microsoft Graph policy evaluation as separate responsibilities.
-- Use least-privilege Purview roles and supported APIs/tools for the tenant's account type.
+- Keep OneLake catalog discovery and publication separate from Microsoft Graph Purview policy evaluation.
+- Use least-privilege Fabric roles and the supported OneLake catalog APIs or tools; no Purview Data Map or Unified Catalog integration.
 - Require explicit confirmation for metadata or publication changes.
 - Treat catalog metadata as descriptive governance information, not source-data authorization.
 
@@ -126,14 +127,14 @@ sequenceDiagram
 - Offline evaluation failures require a durable retry and operational alert without retroactively claiming evaluation succeeded.
 - A changed/invalid ETag requires protection scopes to be recomputed.
 - Agent or catalog unavailability should degrade to a clear unavailable state; Nexus must not fabricate documentation or publication status.
-- Duplicate commands must not create duplicate Dataverse or Purview catalog changes.
+- Duplicate commands must not create duplicate Dataverse or OneLake catalog changes.
 
 ## 🧪 Contract and test requirements
 
 - Contract tests for every supported Data Product Agent intent and terminal result.
 - Grounding tests showing documentation exactly matches the Fabric agent contract.
 - Permission tests for Data Analyst, Data Steward, Technical Owner, and unauthorized roles.
-- Purview catalog read/write tests using least-privilege identities.
+- OneLake catalog read, publication and endorsement tests using least-privilege identities.
 - Protection-scope tests for no scope, offline, inline, multiple scopes, changed ETag, denial, timeout, and unavailable service.
 - Audit tests proving one correlation chain across Nexus and agent events without sensitive payloads.
 - Accessibility tests for policy-block messages, review actions, and unavailable states.
@@ -141,15 +142,17 @@ sequenceDiagram
 ## ⚠️ Explicit exclusions at this stage
 
 - No selection of an agent invocation technology.
-- No Purview Graph permissions or tenant policy changes.
+- No Purview Graph permissions, OneLake catalog configuration or tenant policy changes.
+- No integration with Purview Unified Catalog or Data Map (retiring; see ADR-0008).
 - No new governance tables or duplication of `fvsd_dataproduct`.
 - No automatic catalog publication based solely on an AI recommendation.
 - No extraction of Purview analytics through the policy APIs; Microsoft states that capability is not available through this API surface.
 
 ## 🔗 Related documentation
 
-- [Purview Data Analyst capability](../capabilities/purview-governance/README.md)
-- [Purview and FVSD agent references](../reference/purview-resources.md)
+- [ADR-0008: OneLake catalog and Purview protection](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md)
+- [Data governance and Data Analyst workspace](../capabilities/purview-governance/README.md)
+- [Governance and FVSD agent references](../reference/purview-resources.md)
 - [Data and integrations](data-and-integrations.md)
 - [Identity, licensing, and security](identity-licensing-security.md)
 

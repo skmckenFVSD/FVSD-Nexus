@@ -30,7 +30,7 @@ This page explains the principles that answer that problem. They are not slogans
 
 Three questions have three permanent answers. Nothing in Nexus is allowed to become a fourth.
 
-![FVSD Nexus floating above three plinths: Dataverse, the record; FVSDAnalytics, the calculation; Entra ID, the identity. Purview surrounds them as the catalogue, not a fourth source of truth.](../design-system/assets/illustrations/three-sources-of-truth.svg)
+![FVSD Nexus floating above three plinths: Dataverse, the record; FVSDAnalytics, the calculation; Entra ID, the identity. The OneLake catalog surrounds them as the catalogue, not a fourth source of truth.](../design-system/assets/illustrations/three-sources-of-truth.svg)
 
 The same structure, precisely:
 
@@ -43,7 +43,7 @@ flowchart TB
     DV --> APP["🧭 FVSD Nexus<br>where the work happens"]
     SM --> APP
     ID --> APP
-    PV["🏷️ Purview<br>what it means, who owns it,<br>how sensitive it is"] -.->|describes, never holds| DV
+    PV["🏷️ OneLake catalog<br>what it means, who owns it,<br>where it came from"] -.->|describes, never holds| DV
     PV -.-> SM
 
     classDef record fill:#1F4E79,stroke:#6FB1F5,color:#FFFFFF
@@ -63,7 +63,7 @@ flowchart TB
 - **Record: Dataverse.** Assessments, plans, reference data, workflow state and the audit history of who changed what, and when. See [ADR-0001](../decisions/adr/0001-dataverse-operational-truth.md).
 - **Calculation: the semantic model.** Every measure, trend and classification is defined once in `FVSDAnalytics`. No application recalculates it independently. See [ADR-0002](../decisions/adr/0002-fabric-governed-analytics.md).
 - **Identity: Entra.** Who someone is, what they are licensed for and where they work. See [ADR-0003](../decisions/adr/0003-named-user-delegated-access.md).
-- **Purview is not a fourth source,** and that distinction is the point. It holds none of the record, the calculation or the identity. It publishes what they *mean*, who owns them and how sensitive they are.
+- **The catalogue is not a fourth source,** and that distinction is the point. The **OneLake catalog** holds none of the record, the calculation or the identity. It publishes what they *mean*, who owns them and where they came from, beside the model they describe. **Purview** protects them (labels, DLP, audit) but is not the catalogue. See [ADR-0008](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md).
 
 ## 🎯 The app asks. It never answers.
 
@@ -99,7 +99,7 @@ Three articles by Scott McKenzie in [The Decision Engine](https://medium.com/the
 |---|---|---|
 | [The Measure Illusion](https://medium.com/the-decision-engine/the-measure-illusion-76174d543139) | Familiarity replaces understanding; a measure nobody owns is not a KPI. | Measures stay in the semantic model; analytics shows governed definitions only. |
 | [Stop Writing Documentation. Start Extracting It.](https://medium.com/the-decision-engine/stop-writing-documentation-start-extracting-it-04dd1fc6d8ce) | The model already holds the truth; reveal it instead of retyping it. | Generated guide and deck; links to canonical pages rather than copies. |
-| [The Moment Trust Breaks](https://medium.com/the-decision-engine/the-moment-trust-breaks) | Decisions fail where meaning should live but does not. | Purview, honest status labels, named-user access and audit history. |
+| [The Moment Trust Breaks](https://medium.com/the-decision-engine/the-moment-trust-breaks) | Decisions fail where meaning should live but does not. | OneLake catalog meaning and lineage, honest status labels, named-user access and audit history. |
 
 ## 🗺️ Principles to decisions
 
@@ -110,6 +110,7 @@ Three articles by Scott McKenzie in [The Decision Engine](https://medium.com/the
 | Residency boundary | Azure Canada Central; no off-shore copies | [ADR-0004](../decisions/adr/0004-canadian-data-residency.md) |
 | Modular, governed plans | `fvsd_ippsection` catalogue and allocation contract | [ADR-0006](../decisions/adr/0006-modular-annual-student-plans.md) |
 | Intelligence as a service plane | Foundry components behind governed contracts | [ADR-0007](../decisions/adr/0007-azure-app-and-microsoft-foundry.md) |
+| The catalogue describes, never holds | OneLake catalog for meaning and lineage; Purview for protection | [ADR-0008](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md) |
 
 ## 🔗 Related documentation
 

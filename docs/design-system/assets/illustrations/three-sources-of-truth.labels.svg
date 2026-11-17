@@ -7,7 +7,7 @@
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2304 1296" role="img" aria-labelledby="t d">
   <title id="t">FVSD Nexus: three sources of truth</title>
-  <desc id="d">FVSD Nexus floats above three plinths: Dataverse, the record; the FVSDAnalytics semantic model, the calculation; and Entra ID, the identity. A dashed ring around them is Purview, the catalogue, which describes meaning, ownership and sensitivity but is not a fourth source of truth.</desc>
+  <desc id="d">FVSD Nexus floats above three plinths: Dataverse, the record; the FVSDAnalytics semantic model, the calculation; and Entra ID, the identity. A dashed ring around them is the OneLake catalog, which describes meaning, ownership and lineage but is not a fourth source of truth; Microsoft Purview protects the data.</desc>
   <image href="three-sources-of-truth.base.webp" x="0" y="0" width="2304" height="1296"/>
   <style>
     text { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
@@ -50,7 +50,7 @@
   <!-- Purview: the catalogue ring -->
   <g text-anchor="middle">
     <rect x="692" y="1162" width="920" height="96" rx="48" fill="#04102B" fill-opacity=".8" stroke="#B9C6DC" stroke-width="2" stroke-dasharray="14 10"/>
-    <text class="kicker" x="1152" y="1200" fill="#B9C6DC" style="font-size:21px">PURVIEW · THE CATALOGUE</text>
-    <text class="sub" x="1152" y="1238" style="fill:#F4F7FC;font-size:26px">Meaning, ownership and sensitivity — not a fourth source of truth</text>
+    <text class="kicker" x="1152" y="1200" fill="#B9C6DC" style="font-size:21px">ONELAKE CATALOG · THE CATALOGUE</text>
+    <text class="sub" x="1152" y="1238" style="fill:#F4F7FC;font-size:26px">Meaning, ownership and lineage — not a fourth source of truth</text>
   </g>
 </svg>

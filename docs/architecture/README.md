@@ -22,7 +22,7 @@ FVSD Nexus is a custom user experience over FVSD's existing Microsoft data and i
 - [Overview](overview.md)
 - [Data and integrations](data-and-integrations.md)
 - [PASI connector](pasi-connector.md)
-- [Purview governance and agent integration](purview-governance.md)
+- [Data governance and agent integration](purview-governance.md): OneLake catalog and Purview protection
 - [Copilot and agent interoperability](copilot-interoperability.md)
 - [App-native document and PDF generation](document-generation.md)
 - [Identity, licensing, and security](identity-licensing-security.md)

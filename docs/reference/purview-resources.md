@@ -1,6 +1,6 @@
 ---
-title: Purview and FVSD governance-agent references
-description: "Reviewed: November 5, 2026"
+title: Governance and FVSD agent references
+description: Official Microsoft references for the OneLake catalog, Purview protection, Copilot and Foundry, plus the FVSD Data Product Agent documentation used to frame Phase 3.
 type: reference
 status: current
 icon: 🏷️
@@ -8,15 +8,15 @@ area: reference
 audience: [staff, architects, developers]
 owner: Scott McKenzie
 tags: [nexus, nexus/reference]
-updated: 2026-11-05
+updated: 2026-11-17
 related: ["[[reference/glossary]]"]
 ---
 
-# 🏷️ Purview and FVSD governance-agent references
+# 🏷️ Governance and FVSD agent references
 
-[🏠 Home](../README.md) › [📚 Reference](glossary.md) › Purview and FVSD governance-agent references
+[🏠 Home](../README.md) › [📚 Reference](glossary.md) › Governance and FVSD agent references
 
-**Reviewed:** November 5, 2026
+**Reviewed:** November 17, 2026
 
 This page indexes official Microsoft material and the existing FVSD Data Product Agent documentation used to frame Phase 3. Tenant configuration, licensing, API availability, permissions, and supported integration mechanisms must be validated again before implementation.
 
@@ -44,7 +44,14 @@ This page indexes official Microsoft material and the existing FVSD Data Product
 - [Microsoft Graph permissions reference](https://learn.microsoft.com/en-us/graph/permissions-reference) - authoritative permission catalogue, including applicable Purview delegated permissions.
 - [Purview API samples](https://github.com/microsoft/purview-api-samples) - Microsoft-owned developer examples.
 
-## 🛡️ Purview governance and Fabric
+## 🏷️ Data governance in Fabric (the OneLake catalog)
+
+- [A next step in the evolution of the Microsoft data governance strategy](https://techcommunity.microsoft.com/blog/microsoft-security-blog/a-next-step-in-the-evolution-of-the-microsoft-data-governance-strategy/4572227) - November 12, 2026 announcement: the OneLake catalog becomes the single governance foundation; Purview Data Governance retires with support ending November 12, 2027; Purview remains the security and compliance solution. Basis for [ADR-0008](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md).
+
+## 🛡️ Purview protection and compliance
+
+> [!WARNING]
+> The first three links below describe **Purview Data Governance** (Data Map and Unified Catalog), which Microsoft is retiring. Keep them for migration and historical context only; do not design new FVSD work on them.
 
 - [Data governance with Microsoft Purview](https://learn.microsoft.com/en-us/purview/data-governance-overview) - Data Map, Unified Catalog, metadata boundary, governance domains, data products, quality, and stewardship.
 - [Data governance roles and permissions](https://learn.microsoft.com/en-us/purview/data-governance-roles-permissions) - tenant, catalog, domain, collection, and source permission boundaries.
@@ -65,7 +72,7 @@ This page indexes official Microsoft material and the existing FVSD Data Product
 
 ## ⚠️ Important distinctions
 
-- The OneLake catalog is the primary catalogue and governance experience inside Fabric. Purview complements it with protection and compliance and may provide broader enterprise catalogue capabilities where FVSD adopts them.
+- The OneLake catalog is FVSD's governance catalogue across Fabric, Azure and connected third-party sources. Purview provides protection and compliance only; Purview Data Governance (Data Map and Unified Catalog) retires November 12, 2027 and is not used for new work ([ADR-0008](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md)).
 - Catalog metadata and roles do not grant access to underlying source data.
 - The Microsoft Graph policy APIs evaluate and submit application activity/content. Microsoft states this API surface does not extract Purview analytics.
 - The Fabric Documentation Agent is the existing FVSD authority for surfaced semantic-model Catalog and Lineage documentation.

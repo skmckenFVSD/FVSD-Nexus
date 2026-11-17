@@ -56,7 +56,7 @@ classDef risk     fill:#FFF1F2,stroke:#B42318,color:#9A1D29
 | `record` | Dataverse and other operational records |
 | `calc` | The `FVSDAnalytics` semantic model and governed measures |
 | `identity` | Entra ID, roles, licences |
-| `catalog` | Purview: meaning, ownership, sensitivity (never a source of truth) |
+| `catalog` | The OneLake catalog: meaning, ownership, endorsement, lineage (never a source of truth). Purview protection uses `external` with a 🔐 label. |
 | `surface` | Places people work: Copilot, Teams, SharePoint, the browser |
 | `external` | PowerSchool, PASI, vendors, Microsoft services outside FVSD control |
 | `person` | People and roles |
@@ -79,7 +79,7 @@ flowchart LR
     DV["🗄️ Dataverse<br>operational record"]
     SM["🧮 FVSDAnalytics<br>semantic model"]
     ID["🪪 Entra ID<br>named user"]
-    PV["🏷️ Purview<br>catalogue"]
+    PV["🏷️ OneLake catalog<br>meaning and lineage"]
 
     U --> APP
     APP -->|delegated token| ID

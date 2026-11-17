@@ -26,8 +26,8 @@ related: ["[[architecture/README]]"]
 | Governed measures and analytical classifications | `FVSDAnalytics` semantic model | Query through predefined DAX endpoints. |
 | Application identity and user membership | Microsoft Entra ID | Authentication, group context, and licence lookup where required. |
 | Provincial student information | Alberta Education PASI | Phase 4 read, update, status, and synchronization operations through a dedicated FVSD connector; exact approved domains remain open. |
-| Fabric discovery and governance metadata | Fabric OneLake catalog and Fabric metadata | Discover Fabric items, ownership, endorsement, definitions, and lineage without granting access to source data. |
-| Information protection and compliance | Microsoft Purview | Apply sensitivity, DLP, audit, risk, and compliance controls. Any FVSD use of Purview Unified Catalog is an enterprise-governance decision, separate from Fabric source authorization. |
+| Discovery and governance metadata | Fabric OneLake catalog | Discover and govern items, ownership, endorsement, domains, definitions, and lineage across Fabric, Azure and connected sources without granting access to source data. |
+| Information protection and compliance | Microsoft Purview | Apply sensitivity, DLP, audit, risk, and compliance controls. Purview Data Governance (Unified Catalog, Data Map) is retiring and not used ([ADR-0008](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md)). |
 | Data-product workflow and documentation orchestration | Existing FVSD Data Product Agent and Fabric Documentation Agent | Phase 3 integration through bounded contracts; these assets retain their own governance and authorization boundaries. |
 
 ## 🗄️ Dataverse
@@ -121,11 +121,11 @@ An FVSD-owned PASI connector is Phase 4. The connector will commit the Nexus ope
 
 The Phase 4 design keeps the registered PASI client certificate in a server-side governed store, isolates generated provincial contracts behind an adapter, applies PASI optimistic-concurrency rules, and prevents student payloads from entering telemetry. See the [PASI capability](../capabilities/pasi-connector/README.md), [connector architecture](pasi-connector.md), and [official reference index](../reference/pasi-resources.md).
 
-## 🤖 Phase 3 Purview and governance-agent integration
+## 🤖 Phase 3 governance and agent integration
 
-The Data Analyst workspace can compose the existing FVSD Data Product Agent and Fabric Documentation Agent with Microsoft Purview. Fabric's OneLake catalog is the primary discovery and governance surface inside Fabric. Purview adds information protection and compliance capabilities across the estate. If FVSD adopts Purview Unified Catalog for enterprise data products and glossary, that catalogue remains a separate metadata plane; Microsoft Graph Purview APIs may also evaluate approved Nexus text or file activities for a known signed-in user.
+The Data Analyst workspace can compose the existing FVSD Data Product Agent and Fabric Documentation Agent with the OneLake catalog and Microsoft Purview. The OneLake catalog is the governance catalogue for discovery, ownership, endorsement and lineage across the estate; Purview adds information protection and compliance. Purview Data Governance, including Unified Catalog, is retiring and is not used ([ADR-0008](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md)).
 
-Nexus must not treat its Data Analyst experience role as permission to administer Purview, read source data, or publish catalog changes. Entra, Fabric, Dataverse, Purview, and the external agent contracts remain authoritative. See the [Purview capability](../capabilities/purview-governance/README.md), [agent architecture](purview-governance.md), and [reference index](../reference/purview-resources.md).
+Nexus must not treat its Data Analyst experience role as permission to administer Purview or the OneLake catalog, read source data, or publish catalog changes. Entra, Fabric, Dataverse, Purview, and the external agent contracts remain authoritative. See the [data governance capability](../capabilities/purview-governance/README.md), [agent architecture](purview-governance.md), and [reference index](../reference/purview-resources.md).
 
 ---
 

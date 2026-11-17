@@ -91,8 +91,8 @@ A learning support teacher preparing for one meeting needs screening scores from
 - 🧮 **Calculation** — *How is a number calculated?* **The semantic model** Every measure, trend and classification is defined once. No application recalculates it independently.
 - 🪪 **Identity** — *Who is this person, and what may they use?* **Entra** Identity, licence entitlement, department and location: the organisational facts about staff.
 
-<!-- catalog tag="Purview · the catalogue" -->
-**Not a fourth source of truth, and that distinction is the point.** Purview holds none of the record, the calculation or the identity. It publishes what they *mean*, who owns them and how sensitive they are, so the answer can be found and trusted rather than merely returned.
+<!-- catalog tag="OneLake catalog · the catalogue" -->
+**Not a fourth source of truth, and that distinction is the point.** The catalogue holds none of the record, the calculation or the identity. It publishes what they *mean*, who owns them and where they came from, beside the model they describe, so the answer can be found and trusted rather than merely returned.
 
 ---
 
@@ -141,14 +141,14 @@ Our applications send only predefined, reviewed queries. The browser is never ha
 
 ## Who owns this number, and can it be trusted?
 
-Our Data Product Agent governs the lifecycle of every measure across Fabric, Dataverse, Power BI and Purview. Four patterns carried the weight.
+Our Data Product Agent governs the lifecycle of every measure across Fabric, Dataverse, Power BI and the OneLake catalog. Four patterns carried the weight.
 
 <!-- list mint -->
 - **Extract documentation, don't write it.** Meaning is drawn from the model (logic, dependencies, lineage), not retyped into a document that starts drifting the moment it is saved.
 - **Ownership is a gate.** A measure moves forward only when a business owner, technical owner and data steward are named. Missing ownership stops registration.
 - **Nothing both decides and writes.** Each step hands a validated, typed contract to the next. No free-form instructions cross a boundary.
 - **Exceptions route to a human.** When something can't complete correctly, work stops and a named governance role reviews it. The system never guesses.
-- **It publishes to Purview.** Governed products land in the enterprise catalogue, so discovery arrives with ownership and sensitivity already attached.
+- **It publishes to the catalogue.** Governed products land in the OneLake catalog beside the model they describe, so discovery arrives with ownership, endorsement and lineage already attached.
 
 ---
 
@@ -163,7 +163,7 @@ Our Data Product Agent governs the lifecycle of every measure across Fabric, Dat
 - **Small groups suppressed** — Where five or fewer students sit behind a figure it is suppressed. Where subtraction could still reveal it, both sides are suppressed.
 - **Security never bypassed** — The model enforces access. Users are told their scope limits a result; the system never infers what they cannot see.
 
-Sensitivity classification travels *with* the record (aggregate, school, division or restricted) and governs who may receive it.
+Sensitivity classification and Purview labels travel *with* the record (aggregate, school, division or restricted) and govern who may receive it.
 
 ---
 
@@ -188,7 +188,7 @@ We will not stand up a copy of student data outside Canada to gain early access 
 Every discipline in this deck exists so that when someone asks a question in plain language, the answer can be trusted, and so that governance survives the asking.
 
 <!-- cards edge=mint -->
-- **Ask where the work happens** — Copilot, Teams and the tools staff already have, grounded in the same governed measures and catalogued meaning, not a separate copy of the data.
+- **Ask where the work happens** — Copilot, Teams, Excel and Foundry, grounded in the same governed measures and the meaning the OneLake catalog already carries into them, not a separate copy of the data.
 - **Permission-aware by construction** — Work IQ runs every request **user-scoped**. It accesses only what that person is already allowed to see. The named-user principle we built on, enforced at the intelligence layer.
 - **Already speaking the protocol** — Our documentation agent is an A2A connected tool today. The governed catalogue becomes something agents can reason over, not just something people read.
 
@@ -281,7 +281,8 @@ Today the provincial exchange reaches us through third-party interfaces. Owning 
 | Intervention tracking | 🔵 **Phase 1–2** | Intervention Focus within the annual-plan workflow |
 | Microsoft 365 Copilot integration | 🔵 **Phase 3** | Work IQ, agents, skills and governed tools through the Copilot harness |
 | Provincial connector | 🔵 **Phase 4** | Division-owned exchange with the province |
-| Purview protection and governance | 🔵 **Phase 3** | Meaning, ownership, sensitivity and compliance controls |
+| OneLake catalog governance | 🔵 **Phase 3** | Meaning, ownership, endorsement and lineage beside the model |
+| Purview protection | 🔵 **Phase 3** | Sensitivity labels, DLP and compliance for app content and AI |
 
 ---
 
@@ -307,8 +308,26 @@ Microsoft Foundry will provide the approved API, model, agent, evaluation, toolb
 
 <!-- cards -->
 - **Reusable services** — One governed tool or agent contract can support Nexus and Microsoft 365 Copilot.
-- **Clear authority** — Dataverse remains operational truth and Fabric remains the governed analytical layer.
+- **Clear authority** — Dataverse remains operational truth; Fabric remains the governed analytical layer and, through the OneLake catalog, where meaning is governed.
 - **Same identity** — Entra identity and destination permissions continue to follow the named user.
+
+---
+
+<!-- slide: group="Where Next" nav="Governance moves to Fabric" lead -->
+
+#### Validation, November 2026
+
+## Governance moved to where<br>the measures live
+
+Microsoft is moving data governance into Fabric. The OneLake catalog becomes the single foundation for discovery, governance and protection; Purview Data Governance retires in November 2027.
+
+<!-- list mint -->
+- **The catalogue now sits beside the calculation.** Meaning, ownership, endorsement and lineage live in the same platform as the semantic model they describe. *Extract, don't write* gets easier, not harder.
+- **Purview does what it does best.** Labels, data-loss prevention and compliance across the estate and AI, without also being the catalogue.
+- **It travels to where people work.** The catalog is embedded in Teams, Excel and Foundry, so the same permissions and lineage govern how AI uses the data.
+- **Our principle didn't move.** The catalogue was never a fourth source of truth. Only its address changed.
+
+🟠 **Eyes open** Our catalog agent still publishes to Purview. It gets re-pointed to the OneLake catalog well before support ends, and we confirm exactly what the retirement covers with Microsoft.
 
 ---
 

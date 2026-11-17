@@ -62,7 +62,8 @@ mindmap
 | Canadian residency | 🟢 **Current** | Production student information remains in Azure Canada Central and approved Canadian services. | [Residency and platform options](../architecture/residency-and-platform-options.md), [ADR-0004](../decisions/adr/0004-canadian-data-residency.md) |
 | Small-group suppression | 🟠 **To define** | Where five or fewer students sit behind a figure it is suppressed, including complementary values that would reveal it. Applied by the FVSD Data Product Agent; Nexus analytics adoption still to be confirmed. | [Data Product Agent FOIP rules](https://github.com/skmckenFVSD/FVSDDataProductAgent/blob/main/docs/governance/foip-compliance.md) |
 | Historical correction workflow | 🟠 **Proposed** | Requester, reason, before/after values and approval recorded for any change to a closed record. | [Assessment entry and scoring](../capabilities/assessments/README.md) |
-| Purview meaning, ownership and sensitivity | 🔵 **Phase 3** | Governed measures and records carry definitions, owners and sensitivity labels into discovery and AI. | [Purview governance and agent architecture](../architecture/purview-governance.md) |
+| OneLake catalog: meaning, ownership and lineage | 🔵 **Phase 3** | Governed measures and data products carry definitions, owners, endorsement and lineage into discovery and AI. | [Data governance and agent architecture](../architecture/purview-governance.md), [ADR-0008](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md) |
+| Purview protection for in-app content | 🔵 **Phase 3** | Sensitivity labels and DLP evaluated for Nexus exports, generated documents and AI interactions through the Graph policy APIs. Purview is protection only, not the catalogue. | [Data governance and agent architecture](../architecture/purview-governance.md) |
 | Agents act within the person's permissions | 🔵 **Phase 3** | Copilot and Foundry agents explain and prepare; they never grant themselves access or replace the accountable person. | [Copilot and agent interoperability](../architecture/copilot-interoperability.md) |
 
 ## 🍁 Residency and AI
@@ -85,7 +86,8 @@ Governance applies to this documentation too:
 
 - [Philosophy and design rationale](../philosophy/README.md)
 - [Identity, licensing and security](../architecture/identity-licensing-security.md)
-- [Purview governance and agent architecture](../architecture/purview-governance.md)
+- [Data governance and agent architecture](../architecture/purview-governance.md)
+- [ADR-0008: OneLake catalog and Purview protection](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md)
 - [FVSD Data Product Agent governance framework](https://github.com/skmckenFVSD/FVSDDataProductAgent/blob/main/docs/governance/README.md)
 
 ---

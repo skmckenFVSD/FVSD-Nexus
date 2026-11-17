@@ -89,7 +89,7 @@ The diagram separates three concerns that are easy to blur:
 
 - **Work:** Nexus and, later, Microsoft 365 Copilot are the user experiences.
 - **Truth:** Dataverse owns operational records; the Fabric semantic model owns governed analytical calculations.
-- **Understanding and protection:** Fabric catalog capabilities describe assets inside Fabric, while Purview supplies broader information-protection and compliance controls. Exact FVSD Purview catalogue usage remains a tenant configuration decision.
+- **Understanding and protection:** the OneLake catalog is the governance catalogue for meaning, ownership, endorsement and lineage; Purview supplies information-protection and compliance controls only ([ADR-0008](../decisions/adr/0008-onelake-catalog-governance-purview-protection.md)).
 
 ## 🧩 Responsibilities
 
@@ -103,7 +103,8 @@ The diagram separates three concerns that are easy to blur:
 | Microsoft 365 Copilot and Work IQ | Phase 3 conversational harness and permission-aware Microsoft 365 context for approved skills and agents. |
 | Data Product Agent | Coordinates documented discovery, validation, review, registration, publication, and audit contracts; it is not a student-data source. |
 | Fabric Documentation Agent | Retrieves authoritative Fabric technical metadata and lineage for explanation and downstream governance workflows. |
-| Purview | Information protection, sensitivity, DLP, audit, risk, and compliance; enterprise catalog use is confirmed separately from source-data access. |
+| OneLake catalog | Discovery and governance: meaning, ownership, endorsement, domains and lineage; never grants source-data access. |
+| Purview | Information protection, sensitivity, DLP, audit, risk, and compliance. Not the catalogue: Purview Data Governance retires November 12, 2027. |
 | Entra ID | Named identity, authentication, groups, and delegated access context. |
 | Azure operations | Canadian hosting, Key Vault, telemetry, monitoring, deployment, and recovery controls. |
 

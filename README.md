@@ -39,7 +39,7 @@ See the [phased delivery plan](docs/delivery/roadmap.md), [Phase 1 build record]
 | IEP / IPP | Active modular implementation in Phase 1; Dossier expansion in Phase 2 | [IEP/IPP](docs/capabilities/ipp/README.md) |
 | Intervention tracking | Incorporated into the IEP/IPP module direction | [Interventions](docs/capabilities/interventions/README.md) |
 | School and student profiles | Planned | [Profiles](docs/capabilities/profiles/README.md) |
-| Microsoft 365 Copilot, Work IQ, agents, and skills | Phase 3 | [Purview and agent workspace](docs/capabilities/purview-governance/README.md) |
+| Microsoft 365 Copilot, Work IQ, agents, and skills | Phase 3 | [Data governance and agent workspace](docs/capabilities/purview-governance/README.md) |
 | PASI provincial connector | Phase 4 | [PASI connector](docs/capabilities/pasi-connector/README.md) |
 | Platform administration | Partially implemented; expands with each phase | [Administration](docs/capabilities/administration/README.md) |
 
@@ -98,7 +98,7 @@ PowerSchool --> Dataverse --> OneLake / Fabric --> FVSDAnalytics
                     |
                     `--> PASI durable connector (Phase 4)
 
-Entra governs identity. Fabric catalog metadata and Purview protection/compliance
+Entra governs identity. The OneLake catalog (governance) and Purview (protection/compliance)
 provide understanding and control without replacing source-system authorization.
 ```
 
