@@ -15,7 +15,7 @@ related: ["[[philosophy/README]]", "[[governance/README]]", "[[architecture/over
 
 # 🏠 FVSD Nexus Documentation
 
-> Governed, role-aware software that moves Fort Vermilion School Division from evidence to action — documented once, read everywhere.
+> Governed, role-aware software that moves Fort Vermilion School Division from evidence to action, documented once, read everywhere.
 
 [⬅️ Repository](../README.md) · [📖 Philosophy](philosophy/README.md) · [🏗️ Architecture](architecture/README.md) · [🧩 Capabilities](capabilities/README.md) · [🧑‍🏫 Staff guide](user-guide/README.md) · [🎤 Presentation](presentation/README.md)
 
