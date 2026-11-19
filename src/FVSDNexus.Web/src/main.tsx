@@ -8,17 +8,17 @@ import './styles/ui.css'
 import './styles/layout.css'
 import './index.css'
 
-const showDesignSystemExamples = import.meta.env.DEV
-  && new URLSearchParams(window.location.search).has('design-system')
-const showShellPreview = import.meta.env.DEV
-  && new URLSearchParams(window.location.search).has('shell-preview')
-const HighDensityShellPreview = import.meta.env.DEV
-  ? lazy(() => import('./design-system/HighDensityShellPreview').then((module) => ({ default: module.HighDensityShellPreview })))
-  : null
+const query = new URLSearchParams(window.location.search)
+const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)
+const showDesignSystemExamples = isLocalHost && query.has('design-system')
+const showShellPreview = isLocalHost
+  && (window.location.pathname === '/shell-preview' || query.has('shell-preview'))
+const HighDensityShellPreview = lazy(() => import('./design-system/HighDensityShellPreview')
+  .then((module) => ({ default: module.HighDensityShellPreview })))
 
 createRoot(document.getElementById('app')!).render(
   <StrictMode>
-    {showShellPreview && HighDensityShellPreview ? (
+    {showShellPreview ? (
       <Suspense fallback={<div role="status">Loading shell preview…</div>}>
         <HighDensityShellPreview />
       </Suspense>

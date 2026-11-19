@@ -1,0 +1,12 @@
+{
+  "useMarkdownLinks": true,
+  "newLinkFormat": "relative",
+  "attachmentFolderPath": "./assets",
+  "alwaysUpdateLinks": true,
+  "showFrontmatter": true,
+  "propertiesInDocument": "visible",
+  "readableLineLength": true,
+  "userIgnoreFilters": [
+    "standards/templates/"
+  ]
+}

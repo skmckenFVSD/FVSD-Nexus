@@ -1,21 +1,34 @@
-# Architecture
+---
+title: Architecture
+description: FVSD Nexus is a custom user experience over FVSD's existing Microsoft data and identity platforms.
+type: hub
+status: current
+icon: 🏗️
+area: architecture
+audience: [architects, developers, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/architecture]
+updated: 2026-11-05
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Architecture
+# 🏗️ Architecture
+
+[🏠 Home](../README.md) › Architecture
 
 FVSD Nexus is a custom user experience over FVSD's existing Microsoft data and identity platforms.
 
-## Architecture documents
+## 🗺️ Architecture documents
 
 - [Overview](overview.md)
 - [Data and integrations](data-and-integrations.md)
 - [PASI connector](pasi-connector.md)
-- [Purview governance and agent integration](purview-governance.md)
+- [Data governance and agent integration](purview-governance.md): OneLake catalog and Purview protection
 - [Copilot and agent interoperability](copilot-interoperability.md)
 - [App-native document and PDF generation](document-generation.md)
 - [Identity, licensing, and security](identity-licensing-security.md)
 - [Residency and platform options](residency-and-platform-options.md)
 
-## Core premises
+## 💡 Core premises
 
 1. Dataverse is the operational truth store.
 2. The Fabric semantic model is the governed analytical layer.
@@ -27,3 +40,7 @@ FVSD Nexus is a custom user experience over FVSD's existing Microsoft data and i
 8. Nexus is the Azure application; Microsoft Foundry provides its approved AI, API, service, evaluation, agent, toolbox, and MCP component plane.
 
 Material changes to these premises should be recorded in an [architecture decision record](../decisions/adr/README.md).
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Architecture*

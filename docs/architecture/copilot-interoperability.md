@@ -1,10 +1,24 @@
-# Copilot and agent interoperability
+---
+title: Copilot and agent interoperability
+description: Copilot and agent interoperability for FVSD Nexus.
+type: architecture
+status: proposed
+icon: 🤖
+area: architecture
+audience: [architects, developers, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/architecture]
+updated: 2026-11-05
+related: ["[[architecture/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / Copilot interoperability
+# 🤖 Copilot and agent interoperability
 
-**Status:** Phase 3 architecture and capability investigation
+[🏠 Home](../README.md) › [🏗️ Architecture](README.md) › Copilot and agent interoperability
 
-## Objective
+**Status:** 🟠 Phase 3 architecture and capability investigation
+
+## 🎯 Objective
 
 FVSD staff should be able to reach the same governed Nexus capabilities from two places:
 
@@ -37,7 +51,7 @@ flowchart LR
     FND --> FDA[Fabric Documentation Agent]
 ```
 
-## Current Microsoft extension choices
+## 🔌 Current Microsoft extension choices
 
 Microsoft uses overlapping terms across its extension models. Nexus should select each component by responsibility rather than assuming they are interchangeable.
 
@@ -51,7 +65,7 @@ Microsoft uses overlapping terms across its extension models. Nexus should selec
 | Work IQ | Permission-aware Microsoft 365 work context for supported applications and agents. | It does not grant Dataverse, Fabric, Purview, or Nexus rights. |
 | Copilot connector | Makes approved external organizational content discoverable through Microsoft Graph and Copilot experiences. | It replicates/indexes content and is not the preferred route for live operational transactions. |
 
-## Recommended Nexus pattern
+## 🧩 Recommended Nexus pattern
 
 ### Shared capability plane
 
@@ -83,7 +97,7 @@ The agent should return deep links into the precise Nexus context when a task ne
 
 Use Work IQ only for appropriate Microsoft 365 work context, such as authorized files, meetings, messages, people, or organizational knowledge. Do not copy student operational truth into prompts merely because it is available elsewhere in Microsoft 365. Dataverse and Fabric remain authoritative and are queried through their governed Nexus contracts.
 
-## Security and governance requirements
+## 🔐 Security and governance requirements
 
 - Interactive access uses the signed-in person's Entra identity wherever the selected host supports delegated user context.
 - The plugin, agent, API, MCP server, and destination each enforce their own applicable permission boundary.
@@ -93,7 +107,7 @@ Use Work IQ only for appropriate Microsoft 365 work context, such as authorized 
 - MCP servers, plugins, skills, agents, connections, and publishing assignments require named owners and an administrative lifecycle.
 - Prompt, response, and tool telemetry must minimize student-identifiable content and follow the approved Canadian processing boundary.
 
-## Investigation sequence
+## 🚀 Investigation sequence
 
 1. Inventory current Microsoft 365 Copilot, Copilot Studio, Work IQ, Foundry, Agents SDK, plugin, and MCP licensing and tenant availability.
 2. Select one read-only Nexus capability and publish it through a typed REST action.
@@ -103,7 +117,7 @@ Use Work IQ only for appropriate Microsoft 365 work context, such as authorized 
 6. Compare API plugin and MCP packaging, discovery, administration, latency, traceability, and support.
 7. Add one confirmation-based write only after the read path, audit correlation, and failure behaviour are accepted.
 
-## Acceptance evidence
+## 🧪 Acceptance evidence
 
 - The same user receives the same authorization outcome from Nexus and Microsoft 365 Copilot.
 - Context supplied by either harness cannot expand the user's school, class, student, or data-product scope.
@@ -112,7 +126,7 @@ Use Work IQ only for appropriate Microsoft 365 work context, such as authorized 
 - Users can distinguish an explanation, a prepared action, and a completed transaction.
 - Administrators can identify the owner, version, deployment scope, permissions, and status of every agent, skill, plugin, and MCP server.
 
-## Microsoft references
+## 🔗 Microsoft references
 
 - [Ways to extend Microsoft 365 Copilot](https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/overview)
 - [Declarative agents for Microsoft 365 Copilot](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/overview-declarative-agent)
@@ -120,3 +134,7 @@ Use Work IQ only for appropriate Microsoft 365 work context, such as authorized 
 - [Integrate web or native apps with the Microsoft 365 Agents SDK](https://learn.microsoft.com/en-us/microsoft-copilot-studio/publication-integrate-web-or-native-app-m365-agents-sdk)
 - [Work IQ overview](https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/work-iq)
 - [Microsoft Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/overview)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Architecture*

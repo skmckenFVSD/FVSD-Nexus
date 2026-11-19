@@ -1,19 +1,34 @@
-# ADR-0003: Use named-user delegated access
+---
+title: "ADR-0003: Use named-user delegated access"
+description: Interactive Dataverse and Fabric operations use the signed-in user's delegated identity. A shared system identity will not be used to pool normal user access.
+type: adr
+status: accepted
+icon: ⚖️
+area: decisions
+audience: [architects, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/decisions]
+aliases: [ADR-0003, ADR 3]
+updated: 2026-08-31
+related: ["[[decisions/adr/README]]"]
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Decision register](../decision-register.md) / [Architecture decision records](README.md) / ADR-0003
+# ⚖️ ADR-0003: Use named-user delegated access
 
-- **Status:** Accepted
+[🏠 Home](../../README.md) › [⚖️ Decisions](../decision-register.md) › [⚖️ ADRs](README.md) › ADR-0003
+
+- **Status:** 🟢 Accepted
 - **Date:** 2026-08-31
 
-## Context
+## 🧭 Context
 
 Nexus will handle student assessment and IPP information. FVSD requires each interactive user to be authenticated, licensed where required, authorized, and auditable.
 
-## Decision
+## ⚖️ Decision
 
 Interactive Dataverse and Fabric operations use the signed-in user's delegated identity. A shared system identity will not be used to pool normal user access.
 
-## Consequences
+## 🔄 Consequences
 
 - Destination-service permissions remain effective.
 - Writes are attributable to the individual user.
@@ -21,6 +36,10 @@ Interactive Dataverse and Fabric operations use the signed-in user's delegated i
 - The backend must acquire and protect delegated tokens.
 - Background maintenance processes may still use explicitly governed application identities where appropriate, but they do not replace named-user access.
 
-## Alternatives considered
+## ⚖️ Alternatives considered
 
 - Shared service account or system token for all users: rejected because it weakens authorization, licensing clarity, and audit attribution.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Decisions*

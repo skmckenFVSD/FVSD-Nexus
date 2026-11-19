@@ -1,16 +1,30 @@
-# Leadership analytics
+---
+title: Leadership analytics
+description: Leadership analytics is the first implemented FVSD Nexus capability. It presents governed Fabric semantic-model measures through a guided application experience rather than embedding a conventional Power BI report.
+type: capability
+status: current
+icon: 📊
+area: capabilities
+audience: [leadership, product, architects]
+owner: Scott McKenzie
+tags: [nexus, nexus/capabilities, nexus/leadership-analytics]
+updated: 2026-11-05
+related: ["[[architecture/overview]]", "[[architecture/data-and-integrations]]", "[[delivery/testing-strategy]]"]
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Leadership analytics
+# 📊 Leadership analytics
 
-**Status:** Current deployed capability; remaining page and design work continues in Phase 1
+[🏠 Home](../../README.md) › [🧩 Capabilities](../README.md) › Leadership analytics
+
+**Status:** 🟢 Current deployed capability; remaining page and design work continues in Phase 1
 
 Leadership analytics is the first implemented FVSD Nexus capability. It presents governed Fabric semantic-model measures through a guided application experience rather than embedding a conventional Power BI report.
 
-## Purpose
+## 🎯 Purpose
 
 Help Executive and school leaders move from district-level signals to the schools, grades, periods, and assessment groups requiring attention.
 
-## Current implementation
+## 🧩 Current implementation
 
 - Microsoft Entra single-tenant sign-in.
 - Delegated Fabric access using the signed-in user's identity.
@@ -29,7 +43,7 @@ Current Azure endpoint:
 
 <https://app-fvsd-insights-iwmpkez4.azurewebsites.net/>
 
-## Current literacy pattern
+## 🧩 Current literacy pattern
 
 - TOSREC and TOWRE are available for applicable Grades 1 to 12 contexts.
 - CTOPP is shown only when applicable, including Kindergarten context.
@@ -38,7 +52,7 @@ Current Azure endpoint:
 - The selected assessment group controls both the matrix and visible chart.
 - Descriptive terms are grouped into the Foundation and Curriculum cohorts.
 
-## Experience principles
+## 💡 Experience principles
 
 - Measures remain defined in the semantic model.
 - The application sends only predefined server-side queries.
@@ -46,7 +60,7 @@ Current Azure endpoint:
 - The visual hierarchy prioritizes focus area, signals, matrix evidence, and a focused chart.
 - Detailed Power BI knowledge is not expected from the user.
 
-## Next capability work
+## 🚀 Next capability work
 
 - Replicate the pattern for the School Profile experience.
 - Complete Numeracy and later Wellbeing focus areas.
@@ -54,8 +68,12 @@ Current Azure endpoint:
 - Define role-specific titles, pages, and evidence for additional user groups.
 - Add accessible detail and export patterns where required.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [Architecture overview](../../architecture/overview.md)
 - [Data and integrations](../../architecture/data-and-integrations.md)
 - [Testing strategy](../../delivery/testing-strategy.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Capabilities*

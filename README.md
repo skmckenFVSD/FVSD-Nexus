@@ -4,7 +4,7 @@ FVSD Nexus is Fort Vermilion School Division's unified operational and analytics
 
 > **Status — November 5, 2026:** FVSD has approved Nexus as the application for next year. Phase 1 is active: Leadership Analytics, Class Assignments, TOSREC assessment entry and completion monitoring are working; the modular IEP/IPP experience is in active development from the Educational Framework Canvas app and existing Dataverse foundation.
 
-## At a glance
+## 🧭 At a glance
 
 | Area | Product position |
 |---|---|
@@ -18,7 +18,7 @@ FVSD Nexus is Fort Vermilion School Division's unified operational and analytics
 | Residency | Production student information remains in the approved Canadian geography |
 | Delivery | Four phases: core build; Dossier transition; Microsoft 365 Copilot integration; PASI connector |
 
-## Delivery phases
+## 🚀 Delivery phases
 
 | Phase | Outcome | Position |
 |---|---|---|
@@ -29,7 +29,7 @@ FVSD Nexus is Fort Vermilion School Division's unified operational and analytics
 
 See the [phased delivery plan](docs/delivery/roadmap.md), [Phase 1 build record](docs/delivery/phase-1-product-build.md), and [adoption approach](docs/delivery/adoption-and-engagement.md).
 
-## Product capabilities
+## 🧩 Product capabilities
 
 | Capability | Status | Documentation |
 |---|---|---|
@@ -39,15 +39,15 @@ See the [phased delivery plan](docs/delivery/roadmap.md), [Phase 1 build record]
 | IEP / IPP | Active modular implementation in Phase 1; Dossier expansion in Phase 2 | [IEP/IPP](docs/capabilities/ipp/README.md) |
 | Intervention tracking | Incorporated into the IEP/IPP module direction | [Interventions](docs/capabilities/interventions/README.md) |
 | School and student profiles | Planned | [Profiles](docs/capabilities/profiles/README.md) |
-| Microsoft 365 Copilot, Work IQ, agents, and skills | Phase 3 | [Purview and agent workspace](docs/capabilities/purview-governance/README.md) |
+| Microsoft 365 Copilot, Work IQ, agents, and skills | Phase 3 | [Data governance and agent workspace](docs/capabilities/purview-governance/README.md) |
 | PASI provincial connector | Phase 4 | [PASI connector](docs/capabilities/pasi-connector/README.md) |
 | Platform administration | Partially implemented; expands with each phase | [Administration](docs/capabilities/administration/README.md) |
 
-## Current build
+## ✅ Current build
 
 The current application provides two connected foundations.
 
-### Governed analytics
+### 📊 Governed analytics
 
 - FVSD Entra authentication and delegated Fabric access.
 - Existing Fabric permissions and row-level security.
@@ -55,7 +55,7 @@ The current application provides two connected foundations.
 - Responsive, role-aware analytics without embedding a Power BI report.
 - A shared application shell for Analytics, School Administration, Governance, and Settings destinations.
 
-### Class Assignments and assessments
+### 📋 Class Assignments and assessments
 
 - Role and school context from Dataverse, with server-side section and student authorization.
 - Cascading School, Section Group, Course, Teacher, and Student filters.
@@ -66,7 +66,7 @@ The current application provides two connected foundations.
 - Shared filter context between Class Assignments and Assessments.
 - Grade- and period-aware assessment status summaries on student cards.
 
-### IEP / IPP
+### 🎓 IEP / IPP
 
 - One annual master plan per student and school year.
 - Governed modular sections from `fvsd_ippsection` and audited section allocation on `fvsd_studentipp`.
@@ -81,7 +81,7 @@ Current Azure endpoint:
 
 The deployed resources retain their established `fvsd-insights` identifiers. The product and source solution are FVSD Nexus.
 
-## Architecture
+## 🏗️ Architecture
 
 ```text
 FVSD staff
@@ -98,7 +98,7 @@ PowerSchool --> Dataverse --> OneLake / Fabric --> FVSDAnalytics
                     |
                     `--> PASI durable connector (Phase 4)
 
-Entra governs identity. Fabric catalog metadata and Purview protection/compliance
+Entra governs identity. The OneLake catalog (governance) and Purview (protection/compliance)
 provide understanding and control without replacing source-system authorization.
 ```
 
@@ -115,20 +115,37 @@ Core premises:
 
 See the [architecture diagram](docs/architecture/overview.md), [data-layer examples](docs/architecture/data-and-integrations.md), [Copilot interoperability](docs/architecture/copilot-interoperability.md), [document generation](docs/architecture/document-generation.md), and [decision register](docs/decisions/decision-register.md).
 
-## Documentation
+## 📚 Documentation
 
-The [documentation hub](docs/README.md) includes:
+The [documentation hub](docs/README.md) is the living product, architecture, governance and delivery record. It is written once, as markdown with YAML front matter, and read in four places:
 
-- [Capabilities](docs/capabilities/README.md)
-- [Architecture](docs/architecture/README.md)
-- [Delivery](docs/delivery/README.md)
-- [Decision register](docs/decisions/decision-register.md)
-- [Architecture decision records](docs/decisions/adr/README.md)
-- [Glossary](docs/reference/glossary.md)
+| Surface | What it is | Where |
+|---|---|---|
+| 🐙 GitHub | The documentation as you see it here | [docs/README.md](docs/README.md) |
+| 🗃️ Obsidian | Open `docs/` as a vault; front matter becomes properties | [Front matter standard](docs/standards/front-matter.md) |
+| 🧑‍🏫 Staff user guide | Self-contained HTML for SharePoint, built from [docs/user-guide](docs/user-guide/README.md) | `publish/user-guide/` |
+| 🎤 Presentation | The conference deck and repository site, built from [docs/presentation](docs/presentation/README.md) | `publish/presentation/` |
 
-Documentation labels current functionality, approved work, future phases, and open decisions explicitly.
+Start with:
 
-## Repository structure
+- [📖 Philosophy and design rationale](docs/philosophy/README.md)
+- [🛡️ Governance framework](docs/governance/README.md)
+- [🧩 Capabilities](docs/capabilities/README.md) · [🏗️ Architecture](docs/architecture/README.md) · [🚀 Delivery](docs/delivery/README.md)
+- [⚖️ Decision register](docs/decisions/decision-register.md) · [Architecture decision records](docs/decisions/adr/README.md)
+- [📐 Documentation standards](docs/standards/README.md) · [📝 Contributing](docs/CONTRIBUTING.md)
+
+Build and check the documentation layer:
+
+```text
+cd tools/docs
+npm ci
+npm run docs:build     # staff guide, decks and icon table → publish/
+npm run docs:check     # front matter, icons, links and anchors
+```
+
+Documentation labels current functionality, approved work, future phases and open decisions explicitly: 🟢 current, 🔵 confirmed, 🟠 proposed, ⚪ open.
+
+## 🗺️ Repository structure
 
 ```text
 FVSD-Nexus/
@@ -138,14 +155,17 @@ FVSD-Nexus/
 |   `-- FVSDNexus.Web/          React and TypeScript interface
 |-- tests/
 |   `-- FVSDNexus.Api.Tests/    API, role, integration-contract, and query tests
-|-- docs/                       Product, architecture, and delivery documentation
+|-- docs/                       Documentation source: product, architecture, governance,
+|                               delivery, staff guide and presentation (Obsidian vault)
+|-- tools/docs/                 Documentation builds and checks (Node)
+|-- publish/                    Generated staff guide and presentation (do not edit by hand)
 |-- infra/                      Azure Bicep infrastructure
 |-- scripts/                    Entra and environment configuration
 |-- .azure/                     Deployment plan; local azd state is ignored
 `-- FVSDNexus.sln
 ```
 
-## Local development
+## ⚙️ Local development
 
 ### Prerequisites
 
@@ -169,7 +189,7 @@ Open <http://localhost:5173>.
 
 Local authentication configuration is performed with `scripts/configure-entra-app.ps1`. Secrets belong in the .NET user-secret store or ignored azd environment and must never be committed.
 
-## Validation
+## 🧪 Validation
 
 ```powershell
 dotnet test .\FVSDNexus.sln --configuration Release
@@ -180,13 +200,13 @@ dotnet publish .\src\FVSDNexus.Api\FVSDNexus.Api.csproj --configuration Release
 
 The backend suite and React production build must pass before an Azure release. Deployment validation, accessibility checks, and dependency audits remain required in proportion to the change.
 
-## Deployment
+## 🚀 Deployment
 
 Repository updates and Azure deployment are intentionally separate. The current application remains deployed in Canada Central using its established resources and Entra registration. Deployment occurs only after the applicable validation and explicit release decision.
 
 See the retained [deployment plan](.azure/deployment-plan.md) for the current Azure implementation history.
 
-## Security and repository hygiene
+## 🔐 Security and repository hygiene
 
 - Do not commit credentials, tokens, certificates, connection strings, or student records.
 - Do not place production student data or student-identifiable AI context outside the approved Canadian geography.
@@ -197,6 +217,6 @@ See the retained [deployment plan](.azure/deployment-plan.md) for the current Az
 
 Repository visibility remains an explicit governance decision as operational detail expands.
 
-## Living documentation
+## 📝 Living documentation
 
 Update the relevant capability, architecture page, delivery phase, and decision record in the same change that introduces new behaviour or changes a premise.

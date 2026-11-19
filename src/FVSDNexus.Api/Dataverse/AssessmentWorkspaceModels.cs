@@ -80,6 +80,8 @@ public sealed record StudentPlanHistoryRecord(
     string? TeacherAtPlan,
     string? CourseName,
     string? Curriculum,
+    int StatusCode,
+    string Status,
     DateTimeOffset? ModifiedOn);
 
 public sealed record StudentPlanModuleState(

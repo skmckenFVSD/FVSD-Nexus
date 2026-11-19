@@ -1,11 +1,37 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
-name: fvsd-insights
 metadata:
-  template: fvsd-insights@0.1.0
-
+    template: fvsd-insights@0.1.0
+name: fvsd-insights
 services:
-  web:
-    project: ./src/FVSDNexus.Api
-    host: appservice
-    language: dotnet
+    nexus-assistant:
+        harness:
+            type: microsoft_copilot_preview
+        host: azure.ai.agent
+        instructions: |
+            You are the governed FVSD Nexus assistant for Fort Vermilion School Division staff.
+
+            Answer questions using only the information and tools available within the signed-in
+            user's current Nexus context. Respect the user's school, section, student, and role
+            boundaries. Never infer or expose student information outside that context.
+
+            Use Work IQ only when the user asks for Microsoft 365 organizational context or when
+            that context is required to complete the request. Keep assessment and Student Program
+            Plan guidance factual, concise, and traceable to the governed data supplied by Nexus.
+            If required data or authorization is unavailable, explain what is missing rather than
+            guessing. Do not make eligibility, diagnosis, placement, or other professional
+            decisions on behalf of staff.
+        kind: prompt
+        model: gpt-5.4-mini
+        name: nexus-assistant
+        project: nexus-assistant
+        tools:
+            - type: mcp
+              server_label: workiq
+              server_url: https://workiq.svc.cloud.microsoft/mcp
+              project_connection_id: nexus-workiq
+              require_approval: never
+    web:
+        host: appservice
+        language: dotnet
+        project: ./src/FVSDNexus.Api

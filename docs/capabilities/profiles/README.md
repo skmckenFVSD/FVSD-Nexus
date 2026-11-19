@@ -1,19 +1,33 @@
-# School and student profiles
+---
+title: School and student profiles
+description: Profiles will provide a role-aware entry point into the evidence and operational records relevant to a school or student.
+type: capability
+status: proposed
+icon: 🪪
+area: capabilities
+audience: [leadership, product, architects]
+owner: Scott McKenzie
+tags: [nexus, nexus/capabilities, nexus/profiles]
+updated: 2026-11-05
+related: ["[[architecture/identity-licensing-security]]", "[[capabilities/assessments/README]]", "[[capabilities/ipp/README]]"]
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / School and student profiles
+# 🪪 School and student profiles
 
-**Status:** Planned
+[🏠 Home](../../README.md) › [🧩 Capabilities](../README.md) › School and student profiles
+
+**Status:** 🟠 Planned
 
 Profiles will provide a role-aware entry point into the evidence and operational records relevant to a school or student.
 
-## Intended outcomes
+## 🎯 Intended outcomes
 
 - Give school leaders a coherent school-level view using the same focus-area pattern as the Executive experience.
 - Give authorized staff a student-level context for assessments, IPPs, interventions, and progress.
 - Preserve context as users move between analytics and operational workflows.
 - Avoid recreating separate, disconnected pages for the same school or student facts.
 
-## Proposed school profile
+## 🧩 Proposed school profile
 
 - Persistent school, year, period, and grade context.
 - Literacy, numeracy, and wellbeing focus areas.
@@ -21,7 +35,7 @@ Profiles will provide a role-aware entry point into the evidence and operational
 - Assessment completion and performance evidence.
 - Navigation into authorized student and operational workflows.
 
-## Proposed student profile
+## 🧩 Proposed student profile
 
 - PowerSchool-synchronized demographic and enrolment context from Dataverse.
 - Assessment history and current-period entry actions.
@@ -29,19 +43,23 @@ Profiles will provide a role-aware entry point into the evidence and operational
 - Intervention and progress evidence.
 - Clear distinction between operational records and refreshed analytics.
 
-## Security boundary
+## 🔐 Security boundary
 
 Profile visibility must be determined by delegated identity and destination-service authorization. Hiding a profile link or field in React is not sufficient protection.
 
-## Open questions
+## ❓ Open questions
 
 - Final role-to-profile access matrix.
 - Which demographic attributes are appropriate for each role.
 - The initial student-profile scope within the phased product build.
 - Whether profile navigation starts from school, class, caseload, or search for each role.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [Identity, licensing, and security](../../architecture/identity-licensing-security.md)
 - [Assessment entry and scoring](../assessments/README.md)
 - [Individual Program Plans](../ipp/README.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Capabilities*

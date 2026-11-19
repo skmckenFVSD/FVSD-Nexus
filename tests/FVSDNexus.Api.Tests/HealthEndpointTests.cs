@@ -29,5 +29,14 @@ public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Pr
         Assert.Equal("FVSD Nexus", body?.Service);
     }
 
+    [Fact]
+    public async Task Unknown_api_endpoint_returns_json_instead_of_the_frontend_page()
+    {
+        var response = await _client.GetAsync("/api/endpoint-that-does-not-exist");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
     private sealed record HealthResponse(string Status, string Service);
 }

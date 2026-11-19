@@ -1,12 +1,26 @@
-# Foundations and design tokens
+---
+title: Foundations and design tokens
+description: This document records the semantic visual foundations confirmed on November 13, 2026. It distinguishes current production values from the approved consolidation target that Stage 2 will implement.
+type: design-system
+status: current
+icon: 🎨
+area: design-system
+audience: [designers, developers]
+owner: Scott McKenzie
+tags: [nexus, nexus/design-system]
+updated: 2026-11-13
+related: ["[[design-system/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Design system](README.md) / Foundations
+# 🎨 Foundations and design tokens
+
+[🏠 Home](../README.md) › [🎨 Design system](README.md) › Foundations and design tokens
 
 This document records the semantic visual foundations confirmed on November 13, 2026. It distinguishes current production values from the approved consolidation target that Stage 2 will implement.
 
 ![Current and candidate FVSD Nexus colour foundations](assets/previews/foundation-swatches.svg)
 
-## Colour
+## 🎨 Colour
 
 ### Current brand and governed data colours
 
@@ -73,7 +87,7 @@ The confirmed foreground/background and white/solid pairs meet WCAG AA contrast 
 }
 ```
 
-## Typography
+## 🎨 Typography
 
 | Foundation | Confirmed target | Status |
 |---|---|---|
@@ -87,13 +101,13 @@ The confirmed foreground/background and white/solid pairs meet WCAG AA contrast 
 
 Seven-to-ten-pixel text is not an accepted target for required content. Uppercase labels should be used sparingly and remain readable without excessive letter spacing.
 
-## Spacing
+## 📐 Spacing
 
 **Confirmed scale:** `4, 8, 12, 16, 20, 24, 32, 48` px.
 
 Components should use this scale for gaps, padding, and section rhythm. Optical exceptions must be documented in the component contract rather than introduced as arbitrary one-off values.
 
-## Shape
+## 📐 Shape
 
 | Token | Value | Intended use |
 |---|---:|---|
@@ -104,7 +118,7 @@ Components should use this scale for gaps, padding, and section rhythm. Optical 
 
 These are Confirmed consolidation targets. Circular avatars and indicators may use `50%`.
 
-## Elevation
+## 📐 Elevation
 
 The confirmed system has four semantic levels using a single navy-derived shadow base:
 
@@ -117,7 +131,7 @@ The confirmed system has four semantic levels using a single navy-derived shadow
 
 Browser review may adjust rendering defects through change control. Glossy or decorative inset effects are not general-purpose elevation.
 
-## Controls and focus
+## 🎨 Controls and focus
 
 - Desktop control target: 36–40 px depending on density.
 - Touch control target: at least 44 px.
@@ -128,7 +142,7 @@ Browser review may adjust rendering defects through change control. Glossy or de
 
 The focus basis is structural blue `#1F4E79`. On light and dark surfaces, a two-step ring uses a white separation ring plus structural blue so focus remains visible without changing component geometry.
 
-## Responsive foundations
+## 📐 Responsive foundations
 
 The current application has page-specific breakpoints. The confirmed Nexus viewport breakpoints align with the existing Power Apps model:
 
@@ -136,7 +150,7 @@ The current application has page-specific breakpoints. The confirmed Nexus viewp
 
 These produce five named viewport bands. They coordinate the application shell; components also use container queries when drawers or split panels reduce their actual available width. See [Responsive behaviour and breakpoints](responsive.md) for the full matrix, typography rules, and implementation examples.
 
-## Screen and document relationship
+## 📄 Screen and document relationship
 
 Screen and compiled-document renderers share semantic content rules, not necessarily identical geometry. Shared rules include:
 
@@ -148,3 +162,7 @@ Screen and compiled-document renderers share semantic content rules, not necessa
 - module order and inclusion state.
 
 The document renderer owns page size, page breaks, running headers and footers, table continuation, contents pages, appendices, and signature placement. Interactive controls are never rendered into the compiled document.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Design system*

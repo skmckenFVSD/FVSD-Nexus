@@ -1,6 +1,19 @@
-# Architecture decision records
+---
+title: Architecture decision records
+description: Architecture decision records explain why durable technical and product-architecture choices were made.
+type: hub
+status: current
+icon: ⚖️
+area: decisions
+audience: [architects, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/decisions]
+updated: 2026-11-05
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Decision register](../decision-register.md) / Architecture decision records
+# ⚖️ Architecture decision records
+
+[🏠 Home](../../README.md) › [⚖️ Decisions](../decision-register.md) › Architecture decision records
 
 Architecture decision records explain why durable technical and product-architecture choices were made.
 
@@ -13,8 +26,9 @@ Architecture decision records explain why durable technical and product-architec
 | [0005](0005-preserve-existing-azure-resources.md) | Preserve existing Azure resource identifiers during the Nexus rename | Accepted |
 | [0006](0006-modular-annual-student-plans.md) | Compose one annual student plan from governed module allocations | Accepted |
 | [0007](0007-azure-app-and-microsoft-foundry.md) | Use an Azure App with Microsoft Foundry as the intelligence service plane | Accepted |
+| [0008](0008-onelake-catalog-governance-purview-protection.md) | The OneLake catalog is the governance catalogue; Purview is protection and compliance | Accepted |
 
-## ADR template
+## 📝 ADR template
 
 Each ADR should contain:
 
@@ -26,3 +40,7 @@ Each ADR should contain:
 - Related documentation.
 
 Accepted ADRs are not silently rewritten when a decision changes. Add a new ADR that supersedes the old record.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Decisions*

@@ -1,14 +1,28 @@
-# Shared component contracts
+---
+title: Shared component contracts
+description: See the component gallery for markup examples shown beside their rendered target appearance.
+type: design-system
+status: current
+icon: 🧩
+area: design-system
+audience: [designers, developers]
+owner: Scott McKenzie
+tags: [nexus, nexus/design-system]
+updated: 2026-11-13
+related: ["[[design-system/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Design system](README.md) / Components
+# 🧩 Shared component contracts
 
-**Status:** Shared foundation implemented in Stage 2; feature-by-feature adoption remains pending
+[🏠 Home](../README.md) › [🎨 Design system](README.md) › Shared component contracts
+
+**Status:** 🟢 Shared foundation implemented in Stage 2; feature-by-feature adoption remains pending
 
 See the [component gallery](component-gallery.md) for markup examples shown beside their rendered target appearance.
 
 The contracts below describe responsibilities and states, not final implementation names. A shared component is successful when feature code supplies content and behaviour without redefining its typography, spacing, focus, disabled, or status treatment.
 
-## Core controls
+## 🎨 Core controls
 
 | Component | Required variants and states |
 |---|---|
@@ -20,7 +34,7 @@ The contracts below describe responsibilities and states, not final implementati
 | Dialog | One header/body/footer shell; focus trap, return focus, unsaved-change confirmation and responsive sizing. |
 | Confirm dialog | Styled replacement for browser-native confirms; destructive and non-destructive variants. |
 
-## Content and status
+## 🎨 Content and status
 
 | Component | Contract |
 |---|---|
@@ -33,7 +47,7 @@ The contracts below describe responsibilities and states, not final implementati
 | Empty state | Title, explanation and optional primary action. |
 | Loading state | Consistent spinner/skeleton choice based on whether layout is known. |
 
-## Application layout primitives
+## 📐 Application layout primitives
 
 | Component | Purpose |
 |---|---|
@@ -44,7 +58,7 @@ The contracts below describe responsibilities and states, not final implementati
 | Context drawer | Workspace-specific filters and, where relevant, student roster. |
 | Section navigation | Grouped, scrollable IEP/IPP module list with required and progress states. |
 
-## Document-aligned module rendering
+## 📄 Document-aligned module rendering
 
 IEP/IPP module components should be driven by a canonical view model and expose explicit render modes:
 
@@ -68,7 +82,7 @@ Generated HTML is an output, not the operational source of truth. Where descript
 
 The code contract is defined in `src/FVSDNexus.Web/src/design-system/modulePresentation.ts`. Interactive controls are deliberately absent from `ModulePresentationModel`, preventing buttons, form state and dialogs from entering compiled output.
 
-## Acceptance criteria for every shared component
+## 🧪 Acceptance criteria for every shared component
 
 - Keyboard operable with a visible focus state.
 - Screen-reader name, role and state are correct.
@@ -77,3 +91,7 @@ The code contract is defined in `src/FVSDNexus.Web/src/design-system/modulePrese
 - Uses semantic tokens instead of feature-local colour or spacing literals.
 - Has desktop and touch sizing rules.
 - Has a visual regression example before broad adoption.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Design system*

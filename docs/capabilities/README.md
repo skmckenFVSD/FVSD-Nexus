@@ -1,6 +1,19 @@
-# Product capabilities
+---
+title: Product capabilities
+description: FVSD Nexus is being delivered as a set of related capabilities built on common identity, Dataverse, Fabric, design, and security foundations.
+type: hub
+status: current
+icon: 🧩
+area: capabilities
+audience: [leadership, product, architects]
+owner: Scott McKenzie
+tags: [nexus, nexus/capabilities]
+updated: 2026-11-12
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Capabilities
+# 🧩 Product capabilities
+
+[🏠 Home](../README.md) › Product capabilities
 
 FVSD Nexus is being delivered as a set of related capabilities built on common identity, Dataverse, Fabric, design, and security foundations.
 
@@ -12,10 +25,10 @@ FVSD Nexus is being delivered as a set of related capabilities built on common i
 | Individual Education / Individual Program Plans | Approved for implementation; modular annual-plan model confirmed | [IEP/IPP](ipp/README.md) |
 | Intervention tracking | Student operational focus moving into the IEP/IPP module; aggregate analytics remains separate | [Interventions](interventions/README.md) |
 | PASI provincial connector | Phase 4; feasibility discovery documented | [PASI connector](pasi-connector/README.md) |
-| Purview governance and Data Analyst workspace | Phase 3; existing external agent and Fabric governance foundation identified | [Purview governance](purview-governance/README.md) |
+| Data governance and Data Analyst workspace | Phase 3; OneLake catalog for governance, Purview for protection | [Data governance](purview-governance/README.md) |
 | Platform administration | Partially present; expansion required | [Administration](administration/README.md) |
 
-## Shared experience principles
+## 💡 Shared experience principles
 
 The canonical visual foundations, shared components, and layout patterns are maintained in the [FVSD Nexus design system](../design-system/README.md).
 
@@ -29,9 +42,9 @@ Every capability should:
 - Remain usable for staff who are only occasional Power BI or Power Apps users.
 - Meet accessibility and responsive-design expectations.
 
-## Navigation structure
+## 🗺️ Navigation structure
 
-**Status:** Current shell pattern as of September 3, 2026
+**Status:** 🟢 Current shell pattern as of September 3, 2026
 
 The application shell uses role-aware capability headings and can be collapsed manually on wider screens. It enters the same icon-first compact presentation automatically at narrower breakpoints.
 
@@ -40,11 +53,11 @@ The application shell uses role-aware capability headings and can be collapsed m
 - **Governance:** Data Analyst-only destinations for Data Quality, Data Catalog, and Data Administration. These are developed through the Phase 3 governance and agent scope.
 - **Settings:** a single destination available to all roles for identity, assignment, licensing-policy, and governed connection context. The current-context summary was removed from the sidebar because filter context belongs with each capability's filters.
 - **PASI provincial connector:** a Phase 4 backend integration capability rather than a general-user page; administrative status and reconciliation experiences will be available only to authorized roles.
-- **Purview governance:** a Phase 3 Data Analyst workspace that composes governed documentation, data-product lifecycle, enterprise catalog, and policy-aware application functions; it is not a general-user or Purview-administration page.
+- **Data governance:** a Phase 3 Data Analyst workspace that composes governed documentation, data-product lifecycle, OneLake catalog publication, and Purview policy-aware application functions; it is not a general-user, catalog-administration or Purview-administration page.
 
 Analytics and School Administration are initially expanded. Parent headings use stronger uppercase styling, while destination labels use title case. The compact state retains icons and the FVSD Nexus identity without overlaying the logo. Grouping and page visibility remain role-aware UX concerns; backend and destination-service authorization remain authoritative.
 
-## Capability lifecycle
+## 🔄 Capability lifecycle
 
 Each landing page should eventually contain:
 
@@ -56,3 +69,7 @@ Each landing page should eventually contain:
 6. Acceptance criteria.
 7. Open questions and exclusions.
 8. Related decisions and implementation links.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Capabilities*

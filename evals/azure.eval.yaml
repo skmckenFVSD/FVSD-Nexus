@@ -1,0 +1,15 @@
+datasets:
+  - name: nexus-assistant-turn-tests
+    file: ./.artifacts/foundry-evals/nexus-assistant/nexus-assistant-turn-tests.jsonl
+    tags:
+      evaluation_level: turn
+evaluators:
+  - name: nexus-assistant-evaluator
+    source: ./.artifacts/foundry-evals/nexus-assistant/nexus-assistant-evaluator.json
+    display_name: nexus-assistant-evaluator
+    categories:
+      - quality
+      - agents
+    supported_evaluation_levels:
+      - turn
+      - conversation

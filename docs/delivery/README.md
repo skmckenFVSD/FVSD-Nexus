@@ -1,6 +1,19 @@
-# Delivery
+---
+title: Delivery
+description: FVSD Nexus is an approved product build. Delivery documentation records what is active, what comes next, and the evidence required to release each capability safely.
+type: hub
+status: current
+icon: 🚀
+area: delivery
+audience: [leadership, product]
+owner: Scott McKenzie
+tags: [nexus, nexus/delivery]
+updated: 2026-11-05
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / Delivery
+# 🚀 Delivery
+
+[🏠 Home](../README.md) › Delivery
 
 FVSD Nexus is an approved product build. Delivery documentation records what is active, what comes next, and the evidence required to release each capability safely.
 
@@ -9,7 +22,7 @@ FVSD Nexus is an approved product build. Delivery documentation records what is 
 - [Adoption and engagement](adoption-and-engagement.md)
 - [Testing strategy](testing-strategy.md)
 
-## Delivery principles
+## 🚀 Delivery principles
 
 - Deliver coherent vertical slices that include UX, delegated access, data integrity, security, accessibility, and audit behaviour.
 - Compare operational results with established Canvas, Dossier, and source-system behaviour before replacement.
@@ -17,3 +30,7 @@ FVSD Nexus is an approved product build. Delivery documentation records what is 
 - Keep Dataverse operational confirmation separate from asynchronously refreshed Fabric analytics.
 - Make governance understandable to the people doing the work, not only to platform specialists.
 - Gate release on evidence and support readiness, not only completion of development tasks.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Delivery*

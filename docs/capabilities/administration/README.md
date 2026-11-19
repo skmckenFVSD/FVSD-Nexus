@@ -1,12 +1,26 @@
-# Platform administration
+---
+title: Platform administration
+description: Administration provides the controlled capabilities needed to operate Nexus safely without exposing technical complexity to general users.
+type: capability
+status: current
+icon: ⚙️
+area: capabilities
+audience: [leadership, product, architects]
+owner: Scott McKenzie
+tags: [nexus, nexus/capabilities, nexus/administration]
+updated: 2026-11-17
+related: ["[[architecture/identity-licensing-security]]", "[[delivery/testing-strategy]]", "[[decisions/decision-register]]", "[[capabilities/purview-governance/README]]"]
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Platform administration
+# ⚙️ Platform administration
 
-**Status:** Initial Settings surface present; operational expansion required
+[🏠 Home](../../README.md) › [🧩 Capabilities](../README.md) › Platform administration
+
+**Status:** 🟢 Initial Settings surface present; operational expansion required
 
 Administration provides the controlled capabilities needed to operate Nexus safely without exposing technical complexity to general users.
 
-## Current capabilities
+## 🧩 Current capabilities
 
 - Developer-only role simulation for UX and RLS testing, exposed from a dedicated development-controls rail.
 - Real/obfuscated student-data preview controls available only to the server-authorized developer account.
@@ -18,7 +32,7 @@ Administration provides the controlled capabilities needed to operate Nexus safe
 
 The sidebar no longer duplicates capability filter context. School, school year, grade, period, and other selections remain visible with the page-specific filter controls that own them.
 
-## Proposed operational capabilities
+## 🧩 Proposed operational capabilities
 
 - Verify named-user Power Apps entitlement for Dataverse operations.
 - Display effective Nexus role and service access status.
@@ -29,7 +43,7 @@ The sidebar no longer duplicates capability filter context. School, school year,
 - Support controlled environment diagnostics without exposing student payloads.
 - Surface authorized Microsoft Fabric and OneLake Catalog integration health without granting platform administration through the Nexus experience role.
 
-## Administrative boundaries
+## 🗺️ Administrative boundaries
 
 - Nexus administration does not replace Entra, Dataverse, Fabric, or Power Platform administration.
 - Nexus administration and the Data Administrator workspace do not replace Microsoft Fabric, OneLake Catalog, security, compliance, or platform-administration roles.
@@ -37,7 +51,7 @@ The sidebar no longer duplicates capability filter context. School, school year,
 - The development role simulator never changes the user's actual Fabric identity or Dataverse permissions.
 - Production support telemetry must avoid student-level values and access tokens.
 
-## Open questions
+## ❓ Open questions
 
 - Final mapping between Entra groups, Dataverse roles, Fabric roles, and Nexus experience roles.
 - Which administrative functions belong in Nexus versus existing Microsoft admin portals.
@@ -45,9 +59,13 @@ The sidebar no longer duplicates capability filter context. School, school year,
 - Licensing verification and caching behaviour.
 - Final ownership of Fabric/OneLake catalog administration, policy administration, data stewardship, and Nexus support.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [Identity, licensing, and security](../../architecture/identity-licensing-security.md)
 - [Testing strategy](../../delivery/testing-strategy.md)
 - [Decision register](../../decisions/decision-register.md)
 - [Governance and Data Administrator workspace](../purview-governance/README.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Capabilities*

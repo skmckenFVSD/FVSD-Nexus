@@ -1,14 +1,28 @@
-# PASI provincial connector
+---
+title: PASI provincial connector
+description: An FVSD-owned Provincial Approach to Student Information (PASI) connector is Phase 4 of the approved product direction. It will allow FVSD to govern operational student workflows in Nexus and Dataverse while…
+type: capability
+status: proposed
+icon: 🏛️
+area: capabilities
+audience: [leadership, product, architects]
+owner: Scott McKenzie
+tags: [nexus, nexus/capabilities, nexus/pasi-connector]
+updated: 2026-11-05
+related: ["[[architecture/pasi-connector]]", "[[reference/pasi-resources]]", "[[architecture/data-and-integrations]]", "[[architecture/identity-licensing-security]]", "[[capabilities/ipp/README]]", "[[delivery/roadmap]]", "[[decisions/decision-register]]"]
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / PASI provincial connector
+# 🏛️ PASI provincial connector
 
-**Status:** Phase 4; public technical feasibility established, FVSD onboarding and submission scope remain open
+[🏠 Home](../../README.md) › [🧩 Capabilities](../README.md) › PASI provincial connector
+
+**Status:** 🟠 Phase 4; public technical feasibility established, FVSD onboarding and submission scope remain open
 
 An FVSD-owned Provincial Approach to Student Information (PASI) connector is Phase 4 of the approved product direction. It will allow FVSD to govern operational student workflows in Nexus and Dataverse while exchanging authorized provincial records directly with Alberta Education.
 
 PASI follows the core build, Dossier transition, and Microsoft 365 Copilot integration phases. It is documented now so onboarding, certificate, contract, privacy, support, and incumbent-integration decisions can be resolved before implementation.
 
-## Executive value
+## 🎯 Executive value
 
 A successful connector could provide:
 
@@ -21,7 +35,7 @@ A successful connector could provide:
 
 The business case must include lifetime support, provincial contract changes, certificate operations, testing, and reconciliation. Avoided vendor dependency is valuable, but it is not free integration.
 
-## Feasibility finding
+## 💡 Feasibility finding
 
 The publicly available Alberta Education technical material supports the feasibility of a custom district connector:
 
@@ -36,7 +50,7 @@ The publicly available Alberta Education technical material supports the feasibi
 
 These assets demonstrate technical viability. They do not by themselves confirm FVSD registration, approved operations, the production contract version, delivery effort, or authorization to replace an incumbent connector.
 
-## Phase 4 capability boundary
+## 🚀 Phase 4 capability boundary
 
 The connector should be a separate integration service. It should not be embedded in React and should not make an ordinary Nexus save depend synchronously on provincial service availability.
 
@@ -53,7 +67,7 @@ Authorized Nexus user
 
 Dataverse remains the operational truth store for Nexus. PASI remains authoritative for the provincial information and version returned by PASI. The connector must preserve both sides of that boundary rather than pretending one database owns every fact.
 
-## Planned connector capabilities
+## 🔌 Planned connector capabilities
 
 ### Submission
 
@@ -92,7 +106,7 @@ Dataverse remains the operational truth store for Nexus. PASI remains authoritat
 - Provide replay controls that cannot create duplicate provincial submissions.
 - Keep production student payloads and certificate material out of telemetry.
 
-## Identity and security model
+## 🔐 Identity and security model
 
 PASI system authentication is distinct from Nexus interactive-user licensing and identity:
 
@@ -104,7 +118,7 @@ PASI system authentication is distinct from Nexus interactive-user licensing and
 
 The exact certificate issuance, registration, renewal, production endpoint, and organizational authorization process must be confirmed directly with Alberta Education.
 
-## Relationship to IPP and third-party replacement
+## 🎓 Relationship to IPP and third-party replacement
 
 The [IEP/IPP capability](../ipp/README.md) and PASI connector reinforce one another but are not the same project:
 
@@ -113,7 +127,7 @@ The [IEP/IPP capability](../ipp/README.md) and PASI connector reinforce one anot
 - Discovery must establish which Intellimedia or Jigsaw functions are PASI integration responsibilities, which are PowerSchool responsibilities, and which are purely local IPP/intervention workflows.
 - No assumption should be made that an entire IPP document or every supporting field is submitted to PASI.
 
-## Staged delivery
+## 🚀 Staged delivery
 
 | Stage | Outcome | Exit evidence |
 |---|---|---|
@@ -124,7 +138,7 @@ The [IEP/IPP capability](../ipp/README.md) and PASI connector reinforce one anot
 | 4. Operational hardening | Add queues, retries, alerts, certificate lifecycle, runbooks, and support dashboards. | Failure/recovery exercise and operational acceptance. |
 | 5. Domain expansion | Add further PASI domains one at a time and retire overlapping incumbent functions only after parallel reconciliation. | Domain-specific acceptance and migration approval. |
 
-## Executive demonstration
+## 🧪 Executive demonstration
 
 A compelling development-stage demonstration would show:
 
@@ -139,7 +153,7 @@ A compelling development-stage demonstration would show:
 
 That evidence would prove more than a successful API call: it would demonstrate that FVSD can own the integration operationally.
 
-## Open decisions
+## ❓ Open decisions
 
 - Which PASI business domains are currently handled by Intellimedia, Jigsaw, PowerSchool, or another connector?
 - Which PASI operations would create the greatest executive and operational value for the first proof?
@@ -150,7 +164,7 @@ That evidence would prove more than a successful API call: it would demonstrate 
 - What service availability, recovery, retention, privacy, and audit obligations apply?
 - Which incumbent functions can be retired only after parallel-run reconciliation?
 
-## Related documentation
+## 🔗 Related documentation
 
 - [PASI connector architecture](../../architecture/pasi-connector.md)
 - [Official PASI reference index](../../reference/pasi-resources.md)
@@ -159,3 +173,7 @@ That evidence would prove more than a successful API call: it would demonstrate 
 - [IPP capability](../ipp/README.md)
 - [Phased delivery plan](../../delivery/roadmap.md)
 - [Decision register](../../decisions/decision-register.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Capabilities*

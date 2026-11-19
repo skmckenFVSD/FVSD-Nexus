@@ -1,12 +1,26 @@
-# Intervention tracking
+---
+title: Intervention tracking
+description: Student-level intervention work will not begin as a separate School Administration screen. It will be represented within the selected student's annual IEP/IPP through the existing Intervention Focus module…
+type: capability
+status: confirmed
+icon: 🩺
+area: capabilities
+audience: [leadership, product, architects]
+owner: Scott McKenzie
+tags: [nexus, nexus/capabilities, nexus/interventions]
+updated: 2026-11-05
+related: ["[[capabilities/ipp/README]]", "[[capabilities/profiles/README]]", "[[decisions/decision-register]]"]
+---
 
-> [FVSD Nexus](../../../README.md) / [Documentation](../../README.md) / [Capabilities](../README.md) / Intervention tracking
+# 🩺 Intervention tracking
 
-**Status:** Student operational entry is moving into the modular IEP/IPP capability; wider intervention scope remains open
+[🏠 Home](../../README.md) › [🧩 Capabilities](../README.md) › Intervention tracking
+
+**Status:** 🔵 Student operational entry is moving into the modular IEP/IPP capability; wider intervention scope remains open
 
 Student-level intervention work will not begin as a separate School Administration screen. It will be represented within the selected student's annual IEP/IPP through the existing **Intervention Focus** module definition. Aggregate intervention analytics may remain a separate Analytics destination.
 
-## Intended direction
+## 🎯 Intended direction
 
 - Connect identified evidence to a planned response.
 - Record intervention type, participants, dates, ownership, and intended outcomes.
@@ -14,7 +28,7 @@ Student-level intervention work will not begin as a separate School Administrati
 - Link Intervention Focus content to the authorized annual plan, its goals, and relevant assessment evidence.
 - Surface governed trends without duplicating semantic-model calculations.
 
-## Boundaries to define
+## ❓ Boundaries to define
 
 - Final structured fields and lifecycle for the Intervention Focus module and its relationship to plan goals.
 - Whether interventions can exist at student, group, class, school, or division level.
@@ -23,12 +37,16 @@ Student-level intervention work will not begin as a separate School Administrati
 - Required notifications and reminders.
 - Retention and historical correction rules.
 
-## Documentation approach
+## 📝 Documentation approach
 
 This page intentionally avoids inventing requirements. It should be expanded after current workflows, users, and Dataverse structures are inventoried.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [Individual Program Plans](../ipp/README.md)
 - [Profiles](../profiles/README.md)
 - [Decision register](../../decisions/decision-register.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Capabilities*

@@ -1,0 +1,10 @@
+{
+  "types": {
+    "aliases": "aliases",
+    "tags": "tags",
+    "audience": "multitext",
+    "related": "multitext",
+    "updated": "date",
+    "order": "number"
+  }
+}

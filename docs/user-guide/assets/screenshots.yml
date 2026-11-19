@@ -1,0 +1,37 @@
+# Screenshot map for the staff user guide.
+#
+# The markdown references each image by file name. This map holds what the
+# HTML guide needs beyond the image itself: numbered markers drawn over the
+# screenshot (positions are percentages of the image) and their legend.
+# Captions and alternative text live in the markdown so they read on GitHub.
+#
+#   file:     assets/<name>.png  (descriptive, lowercase, no dates or student details)
+#   markers:  - [number, x%, y%, "What to do at this marker"]
+#   redacted: true when the image has been edited to hide a name
+#
+# Leave markers empty until the screenshot exists, then position them and
+# check at desktop and mobile widths.
+
+screenshots:
+  - file: assets/sign-in.png
+    markers: []
+  - file: assets/navigation.png
+    markers: []
+  - file: assets/analytics-context.png
+    markers: []
+  - file: assets/analytics-matrix.png
+    markers: []
+  - file: assets/class-filters.png
+    markers: []
+  - file: assets/student-record.png
+    markers: []
+  - file: assets/assessment-add.png
+    markers: []
+  - file: assets/assessment-completion.png
+    markers: []
+  - file: assets/ipp-create.png
+    markers: []
+  - file: assets/ipp-modules.png
+    markers: []
+  - file: assets/settings.png
+    markers: []

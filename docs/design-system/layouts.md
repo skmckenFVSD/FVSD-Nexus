@@ -1,10 +1,24 @@
-# Application and workspace layouts
+---
+title: Application and workspace layouts
+description: Application and workspace layouts for FVSD Nexus.
+type: design-system
+status: current
+icon: 📐
+area: design-system
+audience: [designers, developers]
+owner: Scott McKenzie
+tags: [nexus, nexus/design-system]
+updated: 2026-11-13
+related: ["[[design-system/README]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Design system](README.md) / Layouts
+# 📐 Application and workspace layouts
 
-## Standard capability page
+[🏠 Home](../README.md) › [🎨 Design system](README.md) › Application and workspace layouts
 
-**Status:** Current concept, consolidation Proposed
+## 🧩 Standard capability page
+
+**Status:** 🟢 Current concept, consolidation Proposed
 
 Used for Home, Settings, Class Assignment before a student is opened, Assessments, and similar pages:
 
@@ -14,9 +28,9 @@ Used for Home, Settings, Class Assignment before a student is opened, Assessment
 - viewport-contained shell with the main content region owning page scrolling;
 - shared panel and component primitives.
 
-## Viewport-shell contract
+## 📐 Viewport-shell contract
 
-**Status:** Proposed core constraint
+**Status:** 🟢 Proposed core constraint
 
 Every application screen fits inside the visible Nexus shell. The browser document and the shell do not grow beyond the viewport to accommodate feature content.
 
@@ -32,9 +46,9 @@ Every application screen fits inside the visible Nexus shell. The browser docume
 
 This provides stable controls and prevents menus, form actions or document controls from scrolling beyond the visible application frame.
 
-## High-density workspace
+## 📐 High-density workspace
 
-**Status:** Confirmed direction for IEP/IPP; detailed interaction Proposed
+**Status:** 🟢 Confirmed direction for IEP/IPP; detailed interaction Proposed
 
 The separate Stage 3 shell can be reviewed locally at `http://localhost:5173/?shell-preview`. It contains navigation and shell geometry only; it does not call Dataverse or replace the current application shell.
 
@@ -71,9 +85,9 @@ Main regions are fluid: the shell and active content use the full available widt
 - Allow the section list to collapse for wide goals and matrices.
 - On narrow layouts, replace the persistent list with an accessible section selector and previous/next actions.
 
-## Navigation states
+## 🗺️ Navigation states
 
-**Status:** Proposed
+**Status:** 🟢 Proposed
 
 | State | Intended use |
 |---|---|
@@ -86,9 +100,9 @@ The compact rail must not make destinations unreachable. It may use grouping, a 
 
 The exact navigation state at each viewport band is defined in the [responsive matrix](responsive.md). Orientation is a secondary constraint; width and available component space remain the primary drivers.
 
-## Context drawer
+## 📐 Context drawer
 
-**Status:** Proposed for prototype
+**Status:** 🟢 Proposed for prototype
 
 - Opened from a clearly labelled filter/context control and from the context chip.
 - Content is supplied by the active workspace; it is not one fixed global filter form.
@@ -99,10 +113,14 @@ The exact navigation state at each viewport band is defined in the [responsive m
 
 For IEP/IPP, the drawer can combine class filters and the class roster so a teacher can switch students without returning to Class Assignment.
 
-## Analytics layouts
+## 📐 Analytics layouts
 
 Analytics uses the same navigation, controls, typography, notices and surfaces. It may use distinct chart grids, legends, matrices, sticky headers, and container-query behaviour. The design system standardizes the frame and interaction language without forcing charts into School Administration's record-oriented layout.
 
-## Compiled documents
+## 📄 Compiled documents
 
 The document preview and compiled PDF are not standard capability pages. They use shared semantic content but retain print-specific page geometry, headers, footers, contents, pagination and appendix handling. The preview should be available beside or over the workspace without permanently reducing module-editing space.
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Design system*

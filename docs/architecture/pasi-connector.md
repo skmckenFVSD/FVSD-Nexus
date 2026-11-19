@@ -1,10 +1,24 @@
-# PASI connector architecture
+---
+title: PASI connector architecture
+description: PASI connector architecture for FVSD Nexus.
+type: architecture
+status: proposed
+icon: 🏛️
+area: architecture
+audience: [architects, developers, leadership]
+owner: Scott McKenzie
+tags: [nexus, nexus/architecture]
+updated: 2026-11-05
+related: ["[[capabilities/pasi-connector/README]]", "[[reference/pasi-resources]]", "[[architecture/data-and-integrations]]", "[[architecture/identity-licensing-security]]"]
+---
 
-> [FVSD Nexus](../../README.md) / [Documentation](../README.md) / [Architecture](README.md) / PASI connector
+# 🏛️ PASI connector architecture
 
-**Status:** Phase 4 reference architecture; no PASI infrastructure or Dataverse connector tables have been created
+[🏠 Home](../README.md) › [🏗️ Architecture](README.md) › PASI connector architecture
 
-## Architectural intent
+**Status:** 🟠 Phase 4 reference architecture; no PASI infrastructure or Dataverse connector tables have been created
+
+## 🎯 Architectural intent
 
 The PASI connector should isolate provincial integration from interactive Nexus workflows while preserving named-user attribution, Dataverse operational truth, PASI concurrency/version state, and complete reconciliation evidence.
 
@@ -23,7 +37,7 @@ flowchart LR
     OL --> F[Fabric analytics]
 ```
 
-## Responsibilities
+## 🧩 Responsibilities
 
 | Component | Responsibility |
 |---|---|
@@ -35,7 +49,7 @@ flowchart LR
 | Key Vault | Protect the registered PASI client certificate/private key and support controlled rotation. |
 | Operations surface | Expose queue age, failures, warnings/advice, conflicts, certificate health, and reconciliation actions without student payload telemetry. |
 
-## Delivery guarantees
+## 🔄 Delivery guarantees
 
 - A successful Nexus save means the Dataverse transaction is committed; it does not falsely imply PASI acceptance.
 - Provincial submission status progresses independently through states such as Pending, Processing, Accepted, Attention Required, Retry Scheduled, Reconciliation Required, and Terminal Failure.
@@ -43,7 +57,7 @@ flowchart LR
 - A PASI optimistic-concurrency failure is a reconciliation event, not a generic retry.
 - Every submission and retrieval is correlated to the applicable operational record, organization context, connector version, and safe diagnostic identifier.
 
-## Conceptual integration records
+## 🗄️ Conceptual integration records
 
 Detailed Dataverse design is intentionally deferred. Discovery is expected to consider concepts equivalent to:
 
@@ -58,7 +72,7 @@ Detailed Dataverse design is intentionally deferred. Discovery is expected to co
 
 The exact number and ownership of tables must follow confirmed operations and retention rules. These concepts are not authorization to create the schema.
 
-## Connector implementation direction
+## 🎯 Connector implementation direction
 
 - Implement the connector as a dedicated .NET service or worker using generated/controlled SOAP clients for the approved WSDL contract.
 - Keep generated contracts behind an FVSD adapter so contract upgrades do not leak throughout Nexus.
@@ -68,7 +82,7 @@ The exact number and ownership of tables must follow confirmed operations and re
 - Treat PASI code values and validation rules as governed external reference data with effective-version awareness.
 - Provide certificate-expiry and contract-version telemetry without exposing key material or student payloads.
 
-## Security boundaries
+## 🔐 Security boundaries
 
 - Interactive Nexus authorization remains named-user and destination-aware.
 - PASI calls use the FVSD-registered system certificate and permitted `CallerInfo` organization context.
@@ -77,7 +91,7 @@ The exact number and ownership of tables must follow confirmed operations and re
 - Non-production and production certificates, endpoints, queues, and reconciliation records must be isolated.
 - Canadian residency and Alberta Education data-handling requirements must be confirmed before infrastructure is selected.
 
-## Required failure tests
+## 🧪 Required failure tests
 
 - Expired, revoked, or unregistered certificate.
 - Unauthorized represented organization.
@@ -90,7 +104,7 @@ The exact number and ownership of tables must follow confirmed operations and re
 - Duplicate delivery of the same integration request.
 - Synchronization checkpoint recovery after extended downtime.
 
-## Explicit exclusions at this stage
+## ⚠️ Explicit exclusions at this stage
 
 - No PASI certificate request or registration.
 - No production or non-production PASI call.
@@ -99,9 +113,13 @@ The exact number and ownership of tables must follow confirmed operations and re
 - No commitment that PASI will carry an IPP document or every IPP field.
 - No retirement of Intellimedia, Jigsaw, PowerSchool integration, or another incumbent component.
 
-## Related documentation
+## 🔗 Related documentation
 
 - [PASI capability](../capabilities/pasi-connector/README.md)
 - [Official PASI reference index](../reference/pasi-resources.md)
 - [Data and integrations](data-and-integrations.md)
 - [Identity, licensing, and security](identity-licensing-security.md)
+
+---
+
+*🏫 FVSD Nexus · Fort Vermilion School Division · Architecture*

@@ -10,6 +10,8 @@
 .vscode/
 TestResults/
 coverage/
+**/.artifacts/
+/tmp/
 *.log
 *.user
 *.suo
@@ -19,3 +21,12 @@ coverage/
 *.pfx
 *.pem
 *.key
+
+# Obsidian personal state (shared vault settings in docs/.obsidian are committed)
+docs/.obsidian/workspace*.json
+docs/.obsidian/cache
+docs/.trash/
+
+docs/.obsidian/plugins/
+docs/.obsidian/appearance.json
+docs/.obsidian/community-plugins.json

@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FVSD Nexus · Staff user guide</title>
+<meta name="description" content="Source of the staff user guide. Each chapter is markdown; the guide build exports a SharePoint-ready HTML guide.">
+<meta name="generator" content="FVSD Nexus documentation build — source: docs/user-guide">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<style>
+/* FVSD Nexus brand tokens — shared by every generated HTML output.
+   Source of record: docs/standards/brand-and-voice.md and
+   docs/design-system/foundations.md. Change values there first. */
+:root{
+  /* Structural */
+  --nexus-navy:#071940;
+  --nexus-navy-deep:#04102b;
+  --nexus-blue:#1F4E79;
+  --nexus-cyan:#4A90E2;
+  --nexus-sky:#6FB1F5;
+  --nexus-mint:#B8E986;
+  --nexus-amber:#F5A623;
+
+  /* Ink on dark */
+  --nexus-ink:#F4F7FC;
+  --nexus-ink-soft:#B9C6DC;
+  --nexus-ink-faint:#7B92AA;
+
+  /* Ink and surfaces on light */
+  --nexus-text:#1c2330;
+  --nexus-text-muted:#526477;
+  --nexus-surface:#ffffff;
+  --nexus-surface-alt:#eff4fb;
+  --nexus-border:#d7e4f2;
+
+  /* Application states (design-system foundations, confirmed 2026-11-13) */
+  --state-danger-fg:#9A1D29;  --state-danger-bg:#FFF1F2;  --state-danger-border:#E3A4AB;
+  --state-warning-fg:#6B4500; --state-warning-bg:#FFF7DB; --state-warning-border:#D9B44A;
+  --state-success-fg:#17633A; --state-success-bg:#EFFAF3; --state-success-border:#B5DCC7;
+  --state-info-fg:#1F4E79;    --state-info-bg:#EAF3FF;    --state-info-border:#B7D3F2;
+
+  --nexus-font:"Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+  --nexus-ease:cubic-bezier(.22,.61,.36,1);
+}
+
+/* FVSD Nexus staff guide — generated from docs/user-guide. Layout follows the
+   Education Framework Application guide so SharePoint hosting stays identical. */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:104px}
+body{margin:0;background:var(--nexus-surface-alt);color:var(--nexus-text);font-family:var(--nexus-font);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--nexus-blue)}
+a:hover{color:var(--nexus-navy)}
+:focus-visible{outline:3px solid var(--nexus-cyan);outline-offset:2px}
+.ico{flex:none;vertical-align:middle}
+.ico-inline{inline-size:1.05em;block-size:1.05em;margin-inline-end:.2em;vertical-align:-.15em}
+.visually-hidden{position:absolute;inline-size:1px;block-size:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.skip{position:absolute;inset-inline-start:-999px;inset-block-start:8px;background:#fff;color:var(--nexus-navy);padding:8px 14px;border-radius:6px;z-index:20}
+.skip:focus{inset-inline-start:12px}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:10;background:linear-gradient(100deg,var(--nexus-navy-deep),var(--nexus-navy));color:#fff;border-bottom:3px solid #325382}
+.topbar-inner{max-width:1500px;margin:auto;padding:13px 30px;display:flex;align-items:center;gap:18px;justify-content:space-between}
+.wordmark{display:flex;align-items:center;gap:12px;color:#fff;text-decoration:none;font-weight:700;font-size:17px;letter-spacing:.2px;line-height:1.25}
+.wordmark img{inline-size:34px;block-size:34px;border-radius:8px}
+.wordmark small{display:block;font-weight:500;font-size:11.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--nexus-sky)}
+.top-actions{display:flex;align-items:center;gap:12px}
+.draft{font-size:10.5px;letter-spacing:1.4px;font-weight:750;color:var(--nexus-navy-deep);background:var(--nexus-amber);padding:4px 10px;border-radius:99px}
+.launch{display:inline-flex;align-items:center;gap:8px;border-radius:8px;color:var(--nexus-navy-deep);background:var(--nexus-sky);font-weight:750;text-decoration:none;padding:8px 14px;min-block-size:42px;white-space:nowrap}
+.launch:hover{background:#e6f5ff;color:var(--nexus-navy-deep)}
+.launch:focus-visible{outline:3px solid #fff;outline-offset:3px}
+
+/* layout */
+.layout{max-width:1500px;margin:auto;display:grid;grid-template-columns:270px minmax(0,1fr);gap:38px;padding:30px}
+.sidebar{position:sticky;top:96px;max-block-size:calc(100vh - 120px);overflow:auto;scrollbar-width:thin;padding-inline-end:4px}
+.sidebar h2{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--nexus-text-muted);margin:0 0 12px}
+.nav-group{margin:0 0 16px}
+.nav-group>p{display:flex;align-items:center;gap:8px;margin:0 0 5px;font-size:12.5px;font-weight:750;color:var(--nexus-navy)}
+.nav-group>p .ico{color:var(--nexus-blue)}
+.nav-group>a{display:block;padding:6px 10px 6px 12px;margin-inline-start:7px;border-inline-start:2px solid var(--nexus-border);color:var(--nexus-text-muted);text-decoration:none;font-size:14px;line-height:1.4}
+.nav-group>a:hover,.nav-group>a[aria-current]{background:linear-gradient(90deg,#d9eafd,#e8f1fb);border-inline-start-color:var(--nexus-cyan);color:var(--nexus-navy)}
+.nav-group>a[aria-current]{font-weight:650}
+.search{margin:0 0 20px}
+.search label{display:block;font-size:13px;font-weight:650;margin-block-end:5px;color:var(--nexus-navy)}
+.search-line{display:flex;gap:6px}
+.search input{flex:1;min-inline-size:0;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--nexus-border);border-radius:7px;background:#fff}
+.search button{font:inherit;font-size:13px;border:1px solid var(--nexus-border);background:#fff;border-radius:7px;padding:0 10px;cursor:pointer;color:var(--nexus-navy)}
+.search-output{font-size:12.5px;color:var(--nexus-text-muted);margin:6px 0 0;min-block-size:1em}
+.mobile-nav{display:none}
+main{min-inline-size:0}
+
+/* hero */
+.hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:18px;align-items:center;color:#fff;padding:36px 40px;border-radius:14px;
+  background:radial-gradient(ellipse at 90% 15%,#285a94 0%,transparent 54%),linear-gradient(120deg,var(--nexus-navy-deep),var(--nexus-navy) 65%,#10366c);
+  border:1px solid #335787;box-shadow:0 10px 30px #04102b33;margin-block-end:14px}
+.hero .eyebrow{margin:0 0 10px;font-size:12px;letter-spacing:2.2px;text-transform:uppercase;font-weight:750;color:var(--nexus-sky)}
+.hero h1{margin:0 0 12px;font-size:42px;line-height:1.08;letter-spacing:-.8px}
+.hero .subtitle{margin:0;color:#d8e6fb;font-size:18px;max-inline-size:60ch}
+.hero .launch{margin-block-start:20px;min-block-size:50px;padding:11px 21px;background:linear-gradient(108deg,var(--nexus-sky),var(--nexus-mint));box-shadow:0 4px 16px #04102b66;font-size:1rem}
+.hero img{inline-size:100%;block-size:auto;border-radius:22%}
+.review-note{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--state-warning-fg);background:var(--state-warning-bg);border:1px solid var(--state-warning-border);border-radius:8px;padding:8px 14px;margin:0 0 22px}
+
+/* topics */
+.topic{background:#fff;border:1px solid var(--nexus-border);border-radius:9px;margin:0 0 24px;overflow:hidden}
+.topic-head{padding:22px 30px 16px;border-bottom:1px solid var(--nexus-border);background:linear-gradient(100deg,#eaf3ff 0%,#f7faff 64%,#fff)}
+.chapter-kicker{display:flex;align-items:center;gap:7px;margin:0 0 6px;font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;font-weight:750;color:var(--nexus-blue)}
+.topic-head h2{display:flex;align-items:center;gap:11px;margin:0;font-size:26px;line-height:1.25;color:var(--nexus-navy);letter-spacing:-.3px}
+.topic-head h2 .ico{color:var(--nexus-cyan)}
+.topic-head .intro{margin:9px 0 0;color:var(--nexus-text-muted);font-size:16.5px;max-inline-size:75ch}
+.topic-body{padding:20px 30px 26px;max-inline-size:none}
+.topic-body>p,.topic-body li{max-inline-size:78ch}
+.topic-body h3{display:flex;align-items:center;gap:9px;font-size:18px;color:var(--nexus-navy);margin:24px 0 8px}
+.topic-body h3:first-child{margin-block-start:4px}
+code{font-family:Consolas,"Cascadia Mono",monospace;font-size:.9em;background:var(--nexus-surface-alt);border:1px solid var(--nexus-border);border-radius:4px;padding:1px 5px}
+ol.steps{list-style:none;counter-reset:step;padding:0;margin:12px 0 18px}
+ol.steps>li{counter-increment:step;position:relative;padding-inline-start:44px;margin-block-end:12px;min-block-size:30px}
+ol.steps>li::before{content:counter(step);position:absolute;inset-inline-start:0;inset-block-start:-1px;inline-size:30px;block-size:30px;border-radius:50%;background:var(--nexus-navy);color:#fff;font-weight:700;font-size:14px;display:grid;place-items:center}
+ol.steps>li ul{margin-block-start:6px}
+ol.steps .table-scroll{margin:10px 0}
+.table-scroll{overflow-x:auto;margin:14px 0 20px}
+table{border-collapse:collapse;inline-size:100%;font-size:14.5px;line-height:1.55}
+th,td{border:1px solid var(--nexus-border);text-align:start;padding:10px 13px;vertical-align:top}
+thead th{background:#eaf3ff;color:var(--nexus-navy);font-weight:700}
+tbody tr:nth-child(even) td{background:#fafcff}
+
+/* callouts */
+.callout{display:flex;gap:12px;border:1px solid;border-inline-start-width:4px;border-radius:8px;padding:12px 16px;margin:16px 0}
+.callout .ico{margin-block-start:2px}
+.callout p{margin:0 0 6px}
+.callout p:last-child{margin:0}
+.callout .label{display:block;font-weight:750;font-size:13px;letter-spacing:.6px;text-transform:uppercase;margin-block-end:2px}
+.callout.note{background:var(--state-info-bg);border-color:var(--state-info-border);color:#183a5c}
+.callout.note .ico,.callout.note .label{color:var(--state-info-fg)}
+.callout.tip{background:var(--state-success-bg);border-color:var(--state-success-border)}
+.callout.tip .ico,.callout.tip .label{color:var(--state-success-fg)}
+.callout.important{background:#F3EEFF;border-color:#C9B8F0}
+.callout.important .ico,.callout.important .label{color:#4B2A9A}
+.callout.warning{background:var(--state-warning-bg);border-color:var(--state-warning-border)}
+.callout.warning .ico,.callout.warning .label{color:var(--state-warning-fg)}
+.callout.caution{background:var(--state-danger-bg);border-color:var(--state-danger-border)}
+.callout.caution .ico,.callout.caution .label{color:var(--state-danger-fg)}
+
+/* screenshots */
+figure{margin:18px 0 24px}
+.screenshot{display:block;position:relative;border:1px solid var(--nexus-border);border-radius:8px;overflow:hidden;background:#fff;text-decoration:none;color:inherit}
+.screenshot-stage{position:relative;display:block;line-height:0}
+.screenshot img{display:block;inline-size:100%;block-size:auto}
+.zoom-label{position:absolute;inset-block-end:10px;inset-inline-end:10px;background:#071940d9;color:#fff;font-size:12.5px;padding:4px 10px;border-radius:6px;line-height:1.4}
+.image-marker{position:absolute;left:clamp(14px,var(--x),calc(100% - 14px));top:clamp(14px,var(--y),calc(100% - 14px));transform:translate(-50%,-50%);inline-size:28px;block-size:28px;border-radius:50%;background:#C8102E;color:#fff;font-weight:800;font-size:14px;line-height:28px;text-align:center;box-shadow:0 0 0 3px #fff,0 2px 8px #0006}
+figcaption{font-size:14px;color:var(--nexus-text-muted);margin-block-start:8px}
+.marker-key{list-style:none;padding:0;margin:8px 0 0;font-size:14px}
+.marker-key li{display:flex;gap:8px;align-items:baseline;margin-block-end:4px}
+.marker-key span{flex:none;inline-size:22px;block-size:22px;border-radius:50%;background:#C8102E;color:#fff;font-weight:800;font-size:12px;display:grid;place-items:center}
+.shot-missing{display:flex;align-items:center;gap:14px;border:2px dashed #9fb6d3;border-radius:8px;padding:22px;background:repeating-linear-gradient(135deg,#f7faff,#f7faff 12px,#eef4fb 12px,#eef4fb 24px);color:var(--nexus-text-muted)}
+.shot-missing strong{display:block;color:var(--nexus-navy)}
+.shot-missing code{font-size:12.5px}
+.image-dialog{border:0;border-radius:12px;padding:0;max-inline-size:96vw;max-block-size:94vh;box-shadow:0 20px 60px #0008}
+.image-dialog::backdrop{background:#04102bcc}
+.dialog-bar{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 16px;background:var(--nexus-navy);color:#fff;position:sticky;top:0}
+.dialog-bar h2{font-size:15px;margin:0;font-weight:600}
+.dialog-bar button{font:inherit;background:#fff;color:var(--nexus-navy);border:0;border-radius:6px;padding:5px 12px;cursor:pointer;font-weight:650}
+.dialog-canvas{padding:12px;overflow:auto;max-block-size:calc(94vh - 52px)}
+.dialog-image{inline-size:max-content;max-inline-size:none;margin:auto}
+.dialog-image img{max-inline-size:none;inline-size:auto;block-size:auto}
+
+.empty{background:#fff;border:1px dashed var(--nexus-border);border-radius:9px;padding:24px;color:var(--nexus-text-muted)}
+.guide-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:13px;color:var(--nexus-text-muted);border-top:1px solid var(--nexus-border);padding-block-start:14px;margin-block-start:30px}
+
+@media(max-width:1050px){.layout{grid-template-columns:220px minmax(0,1fr);gap:24px;padding:22px}.hero{padding:29px 27px;grid-template-columns:minmax(0,1fr) 110px}.hero h1{font-size:36px}}
+@media(max-width:760px){
+  html{scroll-padding-top:84px}
+  .layout{display:block;padding:14px}
+  .sidebar{display:none}
+  .topbar-inner{padding:10px 14px}
+  .wordmark small{display:none}
+  .draft{display:none}
+  .hero{grid-template-columns:1fr;padding:24px 20px}
+  .hero img{display:none}
+  .hero h1{font-size:31px}
+  .mobile-nav{display:block;background:#fff;border:1px solid var(--nexus-border);border-radius:9px;margin:0 0 18px;padding:10px 14px}
+  .mobile-nav summary{font-weight:700;color:var(--nexus-navy);cursor:pointer}
+  .topic-head,.topic-body{padding-inline:18px}
+  .topic-head h2{font-size:22px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+  @page{size:letter portrait;margin:14mm}
+  body{background:#fff;font-size:11pt}
+  .topbar,.sidebar,.mobile-nav,.search,.zoom-label,.image-dialog,.skip{display:none!important}
+  .layout{display:block;padding:0;max-inline-size:none}
+  .hero{background:none!important;color:var(--nexus-navy);border:0;box-shadow:none;padding:0 0 12px;grid-template-columns:1fr 70px}
+  .hero .subtitle{color:#333}.hero .eyebrow{color:var(--nexus-blue)}.hero .launch{display:none}
+  .topic{break-inside:auto;border:0;border-top:2px solid var(--nexus-navy);border-radius:0;margin:0 0 14px}
+  .topic-head{background:none;padding:10px 0}
+  .topic-body{padding:0 0 10px}
+  figure,table,.callout{break-inside:avoid}
+  ol.steps>li::before,.callout,.image-marker,.marker-key span,thead th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .topic[hidden]{display:block!important}
+  a{color:inherit;text-decoration:none}
+}
+</style></head>
+<body>
+<a class="skip" href="#guide-content">Skip to guide content</a>
+<header class="topbar"><div class="topbar-inner"><a class="wordmark" href="#start-here"><img src="assets/fvsd-nexus-logo.png" alt="" width="34" height="34"><span>FVSD Nexus<small>Fort Vermilion School Division · Staff user guide</small></span></a><div class="top-actions"><span class="draft">WORKING DRAFT</span><a class="launch" href="https://app-fvsd-insights-iwmpkez4.azurewebsites.net/" target="_blank" rel="noopener">Open FVSD Nexus <span aria-hidden="true">↗</span><span class="visually-hidden"> (opens in a new tab)</span></a></div></div></header>
+<div class="layout"><aside class="sidebar" aria-label="Guide navigation"><h2>In this guide</h2><form class="search" role="search" hidden><label>Find a topic in this guide</label><div class="search-line"><input type="search" placeholder="Try TOSREC or signatures" aria-label="Find a topic in this guide" autocomplete="off"><button type="button" data-clear>Clear</button></div><p class="search-output" aria-live="polite"></p></form><nav aria-label="Topics"><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /> </svg>Getting started</p><a href="#start-here" data-topic="start-here">Start here</a><a href="#sign-in" data-topic="sign-in">Sign in</a><a href="#find-your-way-around" data-topic="find-your-way-around">Find your way around</a><a href="#your-role-and-what-you-see" data-topic="your-role-and-what-you-see">Your role and what you see</a></div><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Leadership analytics</p><a href="#open-the-overview" data-topic="open-the-overview">Open the Overview</a><a href="#set-the-analysis-context" data-topic="set-the-analysis-context">Set the analysis context</a><a href="#choose-the-focus-area-and-assessment-group" data-topic="choose-the-focus-area-and-assessment-group">Choose the focus area and assessment group</a><a href="#read-what-needs-our-attention" data-topic="read-what-needs-our-attention">Read “What needs our attention?”</a><a href="#compare-schools-in-the-matrix" data-topic="compare-schools-in-the-matrix">Compare schools in the matrix</a><a href="#read-the-charts" data-topic="read-the-charts">Read the charts</a></div><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 21v-3a2 2 0 0 0-4 0v3" /> <path d="M18 4.933V21" /> <path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6" /> <path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11" /> <path d="M6 4.933V21" /> <circle cx="12" cy="9" r="2" /> </svg>Students and classes</p><a href="#find-your-class" data-topic="find-your-class">Find your class</a><a href="#what-each-section-group-shows" data-topic="what-each-section-group-shows">What each section group shows</a><a href="#open-a-student" data-topic="open-a-student">Open a student</a><a href="#reset-or-change-filters" data-topic="reset-or-change-filters">Reset or change filters</a><a href="#reconnect-microsoft-services" data-topic="reconnect-microsoft-services">Reconnect Microsoft services</a></div><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.5 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v6" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="m14 20 2 2 4-4" /> </svg>Recording assessments</p><a href="#read-a-students-assessment-history" data-topic="read-a-students-assessment-history">Read a student's assessment history</a><a href="#add-a-tosrec-assessment" data-topic="add-a-tosrec-assessment">Add a TOSREC assessment</a><a href="#edit-an-assessment" data-topic="edit-an-assessment">Edit an assessment</a><a href="#delete-an-assessment" data-topic="delete-an-assessment">Delete an assessment</a><a href="#check-assessment-completion" data-topic="check-assessment-completion">Check assessment completion</a></div><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /> </svg>IEP / IPP annual plans</p><a href="#open-a-students-plan-history" data-topic="open-a-students-plan-history">Open a student's plan history</a><a href="#create-this-years-annual-plan" data-topic="create-this-years-annual-plan">Create this year's annual plan</a><a href="#choose-the-plan-modules" data-topic="choose-the-plan-modules">Choose the plan modules</a><a href="#record-evidence-in-plan-sections" data-topic="record-evidence-in-plan-sections">Record evidence in plan sections</a><a href="#manage-signatures" data-topic="manage-signatures">Manage signatures</a><a href="#find-compiled-documents" data-topic="find-compiled-documents">Find compiled documents</a></div><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /> <circle cx="12" cy="12" r="3" /> </svg>Settings and support</p><a href="#check-your-settings" data-topic="check-your-settings">Check your settings</a><a href="#sign-out" data-topic="sign-out">Sign out</a><a href="#if-something-does-not-look-right" data-topic="if-something-does-not-look-right">If something does not look right</a></div></nav></aside>
+<main id="guide-content"><div class="hero"><div><p class="eyebrow">FVSD · Staff user guide</p><h1>FVSD Nexus</h1><p class="subtitle">Clear steps for finding your students, reading governed analytics, recording assessments and building annual plans.</p><a class="launch" href="https://app-fvsd-insights-iwmpkez4.azurewebsites.net/" target="_blank" rel="noopener">Open FVSD Nexus <span aria-hidden="true">↗</span><span class="visually-hidden"> (opens in a new tab)</span></a></div><img src="assets/fvsd-nexus-logo.png" alt="FVSD Nexus" width="512" height="512"></div>
+<p class="review-note"><svg class="ico" width="16" height="16" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 17v5" /> <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" /> </svg>Working draft · Written from the November 2026 build · Screenshots being added</p>
+<details class="mobile-nav"><summary>In this guide and topic search</summary><form class="search" role="search" hidden><label>Find a topic in this guide</label><div class="search-line"><input type="search" placeholder="Try TOSREC or signatures" aria-label="Find a topic in this guide" autocomplete="off"><button type="button" data-clear>Clear</button></div><p class="search-output" aria-live="polite"></p></form><nav aria-label="Topics on smaller screens"><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /> </svg>Getting started</p><a href="#start-here" data-topic="start-here">Start here</a><a href="#sign-in" data-topic="sign-in">Sign in</a><a href="#find-your-way-around" data-topic="find-your-way-around">Find your way around</a><a href="#your-role-and-what-you-see" data-topic="your-role-and-what-you-see">Your role and what you see</a></div><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Leadership analytics</p><a href="#open-the-overview" data-topic="open-the-overview">Open the Overview</a><a href="#set-the-analysis-context" data-topic="set-the-analysis-context">Set the analysis context</a><a href="#choose-the-focus-area-and-assessment-group" data-topic="choose-the-focus-area-and-assessment-group">Choose the focus area and assessment group</a><a href="#read-what-needs-our-attention" data-topic="read-what-needs-our-attention">Read “What needs our attention?”</a><a href="#compare-schools-in-the-matrix" data-topic="compare-schools-in-the-matrix">Compare schools in the matrix</a><a href="#read-the-charts" data-topic="read-the-charts">Read the charts</a></div><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 21v-3a2 2 0 0 0-4 0v3" /> <path d="M18 4.933V21" /> <path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6" /> <path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11" /> <path d="M6 4.933V21" /> <circle cx="12" cy="9" r="2" /> </svg>Students and classes</p><a href="#find-your-class" data-topic="find-your-class">Find your class</a><a href="#what-each-section-group-shows" data-topic="what-each-section-group-shows">What each section group shows</a><a href="#open-a-student" data-topic="open-a-student">Open a student</a><a href="#reset-or-change-filters" data-topic="reset-or-change-filters">Reset or change filters</a><a href="#reconnect-microsoft-services" data-topic="reconnect-microsoft-services">Reconnect Microsoft services</a></div><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.5 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v6" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="m14 20 2 2 4-4" /> </svg>Recording assessments</p><a href="#read-a-students-assessment-history" data-topic="read-a-students-assessment-history">Read a student's assessment history</a><a href="#add-a-tosrec-assessment" data-topic="add-a-tosrec-assessment">Add a TOSREC assessment</a><a href="#edit-an-assessment" data-topic="edit-an-assessment">Edit an assessment</a><a href="#delete-an-assessment" data-topic="delete-an-assessment">Delete an assessment</a><a href="#check-assessment-completion" data-topic="check-assessment-completion">Check assessment completion</a></div><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /> </svg>IEP / IPP annual plans</p><a href="#open-a-students-plan-history" data-topic="open-a-students-plan-history">Open a student's plan history</a><a href="#create-this-years-annual-plan" data-topic="create-this-years-annual-plan">Create this year's annual plan</a><a href="#choose-the-plan-modules" data-topic="choose-the-plan-modules">Choose the plan modules</a><a href="#record-evidence-in-plan-sections" data-topic="record-evidence-in-plan-sections">Record evidence in plan sections</a><a href="#manage-signatures" data-topic="manage-signatures">Manage signatures</a><a href="#find-compiled-documents" data-topic="find-compiled-documents">Find compiled documents</a></div><div class="nav-group"><p><svg class="ico" width="15" height="15" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /> <circle cx="12" cy="12" r="3" /> </svg>Settings and support</p><a href="#check-your-settings" data-topic="check-your-settings">Check your settings</a><a href="#sign-out" data-topic="sign-out">Sign out</a><a href="#if-something-does-not-look-right" data-topic="if-something-does-not-look-right">If something does not look right</a></div></nav></details>
+<p class="empty" hidden>No topics match your search. Try a shorter word, or select Clear.</p>
+
+<!-- TOPIC start-here · source docs/user-guide/01-getting-started.md -->
+<article class="topic" id="start-here" data-title="Start here"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /> </svg>Getting started</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /> </svg>Start here</h2><p class="intro">FVSD Nexus is the division&#39;s application for moving from governed evidence to action. It brings leadership analytics, class assignments, assessment entry and annual plans into one place, and it shows you only what your role allows.</p></header><div class="topic-body">
+<p>Nexus does not keep its own copy of the truth. Every number and record you see comes from a governed source:</p>
+
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Student records, assessments, annual plans</td>
+<td>Microsoft Dataverse, the division&#39;s operational record</td>
+</tr>
+<tr>
+<td>Measures, medians and trends in analytics</td>
+<td>The <code>FVSDAnalytics</code> semantic model in Microsoft Fabric</td>
+</tr>
+<tr>
+<td>Your name, role and school</td>
+<td>Your FVSD Microsoft account and your Nexus role record</td>
+</tr>
+<tr>
+<td>Student demographics and enrolment</td>
+<td>PowerSchool, synchronized into Dataverse</td>
+</tr>
+</tbody></table>
+</div>
+<div class="callout tip" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /> </svg><div><span class="label">Tip</span><p>If a number in Nexus looks different from a report you know, the governed source is the answer. Note what you were looking at and raise it with support (see <a href="#if-something-does-not-look-right">If something does not look right</a>).</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC sign-in · source docs/user-guide/01-getting-started.md -->
+<article class="topic" id="sign-in" data-title="Sign in"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /> </svg>Getting started</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="16" r="1" /> <rect x="3" y="10" width="18" height="12" rx="2" /> <path d="M7 10V7a5 5 0 0 1 10 0v3" /> </svg>Sign in</h2><p class="intro">Nexus uses your FVSD Microsoft account. There is no separate Nexus password.</p></header><div class="topic-body">
+<ol class="steps"><li>Open FVSD Nexus with the <strong>Open FVSD Nexus</strong> button at the top of this guide.</li><li>If you are not already signed in, Nexus shows <strong>Use your FVSD account to continue</strong>. Select the sign-in button and sign in with your FVSD account.</li><li>Nexus opens on the <strong>Overview</strong> page under <strong>Analytics</strong>.</li></ol>
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>The FVSD Nexus sign-in screen asking you to use your FVSD account.<br><code>assets/sign-in.png</code></div></div><figcaption>Sign in with your FVSD account.</figcaption></figure>
+<div class="callout note" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /> </svg><div><span class="label">Note</span><p>Nexus acts <strong>as you</strong>. Every record you open, save or delete is attributed to your account, and you only ever see students, schools and measures that your own permissions allow.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC find-your-way-around · source docs/user-guide/01-getting-started.md -->
+<article class="topic" id="find-your-way-around" data-title="Find your way around"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /> </svg>Getting started</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /> </svg>Find your way around</h2><p class="intro">The navigation down the left side groups everything by area. Select a group to open it, then select a page.</p></header><div class="topic-body">
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>The FVSD Nexus navigation with the Analytics and School Administration groups expanded.<br><code>assets/navigation.png</code></div></div><figcaption>The navigation groups pages by area.</figcaption></figure>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Pages</th>
+<th>Who sees it</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Analytics</strong></td>
+<td><strong>Overview</strong> is available now. Literacy, Numeracy, Wellness, Interventions and Attendance are marked <strong>Soon</strong>.</td>
+<td>Everyone</td>
+</tr>
+<tr>
+<td><strong>School Administration</strong></td>
+<td><strong>Class Assignments</strong> and <strong>Assessments</strong></td>
+<td>Everyone with Class Assignment access</td>
+</tr>
+<tr>
+<td><strong>Governance</strong></td>
+<td>Data Quality, Data Catalog and Data Administration, all marked <strong>Soon</strong></td>
+<td>Data Administrators only</td>
+</tr>
+</tbody></table>
+</div>
+<ul>
+<li>Pages marked <strong>Soon</strong> are planned and cannot be opened yet.</li>
+<li>Use the arrow beside the FVSD Nexus name to <strong>collapse the navigation</strong> and give the page more room. Select it again to expand it.</li>
+<li><strong>Settings</strong> sits at the bottom of the navigation, with your current role and a reminder that Nexus is secured by FVSD Entra ID.</li>
+</ul>
+
+</div></article>
+
+<!-- TOPIC your-role-and-what-you-see · source docs/user-guide/01-getting-started.md -->
+<article class="topic" id="your-role-and-what-you-see" data-title="Your role and what you see"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /> </svg>Getting started</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <path d="M16 3.128a4 4 0 0 1 0 7.744" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <circle cx="9" cy="7" r="4" /> </svg>Your role and what you see</h2><p class="intro">Your role and school assignment come from your Nexus role record. They decide which schools, classes and actions are available to you.</p></header><div class="topic-body">
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Role in Nexus</th>
+<th>What it usually means for you</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Executive</strong></td>
+<td>Division-wide analytics across all schools; can choose any school in filters.</td>
+</tr>
+<tr>
+<td><strong>School Administrator</strong></td>
+<td>Your assigned school or schools; can delete assessment records where required.</td>
+</tr>
+<tr>
+<td><strong>Teacher</strong></td>
+<td>The schools and sections you teach; class rosters and student records for your sections.</td>
+</tr>
+<tr>
+<td><strong>Student Support</strong> / <strong>Specialist Support</strong></td>
+<td>Student records and history for the students you support.</td>
+</tr>
+<tr>
+<td><strong>Data Administrator</strong></td>
+<td>Division-wide data access and the Governance area as it is released.</td>
+</tr>
+</tbody></table>
+</div>
+<p>Your current role is shown at the bottom of the navigation and on the <a href="#check-your-settings">Settings</a> page. If it is wrong, do not work around it: ask for it to be corrected.</p>
+
+<div class="callout important" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M12 15h.01" /> <path d="M12 7v4" /> </svg><div><span class="label">Important</span><p>What you can <strong>see</strong> is enforced by the governed sources, not just by the screen. Hiding a button is a convenience; the data services check your permissions again every time.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC open-the-overview · source docs/user-guide/02-leadership-analytics.md -->
+<article class="topic" id="open-the-overview" data-title="Open the Overview"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Leadership analytics</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Open the Overview</h2><p class="intro">The Overview turns governed assessment measures into a guided picture: where results stand, where participation is low, and which school, grade and period needs attention. You do not need to know Power BI to use it.</p></header><div class="topic-body">
+<ol class="steps"><li>In the navigation, open <strong>Analytics</strong> and select <strong>Overview</strong>. Nexus opens here after you sign in.</li><li>Set the <strong>Analysis context</strong> at the top of the page (see the next topic).</li><li>Work down the page: choose a focus area, read the signals, compare schools, then focus a chart.</li></ol>
+<div class="callout note" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /> </svg><div><span class="label">Note</span><p>Every value comes from the <code>FVSDAnalytics</code> semantic model through predefined, reviewed queries. Your own analytics permissions still apply, so two people can see different schools on the same page.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC set-the-analysis-context · source docs/user-guide/02-leadership-analytics.md -->
+<article class="topic" id="set-the-analysis-context" data-title="Set the analysis context"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Leadership analytics</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /> </svg>Set the analysis context</h2><p class="intro">The analysis context decides which school years, periods, schools and grades every part of the page uses.</p></header><div class="topic-body">
+<ol class="steps"><li>Open <strong>School year</strong> and tick one or more years. <strong>Select all</strong> and <strong>Clear</strong> sit at the top of each list.</li><li>Open <strong>Period</strong> and choose one or more periods.</li><li>If your role allows it, open <strong>School</strong> and choose the schools to include. If you do not see School, the page already uses your own school.</li><li>Under <strong>Executive Dashboard filters</strong>, open <strong>Grade</strong> and choose one or more grades.</li><li>Check the <strong>Live selection</strong> line under the filters. It summarizes exactly what the page is showing.</li></ol>
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>The Analysis context panel with School year, Period, School and Grade filters and the Live selection line.<br><code>assets/analytics-context.png</code></div></div><figcaption>Set school year, period, school and grade, then check Live selection.</figcaption></figure>
+<div class="callout tip" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /> </svg><div><span class="label">Tip</span><p>Choosing several school years lets you compare the same period across years. In the charts, school year becomes the grouping beneath period.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC choose-the-focus-area-and-assessment-group · source docs/user-guide/02-leadership-analytics.md -->
+<article class="topic" id="choose-the-focus-area-and-assessment-group" data-title="Choose the focus area and assessment group"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Leadership analytics</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" /> </svg>Choose the focus area and assessment group</h2><p class="intro">The focus area and assessment group decide which measures the signals, matrix and chart use.</p></header><div class="topic-body">
+<ol class="steps"><li>Under <strong>Main area of focus</strong>, select <strong>Literacy</strong> or <strong>Numeracy</strong>. <strong>Wellbeing</strong> is marked <strong>Later</strong> and is not available yet.</li><li>Open <strong>Assessment group</strong> and choose the screener you want to review, for example TOSREC or TOWRE. Only assessments that apply to your selection are listed.</li></ol>
+<p>The page heading changes to match, for example <strong>Literacy overview</strong>.</p>
+
+</div></article>
+
+<!-- TOPIC read-what-needs-our-attention · source docs/user-guide/02-leadership-analytics.md -->
+<article class="topic" id="read-what-needs-our-attention" data-title="Read “What needs our attention?”"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Leadership analytics</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /> </svg>Read “What needs our attention?”</h2><p class="intro">Three short signals summarize the current selection before you look at any detail.</p></header><div class="topic-body">
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>What it tells you</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Performance</strong></td>
+<td>How median scores are moving across the selected periods.</td>
+</tr>
+<tr>
+<td><strong>Participation</strong></td>
+<td>How many assessments have been submitted, and where submissions are low.</td>
+</tr>
+<tr>
+<td><strong>Focus</strong></td>
+<td>Where to look first: the school, grade or period standing out from the rest.</td>
+</tr>
+</tbody></table>
+</div>
+<div class="callout note" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /> </svg><div><span class="label">Note</span><p>The signal wording is generated from the governed measures for your current selection. Treat the signals as a starting point for a conversation, then confirm the detail in the matrix and chart.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC compare-schools-in-the-matrix · source docs/user-guide/02-leadership-analytics.md -->
+<article class="topic" id="compare-schools-in-the-matrix" data-title="Compare schools in the matrix"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Leadership analytics</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 21v-3a2 2 0 0 0-4 0v3" /> <path d="M18 4.933V21" /> <path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6" /> <path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11" /> <path d="M6 4.933V21" /> <circle cx="12" cy="9" r="2" /> </svg>Compare schools in the matrix</h2><p class="intro">The <strong>School comparison</strong> matrix shows the median score by period and cohort group for each school, school year and grade in your selection.</p></header><div class="topic-body">
+<ol class="steps"><li>Read across a row to see how one school, year and grade moved through the periods.</li><li>Cohort groups (<strong>Foundation</strong> and <strong>Curriculum</strong>) stay in fixed columns so rows can be compared directly.</li><li><strong>Select a row</strong> to focus the chart beneath it on that school, year and grade.</li><li>Select <strong>Clear focus</strong> above the chart, or select the same row again, to return to the full selection.</li></ol>
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>The School comparison matrix with one row selected and the chart focused beneath it.<br><code>assets/analytics-matrix.png</code></div></div><figcaption>Select a row to focus the chart on that school, year and grade.</figcaption></figure>
+<p>If no school matches the selected year, grade, period and assessment group, the matrix tells you so instead of showing an empty table.</p>
+
+</div></article>
+
+<!-- TOPIC read-the-charts · source docs/user-guide/02-leadership-analytics.md -->
+<article class="topic" id="read-the-charts" data-title="Read the charts"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Leadership analytics</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Read the charts</h2><p class="intro">The chart shows descriptive-term submissions and the governed median score for the selected assessment group.</p></header><div class="topic-body">
+<ul>
+<li>Bars show how many submitted assessments fall into each descriptive term. The terms and their colours are the governed screener colours used everywhere in Nexus.</li>
+<li>The median score line shows performance across periods.</li>
+<li>Charts with no submitted assessments for your selection are not drawn.</li>
+</ul>
+
+<div class="callout important" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M12 15h.01" /> <path d="M12 7v4" /> </svg><div><span class="label">Important</span><p>Small groups are protected. Where very few students sit behind a figure, analytics may suppress it to protect privacy. A missing value is not an error.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC find-your-class · source docs/user-guide/03-class-assignments.md -->
+<article class="topic" id="find-your-class" data-title="Find your class"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 21v-3a2 2 0 0 0-4 0v3" /> <path d="M18 4.933V21" /> <path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6" /> <path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11" /> <path d="M6 4.933V21" /> <circle cx="12" cy="9" r="2" /> </svg>Students and classes</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 21v-3a2 2 0 0 0-4 0v3" /> <path d="M18 4.933V21" /> <path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6" /> <path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11" /> <path d="M6 4.933V21" /> <circle cx="12" cy="9" r="2" /> </svg>Find your class</h2><p class="intro">Class Assignments is where you find a class roster and open a student. Assessment history, assessment entry and annual plans all start from here.</p></header><div class="topic-body">
+<ol class="steps"><li>In the navigation, open <strong>School Administration</strong> and select <strong>Class Assignments</strong>.</li><li>In the <strong>Classroom Assignment Filters</strong>, check <strong>School</strong>. It is filled in from your assignment. If you work at more than one school, choose the school you need.</li><li>Choose a <strong>Section Group</strong>: <strong>Literacy</strong>, <strong>Numeracy</strong>, <strong>Foundations</strong> or <strong>Homeroom</strong>.</li><li>Choose a <strong>Course Name</strong>, then a <strong>Teacher</strong>. The teacher sections that match appear as you narrow the choices.</li><li>Select a teacher section to load its current student roster under <strong>Assigned students</strong>.</li></ol>
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>The Classroom Assignment Filters with School, Section Group, Course Name, Teacher and Student.<br><code>assets/class-filters.png</code></div></div><figcaption>Work down the filters: school, section group, course, teacher.</figcaption></figure>
+<div class="callout tip" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /> </svg><div><span class="label">Tip</span><p>Nexus waits until you choose a Section Group before it looks up courses and teachers. If the Course Name list is empty, check the Section Group first.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC what-each-section-group-shows · source docs/user-guide/03-class-assignments.md -->
+<article class="topic" id="what-each-section-group-shows" data-title="What each section group shows"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 21v-3a2 2 0 0 0-4 0v3" /> <path d="M18 4.933V21" /> <path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6" /> <path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11" /> <path d="M6 4.933V21" /> <circle cx="12" cy="9" r="2" /> </svg>Students and classes</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z" /> </svg>What each section group shows</h2><p class="intro">The section group you choose decides which histories and actions open for a student.</p></header><div class="topic-body">
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Section group</th>
+<th>Assessment history and entry</th>
+<th>IEP / IPP annual plans</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Literacy</strong></td>
+<td>Literacy assessments</td>
+<td>Not shown here</td>
+</tr>
+<tr>
+<td><strong>Numeracy</strong></td>
+<td>Numeracy assessments</td>
+<td>Not shown here</td>
+</tr>
+<tr>
+<td><strong>Foundations</strong></td>
+<td>Literacy and numeracy assessments</td>
+<td>Plan history and new plans</td>
+</tr>
+<tr>
+<td><strong>Homeroom</strong></td>
+<td>Not shown</td>
+<td>Plan history and new plans</td>
+</tr>
+</tbody></table>
+</div>
+<p>If you are looking for a student&#39;s annual plan, open them from a <strong>Foundations</strong> or <strong>Homeroom</strong> section.</p>
+
+</div></article>
+
+<!-- TOPIC open-a-student · source docs/user-guide/03-class-assignments.md -->
+<article class="topic" id="open-a-student" data-title="Open a student"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 21v-3a2 2 0 0 0-4 0v3" /> <path d="M18 4.933V21" /> <path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6" /> <path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11" /> <path d="M6 4.933V21" /> <circle cx="12" cy="9" r="2" /> </svg>Students and classes</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /> <circle cx="12" cy="7" r="4" /> </svg>Open a student</h2><p class="intro">Each student card shows the student&#39;s name, grade, date of birth, gender and SPED coding.</p></header><div class="topic-body">
+<ol class="steps"><li>Find the student in <strong>Assigned students</strong>, or pick them from the <strong>Student</strong> filter.</li><li>Select the student card. The roster is replaced by that student&#39;s record, with the panels for your section group:<ul>
+<li><strong>Assessment completion</strong> and <strong>Assessment history</strong> for Literacy, Numeracy and Foundations sections.</li>
+<li><strong>Student IEP / IPP History</strong> for Foundations and Homeroom sections.</li>
+</ul>
+</li><li>To go back, select <strong>Back to class list</strong>. The full roster returns and the history resets to <strong>Current Year</strong>.</li></ol>
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>A selected student's record with assessment completion, assessment history and IEP / IPP history.<br><code>assets/student-record.png</code></div></div><figcaption>A selected student, with the panels for a Foundations section.</figcaption></figure>
+<div class="callout note" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /> </svg><div><span class="label">Note</span><p><strong>Not coded</strong> under SPED means no SPED category is recorded for the student. <strong>Grade not recorded</strong> means PowerSchool has not supplied a grade.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC reset-or-change-filters · source docs/user-guide/03-class-assignments.md -->
+<article class="topic" id="reset-or-change-filters" data-title="Reset or change filters"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 21v-3a2 2 0 0 0-4 0v3" /> <path d="M18 4.933V21" /> <path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6" /> <path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11" /> <path d="M6 4.933V21" /> <circle cx="12" cy="9" r="2" /> </svg>Students and classes</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /> </svg>Reset or change filters</h2></header><div class="topic-body">
+<ul>
+<li>Changing <strong>School</strong> or <strong>Section Group</strong> clears the choices beneath it, because the courses and teachers depend on it.</li>
+<li>Select <strong>Reset filters</strong> to start again from the top.</li>
+<li>If <strong>No teacher sections match these filters</strong> appears, widen the <strong>Course Name</strong> or <strong>Teacher</strong> choice.</li>
+</ul>
+
+</div></article>
+
+<!-- TOPIC reconnect-microsoft-services · source docs/user-guide/03-class-assignments.md -->
+<article class="topic" id="reconnect-microsoft-services" data-title="Reconnect Microsoft services"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 21v-3a2 2 0 0 0-4 0v3" /> <path d="M18 4.933V21" /> <path d="m4 6 7.106-3.79a2 2 0 0 1 1.788 0L20 6" /> <path d="m6 11-3.52 2.147a1 1 0 0 0-.48.854V19a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a1 1 0 0 0-.48-.853L18 11" /> <path d="M6 4.933V21" /> <circle cx="12" cy="9" r="2" /> </svg>Students and classes</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 22v-5" /> <path d="M15 8V2" /> <path d="M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z" /> <path d="M9 8V2" /> </svg>Reconnect Microsoft services</h2><p class="intro">Sometimes your Nexus sign-in is still valid but the connection Nexus uses to read Dataverse on your behalf has expired.</p></header><div class="topic-body">
+<ol class="steps"><li>When you see <strong>Reconnect your Microsoft session</strong>, select <strong>Reconnect Microsoft services</strong>.</li><li>Sign in again if asked. Nexus returns you to the same page.</li></ol>
+<p>This is expected after a long session and does not mean anything has been lost.</p>
+
+</div></article>
+
+<!-- TOPIC read-a-students-assessment-history · source docs/user-guide/04-assessments.md -->
+<article class="topic" id="read-a-students-assessment-history" data-title="Read a student's assessment history"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.5 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v6" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="m14 20 2 2 4-4" /> </svg>Recording assessments</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.5 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v6" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="m14 20 2 2 4-4" /> </svg>Read a student&#39;s assessment history</h2><p class="intro">Assessment history lists every saved screener result for the selected student, with the governed descriptive term and its colour.</p></header><div class="topic-body">
+<ol class="steps"><li>Open the student from <a href="#open-a-student">Class Assignments</a> in a Literacy, Numeracy or Foundations section.</li><li>Under <strong>Assessment history</strong>, <strong>Current Year</strong> opens first. Select <strong>Previous Years</strong> for earlier school years.</li><li>Each row shows the <strong>School year</strong>, <strong>Period</strong>, <strong>Standard score</strong> and <strong>Descriptive term</strong>.</li><li>Select <strong>View</strong> on a row to open the full record.</li></ol>
+<div class="callout note" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /> </svg><div><span class="label">Note</span><p>TOSREC is the first assessment connected in Nexus. Other assessments will be added in turn; until then their history is not shown here.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC add-a-tosrec-assessment · source docs/user-guide/04-assessments.md -->
+<article class="topic" id="add-a-tosrec-assessment" data-title="Add a TOSREC assessment"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.5 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v6" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="m14 20 2 2 4-4" /> </svg>Recording assessments</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m16 9-5.5 5.5L8 12" /> </svg>Add a TOSREC assessment</h2><p class="intro">New assessments are recorded from the student&#39;s history. Nothing is saved until you select <strong>Save Assessment</strong>.</p></header><div class="topic-body">
+<ol class="steps"><li>Under <strong>Assessment history</strong>, select <strong>Add assessment</strong>. <strong>Add Student Assessment</strong> opens.</li><li>Choose the <strong>Assessment Type</strong>. The list is filtered by the student&#39;s curriculum and grade.</li><li>Under <strong>Assessment Detail</strong>, enter the <strong>Assessment Date</strong>.</li><li>Choose the <strong>Period</strong>. Only the period that matches the date is offered:<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Assessment dates</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fall</td>
+<td>September 1 to December 31</td>
+</tr>
+<tr>
+<td>Winter</td>
+<td>January 1 to March 30</td>
+</tr>
+<tr>
+<td>Spring</td>
+<td>April 1 to June 30</td>
+</tr>
+</tbody></table>
+</div></li><li>Set <strong>Exempt</strong>. If the student is exempt, enter the <strong>Exempt Reason</strong> and go to step 7.</li><li>Under <strong>Assessment Scoring</strong>, choose <strong>Total Correct</strong> and <strong>Total Error</strong>. Nexus looks up and shows the <strong>Raw Score</strong>, <strong>Standard Score</strong>, <strong>Percentile Rank</strong> and <strong>Descriptive Term</strong> from the governed reference tables.</li><li>Select <strong>Save Assessment</strong>. The form closes and the history refreshes with the new record.</li></ol>
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>The Add Student Assessment form with Assessment Detail and Assessment Scoring.<br><code>assets/assessment-add.png</code></div></div><figcaption>Complete Assessment Detail first, then Assessment Scoring.</figcaption></figure>
+<div class="callout important" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M12 15h.01" /> <path d="M12 7v4" /> </svg><div><span class="label">Important</span><p>March 31, July and August do not belong to an assessment period. If <strong>No assessment period is available for this date</strong> appears, check the date.</p>
+</div></div>
+<div class="callout tip" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /> </svg><div><span class="label">Tip</span><p>You never type a standard score or descriptive term. They are calculated from the governed reference tables and checked again when you save, so every school scores the same way.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC edit-an-assessment · source docs/user-guide/04-assessments.md -->
+<article class="topic" id="edit-an-assessment" data-title="Edit an assessment"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.5 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v6" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="m14 20 2 2 4-4" /> </svg>Recording assessments</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /> </svg>Edit an assessment</h2><p class="intro">You can correct a record while its period is still open.</p></header><div class="topic-body">
+<ol class="steps"><li>Select <strong>View</strong> on the record in <strong>Assessment history</strong>.</li><li>Select <strong>Edit</strong>. Edit is only offered for records in the current school year and the current period.</li><li>Make the change and select <strong>Save Assessment</strong>.</li></ol>
+<p>Records from a closed period stay read-only. If an older record is wrong, ask your school administrator; a controlled correction process is planned.</p>
+
+<p>If you close the form with unsaved changes, Nexus asks <strong>Discard unsaved changes?</strong> Select <strong>Discard changes</strong> to leave without saving.</p>
+
+</div></article>
+
+<!-- TOPIC delete-an-assessment · source docs/user-guide/04-assessments.md -->
+<article class="topic" id="delete-an-assessment" data-title="Delete an assessment"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.5 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v6" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="m14 20 2 2 4-4" /> </svg>Recording assessments</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /> </svg>Delete an assessment</h2><p class="intro">Deleting is limited to School Administration and Data Administrator roles, and it cannot be undone.</p></header><div class="topic-body">
+<ol class="steps"><li>Select <strong>View</strong> on the record.</li><li>Select <strong>Delete Assessment</strong>.</li><li>Read <strong>Confirm Deletion of Record</strong> and confirm. The record is permanently removed from Dataverse and the history refreshes.</li></ol>
+<div class="callout warning" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /> </svg><div><span class="label">Warning</span><p>Deletion is permanent. If you are unsure, edit the record instead or ask your school administrator.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC check-assessment-completion · source docs/user-guide/04-assessments.md -->
+<article class="topic" id="check-assessment-completion" data-title="Check assessment completion"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.5 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v6" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="m14 20 2 2 4-4" /> </svg>Recording assessments</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 16v5" /> <path d="M16 14.639V21" /> <path d="M20 10.656V21" /> <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" /> <path d="M4 18.463V21" /> <path d="M8 14.656V21" /> </svg>Check assessment completion</h2><p class="intro">The <strong>Assessments</strong> page shows which students still need an assessment in each period.</p></header><div class="topic-body">
+<ol class="steps"><li>In the navigation, open <strong>School Administration</strong> and select <strong>Assessments</strong>.</li><li>Choose the <strong>School</strong>, <strong>Section Group</strong>, <strong>Course Name</strong>, <strong>Teacher</strong> and <strong>Assessment Type</strong>.</li><li>Choose the period to review. Completion counts appear for the roster.</li></ol>
+<p>Which students count towards completion:</p>
+
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Course</th>
+<th>TOSREC required</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Grades 2 to 10</td>
+<td>Every period</td>
+</tr>
+<tr>
+<td>ELALIT1</td>
+<td>Winter and Spring only</td>
+</tr>
+<tr>
+<td>ELA</td>
+<td>Not required</td>
+</tr>
+</tbody></table>
+</div>
+<p>Exempt records count as complete.</p>
+
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>The Assessments completion view showing counts for a class roster by period.<br><code>assets/assessment-completion.png</code></div></div><figcaption>Completion counts for the selected class and period.</figcaption></figure>
+</div></article>
+
+<!-- TOPIC open-a-students-plan-history · source docs/user-guide/05-iep-ipp.md -->
+<article class="topic" id="open-a-students-plan-history" data-title="Open a student's plan history"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /> </svg>IEP / IPP annual plans</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /> </svg>Open a student&#39;s plan history</h2><p class="intro">Each student has at most <strong>one annual plan per school year</strong>. The same plan is shown as an IEP or an IPP depending on the modules and goals it contains.</p></header><div class="topic-body">
+<ol class="steps"><li>In <a href="#find-your-class">Class Assignments</a>, choose a <strong>Foundations</strong> or <strong>Homeroom</strong> section group and open the student.</li><li>Find <strong>Student IEP / IPP History</strong>. <strong>Current Year</strong> opens first; select <strong>Previous Years</strong> for earlier plans.</li><li>Each row shows the <strong>Plan</strong>, <strong>School year</strong>, <strong>Grade</strong>, <strong>School</strong> and <strong>Last updated</strong> date. Select <strong>Open</strong> to open a plan.</li></ol>
+<div class="callout warning" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /> </svg><div><span class="label">Warning</span><p>If you see <strong>More than one plan exists for the current school year</strong>, the records need to be reconciled before another plan can be created. Contact your school administrator; do not create a workaround plan.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC create-this-years-annual-plan · source docs/user-guide/05-iep-ipp.md -->
+<article class="topic" id="create-this-years-annual-plan" data-title="Create this year's annual plan"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /> </svg>IEP / IPP annual plans</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="m16 9-5.5 5.5L8 12" /> </svg>Create this year&#39;s annual plan</h2></header><div class="topic-body">
+<ol class="steps"><li>In <strong>Student IEP / IPP History</strong>, select <strong>Add IEP / IPP</strong>. The button is only offered when the student has no plan for the current school year.</li><li>Check the confirmation: the <strong>Student</strong>, <strong>Grade</strong>, <strong>School</strong> and <strong>Class</strong> are shown.</li><li>Select <strong>Create annual plan</strong>, or <strong>Cancel</strong> to go back without creating anything.</li></ol>
+<p>Opening the confirmation never creates a record. Only <strong>Create annual plan</strong> does.</p>
+
+<p>Every new plan starts with these modules:</p>
+
+<ul>
+<li><strong>Student Details</strong> and <strong>Screener Results</strong>, always.</li>
+<li><strong>Student Conditions and Coding</strong>, when the student is SPED coded at the time the plan is created.</li>
+</ul>
+
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>The Create annual plan confirmation showing the student, grade, school and class.<br><code>assets/ipp-create.png</code></div></div><figcaption>Confirm the student and class, then create the annual plan.</figcaption></figure>
+</div></article>
+
+<!-- TOPIC choose-the-plan-modules · source docs/user-guide/05-iep-ipp.md -->
+<article class="topic" id="choose-the-plan-modules" data-title="Choose the plan modules"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /> </svg>IEP / IPP annual plans</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z" /> </svg>Choose the plan modules</h2><p class="intro">A plan contains only the modules this student needs. The selected modules appear across the top of the plan, in the division&#39;s standard order.</p></header><div class="topic-body">
+<ol class="steps"><li>Select <strong>Manage modules</strong> to open the module catalogue, grouped by area.</li><li>Select a module to add it to the plan. Added modules show <strong>Included</strong>.</li><li>Select an included module again to remove it.</li><li>Select <strong>Manage modules</strong> again to close the catalogue.</li></ol>
+<ul>
+<li>Modules marked <strong>Locked</strong> are required and cannot be removed.</li>
+<li>Selecting a module in the top navigator <strong>opens</strong> it. It does not add or remove it.</li>
+<li>If someone else changes the plan&#39;s modules at the same time, Nexus reloads the plan instead of overwriting their change.</li>
+</ul>
+
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>The Manage modules catalogue with included and locked modules.<br><code>assets/ipp-modules.png</code></div></div><figcaption>Add or remove modules; locked modules stay in the plan.</figcaption></figure>
+</div></article>
+
+<!-- TOPIC record-evidence-in-plan-sections · source docs/user-guide/05-iep-ipp.md -->
+<article class="topic" id="record-evidence-in-plan-sections" data-title="Record evidence in plan sections"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /> </svg>IEP / IPP annual plans</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /> <path d="M2 6h4" /> <path d="M2 10h4" /> <path d="M2 14h4" /> <path d="M2 18h4" /> <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /> </svg>Record evidence in plan sections</h2><p class="intro">Open a module from the navigator to work in it. Each module records its own evidence; you add or edit entries with the button at the top of the section and save them in a side form.</p></header><div class="topic-body">
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Module</th>
+<th>What you record</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Student Details</strong></td>
+<td>Attendance for each reporting period</td>
+<td><strong>Update attendance</strong></td>
+</tr>
+<tr>
+<td><strong>Screener Results</strong></td>
+<td>Nothing: screener results appear automatically from assessment records</td>
+<td>View only</td>
+</tr>
+<tr>
+<td><strong>Oral Reading Fluency (ORF)</strong></td>
+<td>Level of reading and words correct per minute, with the change from the previous result</td>
+<td><strong>Add ORF result</strong></td>
+</tr>
+<tr>
+<td><strong>Word Study</strong></td>
+<td>Words Their Way starting and finishing stage and skill for each term</td>
+<td><strong>Add Word Study record</strong></td>
+</tr>
+<tr>
+<td><strong>Empower Reading</strong></td>
+<td>Initial and current goal level and date achieved</td>
+<td>Select a goal</td>
+</tr>
+<tr>
+<td><strong>Mathematics</strong> / <strong>FMCS Foundations</strong></td>
+<td>Progress against outcomes and goal levels</td>
+<td>Select an outcome</td>
+</tr>
+<tr>
+<td><strong>Writing Snapshot</strong></td>
+<td>Evidence of writing development, with an optional attached writing sample</td>
+<td><strong>Add writing snapshot</strong></td>
+</tr>
+<tr>
+<td><strong>Teacher Comment and Next Steps</strong></td>
+<td>Comments and next steps for a plan section</td>
+<td><strong>Add comment</strong></td>
+</tr>
+<tr>
+<td><strong>Student Conditions and Coding</strong></td>
+<td>Conditions for the primary SPED category and up to three additional categories</td>
+<td><strong>Update coding and conditions</strong></td>
+</tr>
+<tr>
+<td><strong>Intervention Focus</strong></td>
+<td>Interventions: curriculum, section, type, start date, interventionist and outcome</td>
+<td><strong>Add intervention</strong></td>
+</tr>
+<tr>
+<td><strong>Signatures</strong></td>
+<td>Signature recipients and their routing order</td>
+<td><strong>Add signature</strong></td>
+</tr>
+</tbody></table>
+</div>
+<div class="callout note" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /> </svg><div><span class="label">Note</span><p>Attendance is entered as a whole-number percentage for each period. Leave a period blank when no value is available yet.</p>
+</div></div>
+<div class="callout tip" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /> </svg><div><span class="label">Tip</span><p>In <strong>Writing Snapshot</strong>, you can exclude a snapshot from the compiled document. It stays in the plan as evidence but is not printed.</p>
+</div></div>
+</div></article>
+
+<!-- TOPIC manage-signatures · source docs/user-guide/05-iep-ipp.md -->
+<article class="topic" id="manage-signatures" data-title="Manage signatures"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /> </svg>IEP / IPP annual plans</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284" /> <path d="M3 21h18" /> </svg>Manage signatures</h2><p class="intro">The <strong>Signatures</strong> module lists everyone who needs to sign or receive the plan, in routing order.</p></header><div class="topic-body">
+<ol class="steps"><li>Open the <strong>Signatures</strong> module and select <strong>Add signature</strong>.</li><li>Choose the <strong>Recipient Type</strong> and <strong>Signatory Role</strong>, then enter the <strong>Signatory Name</strong> and <strong>Signatory Email</strong>.</li><li>Set the <strong>Signatory Order</strong>. It controls the DocuSign routing order.</li><li>Save the recipient. The card shows its order, <strong>Status</strong>, and the <strong>Requested</strong> and <strong>Signed</strong> dates, which are updated automatically.</li></ol>
+<div class="callout important" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M12 15h.01" /> <path d="M12 7v4" /> </svg><div><span class="label">Important</span><p>Enter and check parent or guardian contact details carefully. <strong>Routing order is locked after signature requests begin.</strong></p>
+</div></div>
+</div></article>
+
+<!-- TOPIC find-compiled-documents · source docs/user-guide/05-iep-ipp.md -->
+<article class="topic" id="find-compiled-documents" data-title="Find compiled documents"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /> </svg>IEP / IPP annual plans</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /> </svg>Find compiled documents</h2></header><div class="topic-body">
+<ol class="steps"><li>In the plan, select <strong>Compiled documents</strong> to open the <strong>Annual plan files</strong> panel.</li><li>Select a document and choose <strong>Download PDF</strong>.</li></ol>
+<p>Until the remaining plan modules are complete, <strong>Request document</strong> is not yet available and the panel may show <strong>No compiled documents yet</strong>.</p>
+
+</div></article>
+
+<!-- TOPIC check-your-settings · source docs/user-guide/06-settings-and-support.md -->
+<article class="topic" id="check-your-settings" data-title="Check your settings"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /> <circle cx="12" cy="12" r="3" /> </svg>Settings and support</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /> <circle cx="12" cy="12" r="3" /> </svg>Check your settings</h2><p class="intro">Settings shows who Nexus thinks you are, which school you are assigned to, and whether the governed data sources are connected.</p></header><div class="topic-body">
+<ol class="steps"><li>Select <strong>Settings</strong> at the bottom of the navigation.</li><li>Review each card:</li></ol>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Card</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Governed data sources</strong></td>
+<td>Whether <strong>Microsoft Fabric</strong> (the <code>FVSDAnalytics</code> semantic model) and <strong>Microsoft Dataverse</strong> are connected for you.</td>
+</tr>
+<tr>
+<td><strong>Assignment and role</strong></td>
+<td>Your <strong>Current role</strong>, <strong>Primary assignment</strong> and <strong>Alternative assignment</strong>.</td>
+</tr>
+<tr>
+<td><strong>Named-user policy</strong></td>
+<td>How you are signed in (<strong>FVSD Entra ID</strong>), that access is <strong>Named user</strong>, and whether the application is enabled for you.</td>
+</tr>
+<tr>
+<td><strong>Request a change</strong></td>
+<td>Role, school assignment and licence change requests. This is <strong>Planned</strong> and not yet available.</td>
+</tr>
+</tbody></table>
+</div>
+<figure class="placeholder"><div class="shot-missing"><svg class="ico" width="30" height="30" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /> </svg><div><strong>Screenshot to add</strong>The Settings page with the governed data sources, assignment and role, and named-user policy cards.<br><code>assets/settings.png</code></div></div><figcaption>Check your role, assignment and connections in Settings.</figcaption></figure>
+<p>If your role or school is wrong, contact support. Do not share an account or sign in as someone else to reach a school.</p>
+
+</div></article>
+
+<!-- TOPIC sign-out · source docs/user-guide/06-settings-and-support.md -->
+<article class="topic" id="sign-out" data-title="Sign out"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /> <circle cx="12" cy="12" r="3" /> </svg>Settings and support</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="16" r="1" /> <rect x="3" y="10" width="18" height="12" rx="2" /> <path d="M7 10V7a5 5 0 0 1 10 0v3" /> </svg>Sign out</h2><p class="intro">Select <strong>Sign out</strong> on the Settings page. On a shared device, always sign out and close the browser when you finish.</p></header><div class="topic-body">
+
+</div></article>
+
+<!-- TOPIC if-something-does-not-look-right · source docs/user-guide/06-settings-and-support.md -->
+<article class="topic" id="if-something-does-not-look-right" data-title="If something does not look right"><header class="topic-head"><p class="chapter-kicker"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /> <circle cx="12" cy="12" r="3" /> </svg>Settings and support</p><h2><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="M9 9.5a3 2.5 0 016 0c0 2-2 2-3 3.5" /> <path d="M12 17h.01" /> </svg>If something does not look right</h2></header><div class="topic-body">
+<ol class="steps"><li>Note the page, the filters or student you had selected, and what you expected to see. Do not include student names in an email or chat; describe the class and period instead.</li><li>If you see <strong>Reconnect your Microsoft session</strong>, select <strong>Reconnect Microsoft services</strong> first. This fixes most loading problems.</li><li>If a number differs from another report, check the <strong>Live selection</strong> line in analytics: different years, periods or grades are the most common cause.</li><li>Contact support with your notes.</li></ol>
+<div class="callout note" role="note"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /> </svg><div><span class="label">Note</span><p><strong>Support contact:</strong> to be confirmed before this guide is published.</p>
+</div></div>
+</div></article>
+<footer class="guide-foot"><span>Fort Vermilion School Division · FVSD Nexus staff user guide</span><span>Content updated 2026-11-17 · generated from docs/user-guide</span></footer>
+</main></div>
+<dialog class="image-dialog" aria-labelledby="image-title"><div class="dialog-bar"><h2 id="image-title">Screenshot</h2><button type="button" data-close-image>Close</button></div><div class="dialog-canvas"></div></dialog>
+<script>
+(()=>{'use strict';
+ const topics=[...document.querySelectorAll('.topic')],forms=[...document.querySelectorAll('.search')];
+ const searchData=topics.map(t=>({el:t,text:(t.dataset.title+' '+t.textContent).toLocaleLowerCase()}));
+ function filter(value){const q=value.trim().toLocaleLowerCase();let count=0;searchData.forEach(t=>{const show=!q||t.text.includes(q);t.el.hidden=!show;if(show)count++});
+  document.querySelectorAll('[data-topic]').forEach(a=>{a.hidden=document.getElementById(a.dataset.topic).hidden});
+  document.querySelectorAll('.nav-group').forEach(g=>{g.hidden=![...g.querySelectorAll('a')].some(a=>!a.hidden)});
+  forms.forEach(f=>{f.querySelector('input').value=value;f.querySelector('.search-output').textContent=q?count+' matching topic'+(count===1?'':'s'):''});
+  document.querySelector('.empty').hidden=count!==0}
+ forms.forEach(f=>{f.hidden=false;f.addEventListener('submit',e=>e.preventDefault());f.querySelector('input').addEventListener('input',e=>filter(e.target.value));f.querySelector('[data-clear]').addEventListener('click',()=>{filter('');f.querySelector('input').focus()})});
+ document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',()=>{const target=document.getElementById(a.getAttribute('href').slice(1));if(target&&target.hidden)filter('');if(a.closest('.mobile-nav nav'))document.querySelector('.mobile-nav').open=false}));
+ function exposeHash(){const target=document.getElementById(location.hash.slice(1));const article=target&&target.closest('.topic');if(article&&article.hidden)filter('')}addEventListener('hashchange',exposeHash);exposeHash();
+ const dialog=document.querySelector('.image-dialog');let returnFocus=null;
+ if(typeof dialog.showModal==='function'){document.querySelectorAll('[data-enlarge]').forEach(link=>link.addEventListener('click',e=>{e.preventDefault();returnFocus=link;const stage=link.querySelector('.screenshot-stage').cloneNode(true);stage.classList.add('dialog-image');stage.querySelector('img').loading='eager';dialog.querySelector('.dialog-canvas').replaceChildren(stage);dialog.querySelector('#image-title').textContent=link.closest('figure').querySelector('figcaption').textContent;dialog.showModal()}));
+  dialog.querySelector('[data-close-image]').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});dialog.addEventListener('close',()=>{if(returnFocus)returnFocus.focus()})}
+ if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>{const found=entries.filter(x=>x.isIntersecting&&!x.target.hidden).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top)[0];if(!found)return;document.querySelectorAll('[data-topic]').forEach(a=>{if(a.dataset.topic===found.target.id)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current')})},{rootMargin:'-90px 0px -55% 0px',threshold:0});topics.forEach(t=>observer.observe(t))}
+})();
+</script></body></html>

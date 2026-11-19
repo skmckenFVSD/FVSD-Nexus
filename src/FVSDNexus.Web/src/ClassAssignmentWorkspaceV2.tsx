@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  BookOpenText,
   ChevronLeft,
   ChevronRight,
   CircleAlert,
@@ -10,6 +9,8 @@ import {
   UsersRound,
   X,
 } from 'lucide-react'
+import { StudentAssessmentPanel, StudentPlanPanel } from './AssessmentWorkspace'
+import type { IppPreviewContext } from './IppPreview'
 
 type SchoolOption = { id: string; name: string }
 type SectionGroupOption = { value: string; label: string; sortOrder: number }
@@ -68,6 +69,8 @@ type Props = {
   setFiltersOpen: (open: boolean) => void
   onContextChange: (context: ClassAssignmentContext) => void
   studentDisplayMode: 'real' | 'obfuscated'
+  currentSchoolYear?: string
+  onOpenIpp?: (context: IppPreviewContext) => void
 }
 
 class ApiRequestError extends Error {
@@ -110,7 +113,7 @@ const emptySelection: Selection = {
   studentId: '',
 }
 
-export function ClassAssignmentWorkspaceV2({ filtersOpen, setFiltersOpen, onContextChange, studentDisplayMode }: Props) {
+export function ClassAssignmentWorkspaceV2({ filtersOpen, setFiltersOpen, onContextChange, studentDisplayMode, currentSchoolYear, onOpenIpp }: Props) {
   const [context, setContext] = useState<WorkspaceContext | null>(null)
   const [selection, setSelection] = useState<Selection>(emptySelection)
   const [sectionGroups, setSectionGroups] = useState<SectionGroupOption[]>([])
@@ -225,6 +228,9 @@ export function ClassAssignmentWorkspaceV2({ filtersOpen, setFiltersOpen, onCont
 
   const selectedSection = sections.find((section) => section.id === selectedSectionId) ?? null
   const selectedStudent = students.find((student) => student.id === selection.studentId) ?? null
+  const normalizedSectionGroup = selection.sectionGroup.trim().toLowerCase()
+  const showAssessmentHistory = ['literacy', 'numeracy', 'mathematics', 'foundations'].includes(normalizedSectionGroup)
+  const showProgramPlanHistory = ['homeroom', 'foundations'].includes(normalizedSectionGroup)
   const selectedSchool = context?.schools.find((school) => school.id === selection.schoolId) ?? null
   const displayStudentName = (student: Student) => studentDisplayMode === 'obfuscated' ? student.obfuscatedName ?? student.name : student.name
   const displayStudentAsn = (student: Student) => studentDisplayMode === 'obfuscated' ? student.obfuscatedAsn ?? student.asn : student.asn
@@ -411,10 +417,31 @@ export function ClassAssignmentWorkspaceV2({ filtersOpen, setFiltersOpen, onCont
               </article>
 
               {selectedStudent ? (
-                <section className="hd-student-history" aria-label="Student history migration status">
-                  <header><div><span>Live migration</span><h2>Student history</h2><p>The student and section context is live. Assessment and Program Plan histories are the next functional migration slice.</p></div></header>
-                  <div className="hd-history-empty"><BookOpenText aria-hidden="true" /><div><strong>Ready for history integration</strong><span>The existing application remains available at the default localhost URL while this view is connected.</span></div></div>
-                </section>
+                <div className="hd-student-history-stack">
+                  {showProgramPlanHistory && selectedSection ? (
+                    <StudentPlanPanel
+                      student={selectedStudent}
+                      studentDisplayMode={studentDisplayMode}
+                      currentSchoolYear={currentSchoolYear}
+                      teacherSectionId={selectedSection.id}
+                      teacherSection={selectedSection}
+                      onOpenIpp={onOpenIpp}
+                    />
+                  ) : null}
+
+                  {showAssessmentHistory && selectedSection ? (
+                    <StudentAssessmentPanel
+                      student={selectedStudent}
+                      studentDisplayMode={studentDisplayMode}
+                      currentSchoolYear={currentSchoolYear}
+                      focusArea={selectedSection.sectionGroup}
+                      teacherSectionId={selectedSection.id}
+                      teacherSection={selectedSection}
+                      role={context?.role ?? ''}
+                      onAssessmentChanged={() => {}}
+                    />
+                  ) : null}
+                </div>
               ) : (
                 <section className="hd-student-roster" aria-label="Assigned students">
                   <div className="hd-student-grid">
