@@ -2310,14 +2310,14 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
     internal static string BuildStudentPlansQuery(Guid studentId) =>
         "fvsd_studentipps?" +
         "$select=fvsd_studentippid,fvsd_name,fvsd_schoolyear,fvsd_gradeatipp," +
-        "fvsd_schoolatipp,fvsd_teacheratipp,fvsd_coursename,fvsd_curriculum,modifiedon&" +
-        $"$filter={Uri.EscapeDataString($"statecode eq 0 and _fvsd_student_value eq {studentId:D}")}&" +
+        "fvsd_schoolatipp,fvsd_teacheratipp,fvsd_coursename,fvsd_curriculum,statecode,statuscode,modifiedon&" +
+        $"$filter={Uri.EscapeDataString($"_fvsd_student_value eq {studentId:D}")}&" +
         "$orderby=fvsd_schoolyear desc,modifiedon desc&$top=5000";
 
     private static string BuildStudentPlanDuplicateQuery(Guid studentId, string schoolYear) =>
         "fvsd_studentipps?" +
         "$select=fvsd_studentippid,fvsd_name,fvsd_schoolyear,fvsd_gradeatipp," +
-        "fvsd_schoolatipp,fvsd_teacheratipp,fvsd_coursename,fvsd_curriculum,modifiedon&" +
+        "fvsd_schoolatipp,fvsd_teacheratipp,fvsd_coursename,fvsd_curriculum,statecode,statuscode,modifiedon&" +
         $"$filter={Uri.EscapeDataString($"_fvsd_student_value eq {studentId:D} and fvsd_schoolyear eq '{EscapeODataString(schoolYear)}'")}&" +
         "$orderby=modifiedon desc&$top=2";
 
@@ -2469,10 +2469,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         "$orderby=fvsd_sortorder asc,fvsd_name asc&$top=5000";
 
     internal static string BuildStudentPlanEmpowerLevelsQuery() =>
-        "fvsd_ipplevels?" +
-        "$select=fvsd_ipplevelid,fvsd_name,fvsd_description,fvsd_fillhexcode,fvsd_fonthexcode,fvsd_sortorder&" +
-        "$filter=statecode eq 0 and fvsd_curriculum/fvsd_name eq 'English Language Arts and Literature'&" +
-        "$expand=fvsd_curriculum($select=fvsd_name)&$orderby=fvsd_sortorder asc,fvsd_name asc&$top=5000";
+        BuildIppSectionLevelsQuery("Empower Reading", "English Language Arts and Literature");
 
     internal static string BuildStudentPlanEmpowerProgressQuery(Guid planId) =>
         "fvsd_studentipplevels?" +
@@ -2492,11 +2489,7 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
         "$orderby=fvsd_subsection asc,fvsd_grade asc,fvsd_sortorder asc,fvsd_name asc&$top=5000";
 
     internal static string BuildStudentPlanMathematicsLevelsQuery() =>
-        "fvsd_ipplevels?" +
-        "$select=fvsd_ipplevelid,fvsd_name,fvsd_description,fvsd_fillhexcode,fvsd_fonthexcode,fvsd_sortorder&" +
-        "$filter=statecode eq 0 and fvsd_curriculum/fvsd_name eq 'Mathematics' " +
-        "and (fvsd_name eq 'In Progress' or fvsd_name eq 'Met')&" +
-        "$expand=fvsd_curriculum($select=fvsd_name)&$orderby=fvsd_sortorder asc,fvsd_name asc&$top=5000";
+        BuildIppSectionLevelsQuery("Mathematics", "Mathematics");
 
     internal static string BuildStudentPlanMathematicsProgressQuery(Guid planId) =>
         "fvsd_studentipplevels?" +
@@ -2805,6 +2798,9 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
                 ReadString(row, "fvsd_teacheratipp"),
                 ReadString(row, "fvsd_coursename"),
                 ReadString(row, "fvsd_curriculum"),
+                ReadInteger(row, "statuscode") ?? 0,
+                ReadFormattedString(row, "statuscode")
+                    ?? GetStudentPlanStatusLabel(ReadInteger(row, "statuscode") ?? 0),
                 ReadDateTimeOffset(row, "modifiedon")));
         }
 
@@ -2813,6 +2809,16 @@ public sealed partial class DataverseAssessmentWorkspaceClient(
             .ThenByDescending(plan => plan.ModifiedOn)
             .ToArray();
     }
+
+    private static string GetStudentPlanStatusLabel(int statusCode) => statusCode switch
+    {
+        1 => "Draft",
+        102370001 => "Principal Review",
+        102370002 => "Awaiting Signatures",
+        102370003 => "Signed",
+        2 => "Archived",
+        _ => "Not recorded"
+    };
 
     internal static IReadOnlyList<StudentPlanScreenerResult> ParseStudentPlanScreeners(
         JsonElement tosrecRoot,

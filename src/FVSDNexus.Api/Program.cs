@@ -1,15 +1,23 @@
+using Azure.Core;
+using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using FVSDNexus.Api.Dataverse;
 using FVSDNexus.Api.DevelopmentRoles;
 using FVSDNexus.Api.Authentication;
+using FVSDNexus.Api.CopilotAccess;
+using FVSDNexus.Api.FoundryCopilot;
 using FVSDNexus.Api.SemanticModel;
 using FVSDNexus.Api.SessionContext;
+using FVSDNexus.Api.WorkIq;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 using OpenTelemetry.Trace;
 using System.Security.Claims;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,9 +37,40 @@ builder.Services.AddOptions<DevelopmentRoleOptions>()
     .Validate(options => DevelopmentRoleNames.IsValid(options.DefaultRole), "The default development role is not supported.")
     .ValidateOnStart();
 
+builder.Services.AddOptions<CopilotAccessOptions>()
+    .Bind(builder.Configuration.GetSection(CopilotAccessOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddMemoryCache();
+
+builder.Services.AddOptions<FoundryCopilotOptions>()
+    .Bind(builder.Configuration.GetSection(FoundryCopilotOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddSingleton<IDevelopmentRoleService, DevelopmentRoleService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<SchoolYearSessionContext>();
+builder.Services.AddSingleton<IWorkIqHandoffStore, WorkIqHandoffStore>();
+builder.Services.AddSingleton<TokenCredential>(_ =>
+{
+    // Local development runs outside Azure, so it cannot use the App Service
+    // managed-identity endpoint. Use the developer's explicit Azure CLI session
+    // locally and retain managed identity as the governed production path.
+    if (builder.Environment.IsDevelopment())
+    {
+        return new AzureCliCredential();
+    }
+
+    return new DefaultAzureCredential(new DefaultAzureCredentialOptions
+    {
+        ExcludeInteractiveBrowserCredential = true,
+        ExcludeAzureCliCredential = true,
+        ExcludeAzureDeveloperCliCredential = true,
+        ExcludeVisualStudioCredential = true,
+        ExcludeVisualStudioCodeCredential = true
+    });
+});
 
 builder.Services
     .AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
@@ -88,6 +127,19 @@ builder.Services.AddHttpClient<IDataverseAssessmentWorkspaceClient, DataverseAss
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient<ICopilotAccessClient, CopilotAccessClient>((services, client) =>
+{
+    var options = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<CopilotAccessOptions>>().Value;
+    client.BaseAddress = options.ApiBaseUrl;
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+
+builder.Services.AddHttpClient<IFoundryCopilotClient, FoundryCopilotClient>((services, client) =>
+{
+    var options = services.GetRequiredService<IOptions<FoundryCopilotOptions>>().Value;
+    client.Timeout = TimeSpan.FromSeconds(options.RequestTimeoutSeconds);
+});
+
 if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
 {
     builder.Services.AddOpenTelemetry()
@@ -103,6 +155,20 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 var postAuthenticationRedirect = builder.Configuration["Frontend:BaseUrl"] ?? "/";
+
+if (app.Environment.IsDevelopment())
+{
+    var frontendDistPath = Path.GetFullPath(Path.Combine(
+        app.Environment.ContentRootPath,
+        "..",
+        "FVSDNexus.Web",
+        "dist"));
+
+    if (Directory.Exists(frontendDistPath))
+    {
+        app.Environment.WebRootFileProvider = new PhysicalFileProvider(frontendDistPath);
+    }
+}
 
 app.UseExceptionHandler();
 app.Use(async (context, next) =>
@@ -184,6 +250,99 @@ app.MapGet("/api/auth/signout", (HttpRequest request) => Results.SignOut(
             request.Query["returnUrl"].FirstOrDefault())
     },
     [CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme]))
+    .AllowAnonymous();
+
+// Tenant-wide admin consent for the delegated scopes Nexus acquires silently after
+// sign-in. target=copilot grants Microsoft Graph User.Read (licence check);
+// target=workiq grants the Foundry delegated scope used by confirmed Work IQ actions.
+// Non-administrators are stopped by Entra itself.
+app.MapGet("/api/auth/admin-consent", (
+    HttpContext context,
+    string? target,
+    IOptions<CopilotAccessOptions> copilotOptions,
+    IOptions<FoundryCopilotOptions> foundryOptions) =>
+{
+    var scope = (target ?? "copilot").ToLowerInvariant() switch
+    {
+        "copilot" => copilotOptions.Value.GraphScope,
+        "workiq" => foundryOptions.Value.DelegatedConsentScope,
+        _ => null
+    };
+    if (scope is null)
+    {
+        return Results.BadRequest(new { error = "Unsupported admin-consent target. Use 'copilot' or 'workiq'." });
+    }
+
+    var azureAd = builder.Configuration.GetSection("AzureAd");
+    var clientId = azureAd["ClientId"];
+    var tenantId = azureAd["TenantId"];
+    if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(tenantId))
+    {
+        return Results.Problem(
+            title: "The Entra app registration is not configured.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var state = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
+    context.Response.Cookies.Append(AdminConsent.StateCookieName, state, new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = context.Request.IsHttps,
+        SameSite = SameSiteMode.Lax,
+        Path = AdminConsent.CallbackPath,
+        MaxAge = TimeSpan.FromMinutes(10)
+    });
+
+    var consentUri = AdminConsent.BuildConsentUri(
+        azureAd["Instance"] ?? "https://login.microsoftonline.com/",
+        tenantId,
+        clientId,
+        AdminConsent.ResolveRedirectUri(postAuthenticationRedirect, context.Request),
+        [scope],
+        state);
+    return Results.Redirect(consentUri.AbsoluteUri);
+});
+
+app.MapGet(AdminConsent.CallbackPath, async (
+    HttpContext context,
+    ICopilotAccessClient copilotAccess,
+    CancellationToken cancellationToken) =>
+{
+    var query = context.Request.Query;
+    var expectedState = context.Request.Cookies[AdminConsent.StateCookieName];
+    context.Response.Cookies.Delete(AdminConsent.StateCookieName, new CookieOptions { Path = AdminConsent.CallbackPath });
+
+    string outcome;
+    if (string.IsNullOrEmpty(expectedState)
+        || !string.Equals(expectedState, query["state"].FirstOrDefault(), StringComparison.Ordinal))
+    {
+        outcome = "invalid_state";
+    }
+    else if (string.Equals(query["admin_consent"].FirstOrDefault(), "True", StringComparison.OrdinalIgnoreCase))
+    {
+        outcome = "granted";
+        if (context.User.Identity?.IsAuthenticated == true)
+        {
+            // Replace the cached "unconfirmed" entitlement with a fresh Graph check.
+            var status = await copilotAccess.GetStatusAsync(GetUserEmail(context.User), true, cancellationToken);
+            app.Logger.LogInformation(
+                "Admin consent granted. Copilot licence check is now {LicenseCheckStatus}.",
+                status.LicenseCheckStatus);
+        }
+    }
+    else
+    {
+        outcome = "failed";
+        app.Logger.LogWarning(
+            "Admin consent was not granted. Error: {Error}. Description: {Description}",
+            query["error"].FirstOrDefault(),
+            query["error_description"].FirstOrDefault());
+    }
+
+    return Results.Redirect(AuthenticationRedirects.Resolve(
+        postAuthenticationRedirect,
+        $"/?adminConsent={outcome}"));
+})
     .AllowAnonymous();
 
 app.MapGet("/api/me", (
@@ -319,6 +478,105 @@ app.MapGet("/api/assessments/completion/tosrec", async (
         context.Response.Headers.CacheControl = "no-store";
         return Results.Ok(await assessments.GetCompletionAsync(accessContext, role.ActiveRole, role.IsDeveloper,
             schoolId, sectionGroup, courseNumber, teacherId, schoolYears.GetCurrentSchoolYear(context.User), cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message });
+    }
+});
+
+app.MapGet("/api/program-plans/class-overview", async (
+    Guid? schoolId, Guid teacherId, string? sectionGroup, string? schoolYear, string? ippSection,
+    HttpContext context, IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments, IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears, CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Student Program Plan access is not enabled for this user.", statusCode: 403);
+
+    var year = schoolYear ?? schoolYears.GetCurrentSchoolYear(context.User);
+    var match = System.Text.RegularExpressions.Regex.Match(year, @"^(\d{4})\s*[-/]\s*(\d{4})$");
+    if (!match.Success || int.Parse(match.Groups[2].Value) != int.Parse(match.Groups[1].Value) + 1)
+        return Results.BadRequest(new { error = "Select a valid school year." });
+    year = $"{match.Groups[1].Value} / {match.Groups[2].Value}";
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetEmpowerClassOverviewAsync(accessContext, role.ActiveRole,
+            role.IsDeveloper, schoolId, teacherId, sectionGroup, year, cancellationToken, ippSection ?? "Empower Reading",
+            schoolYears.GetCurrentSchoolYear(context.User)));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message });
+    }
+});
+
+app.MapGet("/api/program-plans/dashboard", async (
+    Guid? schoolId, string? schoolYear,
+    HttpContext context, IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments, IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears, CancellationToken cancellationToken) =>
+{
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Student Program Plan access is not enabled for this user.", statusCode: 403);
+
+    var year = schoolYear ?? schoolYears.GetCurrentSchoolYear(context.User);
+    var yearMatch = System.Text.RegularExpressions.Regex.Match(year, @"^(\d{4})\s*[-/]\s*(\d{4})$");
+    if (!yearMatch.Success
+        || int.Parse(yearMatch.Groups[2].Value) != int.Parse(yearMatch.Groups[1].Value) + 1)
+        return Results.BadRequest(new { error = "Select a valid school year." });
+    year = $"{yearMatch.Groups[1].Value} / {yearMatch.Groups[2].Value}";
+
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentProgramPlansDashboardAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper, schoolId, year, cancellationToken));
+    }
+    catch (AssessmentWorkspaceAccessException exception)
+    {
+        return Results.Problem(title: exception.Message, statusCode: 403);
+    }
+});
+
+app.MapGet("/api/assessments/dashboard", async (
+    Guid? schoolId, string? sectionGroup, string? courseNumber, Guid? teacherId,
+    string? assessmentType, int? period,
+    HttpContext context, IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments, IDevelopmentRoleService developmentRoles,
+    SchoolYearSessionContext schoolYears, CancellationToken cancellationToken) =>
+{
+    if (!string.IsNullOrWhiteSpace(assessmentType)
+        && !string.Equals(assessmentType, "TOSREC", StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.BadRequest(new { error = "Only the TOSREC dashboard is connected in this release." });
+    }
+
+    var accessContext = await GetDataverseAccessContextAsync(context, accessContextClient, cancellationToken);
+    if (accessContext is null || !accessContext.RoleRecordFound || !accessContext.PocEnabled)
+        return Results.Problem(title: "Assessment access is not enabled for this user.", statusCode: 403);
+
+    try
+    {
+        var role = developmentRoles.GetContext(context);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(await assessments.GetStudentScreenersDashboardAsync(
+            accessContext, role.ActiveRole, role.IsDeveloper,
+            schoolId, sectionGroup, courseNumber, teacherId,
+            period ?? 1, schoolYears.GetCurrentSchoolYear(context.User), cancellationToken));
     }
     catch (AssessmentWorkspaceAccessException exception)
     {
@@ -2608,6 +2866,292 @@ app.MapGet("/api/semantic-model/status", async (
     return Results.Ok(status);
 });
 
+app.MapGet("/api/copilot/access", async (
+    HttpContext context,
+    bool? refresh,
+    ICopilotAccessClient copilotAccess,
+    CancellationToken cancellationToken) =>
+{
+    var status = await copilotAccess.GetStatusAsync(
+        GetUserEmail(context.User),
+        refresh == true,
+        cancellationToken);
+    context.Response.Headers.CacheControl = "no-store";
+    return Results.Ok(status);
+});
+
+app.MapPost("/api/copilot/chat", async (
+    HttpContext context,
+    FoundryCopilotChatRequest request,
+    IFoundryCopilotClient copilot,
+    ICopilotAccessClient copilotAccess,
+    IWorkIqHandoffStore handoffs,
+    IOptions<FoundryCopilotOptions> options,
+    IDevelopmentRoleService developmentRoles,
+    IDataverseAccessContextClient accessContextClient,
+    IDataverseAssessmentWorkspaceClient assessments,
+    SchoolYearSessionContext schoolYears,
+    CancellationToken cancellationToken) =>
+{
+    if (!options.Value.Enabled)
+    {
+        return Results.Problem(
+            title: "The Nexus assistant is not enabled.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Prompt) || request.Prompt.Length > 4000)
+    {
+        return Results.BadRequest(new { error = "Enter a Copilot prompt between 1 and 4,000 characters." });
+    }
+
+    if (request.AssessmentPeriod is < 1 or > 3)
+    {
+        return Results.BadRequest(new { error = "The selected Assessment Period is not supported." });
+    }
+
+    var developmentContext = developmentRoles.GetContext(context);
+    var accessContext = await GetDataverseAccessContextAsync(
+        context,
+        accessContextClient,
+        cancellationToken);
+    if (accessContext is null
+        || !accessContext.RoleRecordFound
+        || !accessContext.PocEnabled
+        || string.Equals(accessContext.EffectiveRole, "No Access", StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Forbid();
+    }
+
+    try
+    {
+        var dashboard = await assessments.GetStudentScreenersDashboardAsync(
+            accessContext,
+            developmentContext.ActiveRole,
+            developmentContext.IsDeveloper,
+            request.SchoolId,
+            request.SectionGroup,
+            request.CourseNumber,
+            request.TeacherId,
+            request.AssessmentPeriod,
+            schoolYears.GetCurrentSchoolYear(context.User),
+            cancellationToken);
+        var selectedPeriod = dashboard.Periods.FirstOrDefault(item => item.Period == request.AssessmentPeriod)
+            ?? throw new ArgumentException("The selected Assessment Period is not available.");
+
+        const int accountabilityLimit = 50;
+        const int missingStudentLimit = 100;
+        var accountability = dashboard.Accountability
+            .Take(accountabilityLimit)
+            .Select(item => new FoundryCopilotAccountabilityContext(
+                item.Label,
+                item.Expected,
+                item.Completed,
+                item.Missing,
+                item.CompletionRate))
+            .ToArray();
+        var missingStudents = selectedPeriod.Missing
+            .Take(missingStudentLimit)
+            .Select(student => new FoundryCopilotMissingStudentContext(
+                request.ObfuscateStudentData
+                    ? student.ObfuscatedName ?? student.Name
+                    : student.Name,
+                request.ObfuscateStudentData
+                    ? student.ObfuscatedAsn ?? student.Asn
+                    : student.Asn,
+                student.Grade))
+            .ToArray();
+        var school = request.SchoolId is Guid selectedSchoolId
+            ? dashboard.Schools.FirstOrDefault(item => item.Id == selectedSchoolId)?.Name
+            : null;
+        var completionRate = selectedPeriod.Expected == 0
+            ? 0
+            : (int)Math.Round(selectedPeriod.Completed * 100d / selectedPeriod.Expected);
+        // Copilot entitlement and delegated execution always belong to the real signed-in
+        // identity. A development preview user may only change the governed Nexus data scope.
+        var userEmail = GetUserEmail(context.User);
+        var prompt = new FoundryCopilotPrompt(
+            request.Prompt,
+            request.ConversationId,
+            dashboard.Role,
+            userEmail,
+            dashboard.ScopeLabel,
+            school,
+            dashboard.AssessmentType,
+            selectedPeriod.Label,
+            selectedPeriod.Expected,
+            selectedPeriod.Completed,
+            Math.Max(0, selectedPeriod.Expected - selectedPeriod.Completed),
+            completionRate,
+            accountability,
+            missingStudents,
+            Math.Max(0, dashboard.Accountability.Count - accountability.Length),
+            Math.Max(0, selectedPeriod.Missing.Count - missingStudents.Length));
+
+        if (IsWorkIqActionRequest(request.Prompt))
+        {
+            if (string.IsNullOrWhiteSpace(userEmail))
+            {
+                return Results.Forbid();
+            }
+
+            var entitlement = await copilotAccess.GetStatusAsync(userEmail, false, cancellationToken);
+            if (!string.Equals(entitlement.LicenseCheckStatus, "Connected", StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.Ok(new FoundryCopilotReply(
+                    "Nexus could not confirm your Microsoft 365 Copilot entitlement at sign-in. Copilot Chat remains available, but Work IQ actions are disabled until the access check succeeds.",
+                    request.ConversationId ?? Guid.NewGuid().ToString("N"),
+                    null,
+                    HandoffStatus: "UnableToConfirm",
+                    HandoffTitle: "Work IQ access not confirmed",
+                    HandoffMessage: entitlement.Message));
+            }
+
+            if (!entitlement.HasMicrosoft365Copilot)
+            {
+                return Results.Ok(new FoundryCopilotReply(
+                    "This action requires a Microsoft 365 Copilot licence for your signed-in account. Copilot Chat remains available for questions and summaries.",
+                    request.ConversationId ?? Guid.NewGuid().ToString("N"),
+                    null,
+                    HandoffStatus: "NotLicensed",
+                    HandoffTitle: "Work IQ action unavailable",
+                    HandoffMessage: entitlement.Message));
+            }
+
+            if (!entitlement.WorkIqAvailable)
+            {
+                return Results.Ok(new FoundryCopilotReply(
+                    "Your Microsoft 365 Copilot licence is active, but Work IQ actions require an assigned Work-Based Billing policy.",
+                    request.ConversationId ?? Guid.NewGuid().ToString("N"),
+                    null,
+                    HandoffStatus: "WorkBasedBillingPolicyRequired",
+                    HandoffTitle: "Work-Based Billing policy required",
+                    HandoffMessage: entitlement.Message));
+            }
+
+            var review = await copilot.SendAsync(prompt, cancellationToken);
+            var proposal = handoffs.Create(userEmail, prompt, BuildWorkIqTitle(request.Prompt));
+            return Results.Ok(review with
+            {
+                HandoffId = proposal.Id,
+                HandoffStatus = "RequiresConfirmation",
+                HandoffTitle = proposal.Title,
+                HandoffMessage = "Everything is ready. Review the proposed Work IQ action, then confirm it to run using your signed-in Microsoft 365 account.",
+                HandoffExpiresAtUtc = proposal.ExpiresAtUtc
+            });
+        }
+
+        var reply = await copilot.SendAsync(prompt, cancellationToken);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Ok(reply);
+    }
+    catch (AssessmentWorkspaceAccessException)
+    {
+        return Results.Forbid();
+    }
+    catch (ArgumentException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (AuthenticationFailedException exception)
+    {
+        app.Logger.LogWarning(exception, "Managed Foundry authentication failed for the Nexus assistant.");
+        return Results.Problem(
+            title: "The Nexus assistant could not authenticate to Microsoft Foundry.",
+            detail: "Verify the local Azure sign-in or the App Service managed identity assignment.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+    catch (Exception exception) when (exception is HttpRequestException or JsonException)
+    {
+        app.Logger.LogWarning(exception, "The managed Foundry agent request failed.");
+        return Results.Problem(
+            title: "The Nexus assistant could not complete the request.",
+            detail: "The managed Foundry service did not return a usable response.",
+            statusCode: StatusCodes.Status502BadGateway);
+    }
+});
+
+app.MapPost("/api/copilot/handoff/{handoffId:guid}/confirm", async (
+    HttpContext context,
+    Guid handoffId,
+    IWorkIqHandoffStore handoffs,
+    ICopilotAccessClient copilotAccess,
+    IFoundryCopilotClient copilot,
+    IOptions<FoundryCopilotOptions> options,
+    ITokenAcquisition tokenAcquisition,
+    CancellationToken cancellationToken) =>
+{
+    var userEmail = GetUserEmail(context.User);
+    if (string.IsNullOrWhiteSpace(userEmail)
+        || !handoffs.TryGet(handoffId, userEmail, out var pending)
+        || pending is null)
+    {
+        return Results.NotFound(new { error = "This Work IQ handoff is unavailable or has expired." });
+    }
+
+    // Use the signed-in entitlement established by the opening access gate. The
+    // short-lived server cache prevents every Work IQ action from repeating Graph.
+    var entitlement = await copilotAccess.GetStatusAsync(userEmail, false, cancellationToken);
+    if (!string.Equals(entitlement.LicenseCheckStatus, "Connected", StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Json(new { error = "Microsoft 365 Copilot entitlement could not be confirmed at sign-in." }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    if (!entitlement.HasMicrosoft365Copilot)
+    {
+        return Results.Json(new { error = "A Microsoft 365 Copilot licence is required to run this Work IQ action." }, statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    if (!entitlement.WorkIqAvailable)
+    {
+        return Results.Json(new { error = "The Work-Based Billing policy is not assigned to your signed-in account." }, statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    var delegatedToken = await tokenAcquisition.GetAccessTokenForUserAsync([options.Value.Scope]);
+    if (!handoffs.TryTake(handoffId, userEmail, out var proposal) || proposal is null)
+    {
+        return Results.NotFound(new { error = "This Work IQ handoff is unavailable or has expired." });
+    }
+
+    var reply = await copilot.SendDelegatedAsync(
+        proposal.Prompt with { ConversationId = null, AllowWorkIqExecution = true },
+        delegatedToken,
+        cancellationToken);
+    // Never report completion from the agent's prose alone; require tool evidence.
+    var completed = reply.Outcome?.HasCompletedToolEvidence == true;
+    return Results.Ok(reply with
+    {
+        HandoffId = handoffId,
+        HandoffStatus = completed ? "Completed" : "NotConfirmed",
+        HandoffTitle = proposal.Title,
+        HandoffMessage = completed
+            ? "The confirmed Work IQ action was run as your signed-in identity."
+            : "The assistant finished without evidence that the Microsoft 365 action was carried out. Check Outlook before trying again."
+    });
+});
+
+app.MapPost("/api/copilot/handoff/{handoffId:guid}/cancel", (
+    HttpContext context,
+    Guid handoffId,
+    IWorkIqHandoffStore handoffs) =>
+{
+    var userEmail = GetUserEmail(context.User);
+    if (string.IsNullOrWhiteSpace(userEmail)
+        || !handoffs.TryTake(handoffId, userEmail, out var proposal)
+        || proposal is null)
+    {
+        return Results.NotFound(new { error = "This Work IQ handoff is unavailable or has expired." });
+    }
+
+    return Results.Ok(new
+    {
+        handoffId,
+        handoffStatus = "Cancelled",
+        handoffTitle = proposal.Title,
+        message = "The Work IQ action was cancelled. No action was run."
+    });
+});
+
 app.MapGet("/api/filters", async (
     IPowerBiSemanticModelClient semanticModel,
     CancellationToken cancellationToken) =>
@@ -2705,9 +3249,26 @@ app.MapGet("/api/schools/comparison", async (
     }
 });
 
+app.MapFallback("/api/{**path}", () => Results.Problem(
+    title: "The requested API endpoint is not available in this running version.",
+    statusCode: StatusCodes.Status404NotFound)).AllowAnonymous();
 app.MapFallbackToFile("index.html").AllowAnonymous();
 
 app.Run();
+
+static bool IsWorkIqActionRequest(string prompt)
+{
+    var value = prompt.ToLowerInvariant();
+    string[] actionWords = ["create", "add", "send", "schedule", "assign", "update", "delete", "cancel", "post", "publish", "submit"];
+    string[] workTargets = ["task", "planner", "email", "message", "meeting", "calendar", "event", "document", "file", "team", "channel", "approval", "reminder"];
+    return actionWords.Any(value.Contains) && workTargets.Any(value.Contains);
+}
+
+static string BuildWorkIqTitle(string prompt)
+{
+    var title = string.Join(' ', prompt.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+    return title.Length <= 120 ? title : $"{title[..117]}...";
+}
 
 static string[] GetQueryValues(HttpRequest request, string name) =>
     request.Query[name]

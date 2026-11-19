@@ -76,4 +76,67 @@ public sealed class AssessmentCompletionTests
         Assert.Equal(3, summary.Periods.Count);
         Assert.All(summary.Periods, period => { Assert.Equal(0, period.Expected); Assert.Equal(0, period.Completed); Assert.Empty(period.Missing); });
     }
+
+    [Fact]
+    public void Dashboard_sections_query_is_limited_to_permitted_schools_and_section_group()
+    {
+        var firstSchool = Guid.NewGuid();
+        var secondSchool = Guid.NewGuid();
+        var query = Uri.UnescapeDataString(DataverseAssessmentWorkspaceClient.BuildScreenersDashboardSectionsQuery(
+            [firstSchool, secondSchool], "Literacy", null));
+
+        Assert.Contains($"_fvsd_school_value eq {firstSchool:D}", query);
+        Assert.Contains($"_fvsd_school_value eq {secondSchool:D}", query);
+        Assert.Contains("fvsd_sectiongrouping eq 1", query);
+        Assert.Contains("statecode eq 0", query);
+        Assert.DoesNotContain("fvsd_sectiongrouping ne 4", query);
+    }
+
+    [Fact]
+    public void Dashboard_sections_query_preserves_teacher_identity_scope()
+    {
+        var school = Guid.NewGuid();
+        var teacherObjectId = Guid.NewGuid();
+        var query = Uri.UnescapeDataString(DataverseAssessmentWorkspaceClient.BuildScreenersDashboardSectionsQuery(
+            [school], null, "teacher@fvsd.ab.ca", teacherObjectId));
+
+        Assert.Contains("fvsd_sectiongrouping ne 4", query);
+        Assert.Contains("teacher@fvsd.ab.ca", query, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(teacherObjectId.ToString("D"), query, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Division_dashboard_periods_keep_counts_without_returning_student_detail()
+    {
+        var student = new CompletionStudent(Guid.NewGuid(), "Student", null, "123", null, "Grade 4");
+        IReadOnlyList<CompletionPeriod> periods =
+        [
+            new(1, "Fall", 10, 8, [student]),
+            new(2, "Winter", 10, 0, [student]),
+            new(3, "Spring", 10, 0, [student])
+        ];
+
+        var response = DataverseAssessmentWorkspaceClient.BuildDashboardResponsePeriods(periods, divisionRollup: true);
+
+        Assert.Equal(10, response[0].Expected);
+        Assert.Equal(8, response[0].Completed);
+        Assert.All(response, item => Assert.Empty(item.Missing));
+        Assert.NotEmpty(periods[0].Missing);
+    }
+
+    [Fact]
+    public void Division_dashboard_accountability_returns_only_highest_priority_school_exceptions()
+    {
+        var rows = Enumerable.Range(1, 12)
+            .Select(index => new ScreenersDashboardAccountability(index.ToString(), $"School {index}", 100,
+                80 + index, 20 - index, 80 + index))
+            .ToArray();
+
+        var response = DataverseAssessmentWorkspaceClient.BuildDashboardResponseAccountability(rows, divisionRollup: true);
+
+        Assert.Equal(8, response.Count);
+        Assert.All(response, item => Assert.True(item.CompletionRate < 95));
+        Assert.Equal(81, response[0].CompletionRate);
+        Assert.DoesNotContain(response, item => item.CompletionRate >= 95);
+    }
 }

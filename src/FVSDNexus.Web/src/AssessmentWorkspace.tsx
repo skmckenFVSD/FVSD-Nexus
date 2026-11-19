@@ -128,6 +128,8 @@ type StudentPlanHistoryRecord = {
   teacherAtPlan?: string
   courseName?: string
   curriculum?: string
+  statusCode: number
+  status: string
   modifiedOn?: string
 }
 
@@ -828,7 +830,7 @@ function StudentCard({ student, studentDisplayMode, assessmentStatus, assessment
   )
 }
 
-function StudentPlanPanel({ student, studentDisplayMode, currentSchoolYear, teacherSectionId, teacherSection, onOpenIpp }: {
+export function StudentPlanPanel({ student, studentDisplayMode, currentSchoolYear, teacherSectionId, teacherSection, onOpenIpp }: {
   student: Student
   studentDisplayMode: StudentDisplayMode
   currentSchoolYear?: string
@@ -898,8 +900,8 @@ function StudentPlanPanel({ student, studentDisplayMode, currentSchoolYear, teac
     <section className="student-assessment-panel student-plan-panel card" aria-labelledby="student-plan-heading">
       <div className="student-assessment-heading">
         <div>
-          <h2 id="student-plan-heading">Student IEP / IPP History</h2>
-          <p>One annual plan per student and school year. Interventions are managed within the Intervention Focus module.</p>
+          <h2 id="student-plan-heading">Student Program Plan History</h2>
+          <p>One governed Student Program Plan is maintained for each student and school year. Interventions are managed within the Intervention Focus module.</p>
         </div>
         {!loadingPlans && !planError && currentPlans.length === 0 ? (
           <div className="student-assessment-actions">
@@ -909,14 +911,14 @@ function StudentPlanPanel({ student, studentDisplayMode, currentSchoolYear, teac
               disabled={!onOpenIpp}
               onClick={() => openPlan()}
             >
-              <GraduationCap size={14} /> Add IEP / IPP
+              <GraduationCap size={14} /> Add Program Plan
             </button>
           </div>
         ) : null}
       </div>
 
       <div className="assessment-history-toolbar">
-        <div className="assessment-year-tabs" role="tablist" aria-label="IEP and IPP school years">
+        <div className="assessment-year-tabs" role="tablist" aria-label="Student Program Plan school years">
           <button
             type="button"
             role="tab"
@@ -943,7 +945,7 @@ function StudentPlanPanel({ student, studentDisplayMode, currentSchoolYear, teac
       ) : null}
 
       {loadingPlans ? (
-        <div className="assessment-history-loading">Loading IEP / IPP history from Dataverse…</div>
+        <div className="assessment-history-loading">Loading Student Program Plan history from Dataverse…</div>
       ) : plansNeedReconnect ? (
         <div className="assessment-history-reconnect">
           <BookOpenCheck size={24} />
@@ -959,15 +961,21 @@ function StudentPlanPanel({ student, studentDisplayMode, currentSchoolYear, teac
         <div className="assessment-history-list">
           {visiblePlans.map((plan) => (
             <article className="assessment-history-record student-plan-record" key={plan.id}>
-              <div><span>Plan</span><strong>IEP / IPP</strong></div>
+              <div><span>Plan</span><strong>Student Program Plan</strong></div>
               <div><span>School year</span><strong>{plan.schoolYear}</strong></div>
               <div><span>Grade</span><strong>{plan.gradeAtPlan ?? student.grade ?? 'Not recorded'}</strong></div>
               <div><span>School</span><strong>{plan.schoolAtPlan ?? teacherSection?.schoolName ?? 'Not recorded'}</strong></div>
+                        <div>
+                          <span>Status</span>
+                          <strong className={`student-plan-status ${getStudentPlanStatusClass(plan.statusCode, plan.status)}`}>
+                            {getStudentPlanStatusLabel(plan.statusCode, plan.status)}
+                          </strong>
+                        </div>
               <div><span>Last updated</span><strong>{formatDate(plan.modifiedOn)}</strong></div>
               <button
                 type="button"
                 className="assessment-edit-button"
-                aria-label={`Open ${studentName}'s ${plan.schoolYear} IEP or IPP`}
+                    aria-label={`Open ${studentName}'s ${plan.schoolYear} Student Program Plan`}
                 onClick={() => openPlan(plan)}
               >
                 <Eye size={13} /> Open
@@ -977,14 +985,14 @@ function StudentPlanPanel({ student, studentDisplayMode, currentSchoolYear, teac
         </div>
       ) : (
         <AssessmentHistoryEmpty text={yearView === 'current'
-          ? `No IEP / IPP was found for ${currentSchoolYear || 'the current school year'}.`
-          : 'No previous IEP / IPP records were found for this student.'} />
+          ? `No Student Program Plan was found for ${currentSchoolYear || 'the current school year'}.`
+          : 'No previous Student Program Plan records were found for this student.'} />
       )}
     </section>
   )
 }
 
-function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear, focusArea, teacherSectionId, teacherSection, role, onAssessmentChanged }: {
+export function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear, focusArea, teacherSectionId, teacherSection, role, onAssessmentChanged }: {
   student: Student
   studentDisplayMode: StudentDisplayMode
   currentSchoolYear?: string
@@ -1003,8 +1011,15 @@ function StudentAssessmentPanel({ student, studentDisplayMode, currentSchoolYear
   const [editingRecord, setEditingRecord] = useState<AssessmentHistoryRecord | null>(null)
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
   const [saveNotice, setSaveNotice] = useState<string | null>(null)
-  const tosrecVisible = focusArea === 'Literacy' || focusArea === 'Foundations'
-  const canDeleteAssessments = role === 'Administrator' || role === 'Data Analyst'
+  const normalizedFocusArea = focusArea.trim().toLowerCase()
+  const tosrecVisible = normalizedFocusArea === 'literacy' || normalizedFocusArea === 'foundations'
+  const canDeleteAssessments = [
+    'administrator',
+    'data analyst',
+    'data administrator',
+    'executive',
+    'school administrator',
+  ].includes(role.trim().toLowerCase())
 
   useEffect(() => {
     setYearView('current')
@@ -1830,4 +1845,28 @@ function sameSchoolYear(left?: string, right?: string) {
 function formatDate(value?: string) {
   if (!value) return 'Not recorded'
   return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(value))
+}
+
+function getStudentPlanStatusLabel(statusCode?: number, status?: string) {
+  const formattedStatus = status?.trim()
+  if (formattedStatus) return formattedStatus
+
+  switch (statusCode) {
+    case 1: return 'Draft'
+    case 102370001: return 'Principal Review'
+    case 102370002: return 'Awaiting Signatures'
+    case 102370003: return 'Signed'
+    case 2: return 'Archived'
+    default: return 'Not recorded'
+  }
+}
+
+function getStudentPlanStatusClass(statusCode?: number, status?: string) {
+  switch (getStudentPlanStatusLabel(statusCode, status).toLowerCase()) {
+    case 'principal review': return 'is-principal-review'
+    case 'awaiting signatures': return 'is-awaiting-signatures'
+    case 'signed': return 'is-signed'
+    case 'archived': return 'is-archived'
+    default: return 'is-draft'
+  }
 }

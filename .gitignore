@@ -10,6 +10,8 @@
 .vscode/
 TestResults/
 coverage/
+**/.artifacts/
+/tmp/
 *.log
 *.user
 *.suo

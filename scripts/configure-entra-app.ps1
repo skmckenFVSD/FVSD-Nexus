@@ -8,6 +8,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $tenantId = '42242eff-faf6-4ccd-aea3-e2c4479f8ccb'
+$microsoftGraphApiId = '00000003-0000-0000-c000-000000000000'
 $powerBiApiId = '00000009-0000-0000-c000-000000000000'
 $datasetReadAllScopeId = '7f33e027-4039-419b-938e-2f8ca153e68e'
 $projectPath = Join-Path $PSScriptRoot '..\src\FVSDNexus.Api\FVSDNexus.Api.csproj'
@@ -38,8 +39,10 @@ $clientId = if ([string]::IsNullOrWhiteSpace($existingClientId)) {
 
 if ([string]::IsNullOrWhiteSpace($clientId)) { throw 'The Entra app registration could not be created or found.' }
 
+# Admin consent returns to the API callback on the same browser-facing origin.
+$adminConsentRedirectUri = $RedirectUri -replace '/signin-oidc$', '/api/auth/admin-consent/callback'
 $currentRedirects = @(az ad app show --id $clientId --query 'web.redirectUris' --output json | ConvertFrom-Json)
-$allRedirects = @($currentRedirects + $RedirectUri | Sort-Object -Unique)
+$allRedirects = @($currentRedirects + $RedirectUri + $adminConsentRedirectUri | Sort-Object -Unique)
 az ad app update --id $clientId --web-redirect-uris $allRedirects --output none
 
 $servicePrincipalId = az ad sp show --id $clientId --query id --output tsv 2>$null
@@ -47,16 +50,33 @@ if ([string]::IsNullOrWhiteSpace($servicePrincipalId)) {
     az ad sp create --id $clientId --output none
 }
 
-$permissionExists = az ad app show --id $clientId `
-    --query "requiredResourceAccess[?resourceAppId=='$powerBiApiId'].resourceAccess[?id=='$datasetReadAllScopeId'] | length(@)" `
-    --output tsv
-if ($permissionExists -eq '0') {
-    az ad app permission add `
-        --id $clientId `
-        --api $powerBiApiId `
-        --api-permissions "$datasetReadAllScopeId=Scope" `
-        --output none
+function Add-DelegatedPermission([string]$ResourceAppId, [string]$ScopeId) {
+    # Flatten before filtering: the previous query counted matching API entries,
+    # not matching scopes, so an API already listed hid a missing scope.
+    $existing = az ad app show --id $clientId `
+        --query "length(requiredResourceAccess[?resourceAppId=='$ResourceAppId'].resourceAccess[] | [?id=='$ScopeId'])" `
+        --output tsv
+    if ($existing -eq '0') {
+        az ad app permission add `
+            --id $clientId `
+            --api $ResourceAppId `
+            --api-permissions "$ScopeId=Scope" `
+            --output none
+    }
 }
+
+$graphServicePrincipal = az ad sp show --id $microsoftGraphApiId --output json | ConvertFrom-Json
+$userReadScopeId = $graphServicePrincipal.oauth2PermissionScopes |
+    Where-Object { $_.value -eq 'User.Read' } |
+    Select-Object -ExpandProperty id -First 1
+if ([string]::IsNullOrWhiteSpace($userReadScopeId)) {
+    throw 'Microsoft Graph delegated permission User.Read could not be resolved.'
+}
+
+# User.Read covers the signed-in user's own assignedLicenses/assignedPlans for the
+# Microsoft 365 Copilot licence check; User.Read.All is not needed.
+Add-DelegatedPermission $microsoftGraphApiId $userReadScopeId
+Add-DelegatedPermission $powerBiApiId $datasetReadAllScopeId
 
 if ($GrantAdminConsent) {
     az ad app permission admin-consent --id $clientId --output none
@@ -81,5 +101,11 @@ if (-not $hasExistingSecret -or $RotateSecret) {
 
 Write-Host "FVSD Nexus app registration configured. Client ID: $clientId"
 if (-not $GrantAdminConsent) {
-    Write-Host 'An Entra administrator must grant tenant consent for the delegated Power BI Dataset.Read.All permission.'
+    Write-Host 'An Entra administrator must grant tenant consent for delegated Microsoft Graph User.Read and Power BI Dataset.Read.All.'
 }
+
+$appOrigin = $RedirectUri -replace '/signin-oidc$', ''
+Write-Host "Admin consent redirect URI registered: $adminConsentRedirectUri"
+Write-Host 'With Nexus running, a tenant administrator signs in and opens:'
+Write-Host "  Copilot licence check (Graph User.Read): $appOrigin/api/auth/admin-consent?target=copilot"
+Write-Host "  Work IQ confirmed actions (Foundry):     $appOrigin/api/auth/admin-consent?target=workiq"

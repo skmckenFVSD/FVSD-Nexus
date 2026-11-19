@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { ClassAssignmentWorkspaceV2 } from '../ClassAssignmentWorkspaceV2'
+import { StudentScreenersDashboard } from '../StudentScreenersDashboard'
+import { StudentProgramPlansDashboard } from '../StudentProgramPlansDashboard'
+import { IppPreview, type IppPreviewContext } from '../IppPreview'
 import {
   Activity,
   AlertTriangle,
-  Archive,
   BarChart3,
   BookOpenText,
   CalendarDays,
@@ -38,7 +40,6 @@ import {
   Settings,
   Shield,
   ShieldCheck,
-  Signature,
   SlidersHorizontal,
   Sparkles,
   Target,
@@ -62,9 +63,6 @@ type AssessmentHistoryPreview = { schoolYear: string; period: string; standardSc
 type AssessmentModalState = { mode: 'create' | 'view' | 'edit'; assessmentType: string } | null
 type HistoryView = 'assessment' | 'program-plan'
 type PlanRail = 'modules' | 'exports' | null
-type ScreenersAudience = 'executive' | 'school-admin' | 'teacher'
-type ProgramPlansAudience = 'executive' | 'school-admin' | 'teacher'
-type ProgramPlanStatus = 'All statuses' | 'Draft' | 'Principal Review' | 'Awaiting Signatures' | 'Signed' | 'Archived'
 type AnalyticsFocus = 'Literacy' | 'Numeracy' | 'Wellbeing'
 type StudentDisplayMode = 'real' | 'obfuscated'
 
@@ -90,6 +88,19 @@ type ShellConnectionStatus = {
   status: string
   workspace: string
   semanticModel: string
+  checkedAtUtc: string
+}
+
+type CopilotAccessStatus = {
+  experience: 'Microsoft365Copilot' | 'CopilotChat'
+  hasMicrosoft365Copilot: boolean
+  workIqAvailable: boolean
+  workIqStatus: string
+  workBasedBillingPolicyStatus: string
+  workBasedBillingStatus: string
+  licenseCheckStatus: string
+  source: string
+  message: string
   checkedAtUtc: string
 }
 
@@ -403,6 +414,8 @@ export function HighDensityShellPreview() {
   const [fabricConnection, setFabricConnection] = useState<ShellConnectionStatus | null>(null)
   const [fabricChecked, setFabricChecked] = useState(false)
   const [fabricError, setFabricError] = useState(false)
+  const [copilotAccess, setCopilotAccess] = useState<CopilotAccessStatus | null>(null)
+  const [copilotChecked, setCopilotChecked] = useState(false)
   const [reauthorizeUrl, setReauthorizeUrl] = useState<string | null>(null)
   const [roleChanging, setRoleChanging] = useState<string | null>(null)
   const [roleChangeError, setRoleChangeError] = useState('')
@@ -447,6 +460,41 @@ export function HighDensityShellPreview() {
       })
       .finally(() => {
         if (!cancelled) setSecurityChecked(true)
+      })
+    return () => { cancelled = true }
+  }, [user?.email])
+
+  useEffect(() => {
+    if (!user) {
+      setCopilotAccess(null)
+      setCopilotChecked(false)
+      return
+    }
+
+    let cancelled = false
+    setCopilotChecked(false)
+    getShellJson<CopilotAccessStatus>('/api/copilot/access')
+      .then((status) => {
+        if (!cancelled) setCopilotAccess(status)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCopilotAccess({
+            experience: 'CopilotChat',
+            hasMicrosoft365Copilot: false,
+            workIqAvailable: false,
+            workIqStatus: 'UnableToConfirm',
+            workBasedBillingPolicyStatus: 'NotEvaluated',
+            workBasedBillingStatus: 'NotEvaluated',
+            licenseCheckStatus: 'NotConnected',
+            source: 'Fallback',
+            message: 'Microsoft 365 Copilot licensing could not be confirmed. Copilot Chat remains available.',
+            checkedAtUtc: new Date().toISOString(),
+          })
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCopilotChecked(true)
       })
     return () => { cancelled = true }
   }, [user?.email])
@@ -579,21 +627,21 @@ export function HighDensityShellPreview() {
     return <ShellOpeningState mode="signed-out" />
   }
 
-  if (!securityChecked || !fabricChecked || !developmentAccessChecked) {
-    return <ShellOpeningState mode="loading-access" user={user} accessContext={accessContext} fabricConnection={fabricConnection} />
+  if (!securityChecked || !fabricChecked || !copilotChecked || !developmentAccessChecked) {
+    return <ShellOpeningState mode="loading-access" user={user} accessContext={accessContext} fabricConnection={fabricConnection} copilotAccess={copilotAccess} />
   }
 
   if (reauthorizeUrl) {
-    return <ShellOpeningState mode="reconnect" user={user} accessContext={accessContext} fabricConnection={fabricConnection} reauthorizeUrl={reauthorizeUrl} />
+    return <ShellOpeningState mode="reconnect" user={user} accessContext={accessContext} fabricConnection={fabricConnection} copilotAccess={copilotAccess} reauthorizeUrl={reauthorizeUrl} />
   }
 
   if (securityError || fabricError) {
-    return <ShellOpeningState mode="security-error" user={user} accessContext={accessContext} fabricConnection={fabricConnection} dataverseFailed={securityError} fabricFailed={fabricError} />
+    return <ShellOpeningState mode="security-error" user={user} accessContext={accessContext} fabricConnection={fabricConnection} copilotAccess={copilotAccess} dataverseFailed={securityError} fabricFailed={fabricError} />
   }
 
   const fabricConnected = fabricConnection?.status.toLowerCase() === 'connected'
   if (!accessContext?.roleRecordFound || !accessContext.pocEnabled || accessContext.effectiveRole === 'No Access' || !fabricConnected) {
-    return <ShellOpeningState mode="access-denied" user={user} accessContext={accessContext} fabricConnection={fabricConnection} dataverseFailed={!accessContext?.roleRecordFound || !accessContext.pocEnabled || accessContext.effectiveRole === 'No Access'} fabricFailed={!fabricConnected} />
+    return <ShellOpeningState mode="access-denied" user={user} accessContext={accessContext} fabricConnection={fabricConnection} copilotAccess={copilotAccess} dataverseFailed={!accessContext?.roleRecordFound || !accessContext.pocEnabled || accessContext.effectiveRole === 'No Access'} fabricFailed={!fabricConnected} />
   }
 
   const workspaceAccessContext = developmentAccessContext ?? accessContext
@@ -608,6 +656,7 @@ export function HighDensityShellPreview() {
       user={user}
       accessContext={workspaceAccessContext}
       fabricConnection={fabricConnection}
+      copilotAccess={copilotAccess}
       effectiveRole={effectiveRole}
       roleChanging={roleChanging}
       roleChangeError={roleChangeError}
@@ -622,7 +671,7 @@ export function HighDensityShellPreview() {
   )
 }
 
-function buildAccessSupportMailto(user: ShellUser, accessContext?: ShellAccessContext | null, fabricConnection?: ShellConnectionStatus | null) {
+function buildAccessSupportMailto(user: ShellUser, accessContext?: ShellAccessContext | null, fabricConnection?: ShellConnectionStatus | null, copilotAccess?: CopilotAccessStatus | null) {
   const schoolAssignments = [accessContext?.primarySchool?.name, accessContext?.alternativeSchool?.name].filter(Boolean).join(' / ') || 'Not available'
   const body = [
     'Hello FVSD Helpdesk,',
@@ -638,6 +687,8 @@ function buildAccessSupportMailto(user: ShellUser, accessContext?: ShellAccessCo
     `School assignment: ${schoolAssignments}`,
     `Microsoft Fabric: ${fabricConnection?.status ?? 'Not verified'}`,
     `Fabric workspace/model: ${fabricConnection ? `${fabricConnection.workspace} / ${fabricConnection.semanticModel}` : 'Not available'}`,
+    `Copilot experience: ${copilotAccess?.experience === 'Microsoft365Copilot' ? 'Microsoft 365 Copilot with Work IQ' : 'Copilot Chat'}`,
+    `Copilot licence check: ${copilotAccess?.licenseCheckStatus ?? 'Not verified'}`,
     '',
     'Please contact me if any additional information is required.',
   ].join('\n')
@@ -645,11 +696,12 @@ function buildAccessSupportMailto(user: ShellUser, accessContext?: ShellAccessCo
   return `mailto:helpdesk@fvsd.ab.ca?cc=${encodeURIComponent('scottm@fvsd.ab.ca')}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 }
 
-function ShellOpeningState({ mode, user, accessContext, fabricConnection, dataverseFailed = false, fabricFailed = false, reauthorizeUrl }: {
+function ShellOpeningState({ mode, user, accessContext, fabricConnection, copilotAccess, dataverseFailed = false, fabricFailed = false, reauthorizeUrl }: {
   mode: 'loading' | 'signed-out' | 'loading-access' | 'reconnect' | 'security-error' | 'access-denied'
   user?: ShellUser
   accessContext?: ShellAccessContext | null
   fabricConnection?: ShellConnectionStatus | null
+  copilotAccess?: CopilotAccessStatus | null
   dataverseFailed?: boolean
   fabricFailed?: boolean
   reauthorizeUrl?: string
@@ -676,11 +728,26 @@ function ShellOpeningState({ mode, user, accessContext, fabricConnection, datave
       : mode === 'security-error'
         ? 'Nexus could not confirm all required service connections. You can retry or prepare a Helpdesk request with your identity and verification details.'
         : mode === 'loading-access'
-          ? 'Your Microsoft sign-in is complete. Nexus is now confirming Dataverse access, role assignments, and Microsoft Fabric access.'
+          ? 'Your Microsoft sign-in is complete. Nexus is now confirming Dataverse, Fabric, and Microsoft 365 Copilot capabilities.'
           : 'Checking for an existing FVSD Microsoft session.'
-  const supportHref = user ? buildAccessSupportMailto(user, accessContext, fabricConnection) : undefined
+  const supportHref = user ? buildAccessSupportMailto(user, accessContext, fabricConnection, copilotAccess) : undefined
   const dataverseReady = Boolean(accessContext?.roleRecordFound && accessContext.pocEnabled && accessContext.effectiveRole !== 'No Access')
   const fabricReady = fabricConnection?.status.toLowerCase() === 'connected'
+  const copilotConfirmed = copilotAccess?.licenseCheckStatus === 'Connected'
+  const copilotReady = Boolean(copilotAccess && copilotConfirmed)
+  const copilotUnconfirmed = Boolean(copilotAccess && !copilotConfirmed)
+  const copilotLabel = copilotConfirmed
+    ? copilotAccess?.hasMicrosoft365Copilot
+      ? 'Microsoft 365 Copilot'
+      : 'Copilot Chat'
+    : 'Microsoft 365 Copilot'
+  const copilotDetail = !copilotConfirmed
+    ? 'Licence could not be verified · Copilot Chat remains available'
+    : copilotAccess?.hasMicrosoft365Copilot
+      ? copilotAccess.workIqAvailable
+        ? 'Work IQ available · subject to spending policy'
+        : 'Licence confirmed · Work-Based Billing policy required'
+      : 'Copilot Chat available'
 
   return (
     <main className="hd-opening-screen" data-state={mode}>
@@ -724,6 +791,10 @@ function ShellOpeningState({ mode, user, accessContext, fabricConnection, datave
                 {fabricReady ? <CheckCircle2 aria-hidden="true" /> : fabricFailed ? <AlertTriangle aria-hidden="true" /> : <Clock3 aria-hidden="true" />}
                 <span><strong>Microsoft Fabric</strong><small>{fabricReady ? `${fabricConnection?.semanticModel} · delegated access confirmed` : fabricFailed ? 'Access or licensing requires review' : 'Checking governed analytics access'}</small></span>
               </div>
+              <div className={copilotReady ? 'is-ready' : copilotUnconfirmed ? 'is-error' : 'is-pending'}>
+                {copilotReady ? <CheckCircle2 aria-hidden="true" /> : copilotUnconfirmed ? <AlertTriangle aria-hidden="true" /> : <Clock3 aria-hidden="true" />}
+                <span><strong>{copilotLabel}</strong><small>{copilotAccess ? copilotDetail : 'Checking Copilot capability'}</small></span>
+              </div>
             </div>
           ) : null}
 
@@ -744,6 +815,7 @@ type HighDensityShellWorkspaceProps = {
   user: ShellUser
   accessContext: ShellAccessContext
   fabricConnection: ShellConnectionStatus
+  copilotAccess: CopilotAccessStatus | null
   effectiveRole: string
   roleChanging: string | null
   roleChangeError: string
@@ -760,6 +832,7 @@ function HighDensityShellWorkspace({
   user,
   accessContext,
   fabricConnection,
+  copilotAccess,
   effectiveRole,
   roleChanging,
   roleChangeError,
@@ -789,17 +862,13 @@ function HighDensityShellWorkspace({
   const [assessmentTypeFilter, setAssessmentTypeFilter] = useState('')
   const [assessmentModal, setAssessmentModal] = useState<AssessmentModalState>(null)
   const [programPlanOpen, setProgramPlanOpen] = useState(false)
+  const [liveIppPreviewContext, setLiveIppPreviewContext] = useState<IppPreviewContext | null>(null)
   const [activePlanModule, setActivePlanModule] = useState('Student Details')
   const [planRail, setPlanRail] = useState<PlanRail>(null)
   const [showModuleDescriptions, setShowModuleDescriptions] = useState(false)
   const [includedPlanModules, setIncludedPlanModules] = useState(() => new Set(programPlanModules.map((module) => module.name)))
   const [exportedPlanModules, setExportedPlanModules] = useState(() => new Set(programPlanModules.map((module) => module.name)))
   const [notesAfterPlanSections, setNotesAfterPlanSections] = useState(() => new Set<string>())
-  const [screenersAudience, setScreenersAudience] = useState<ScreenersAudience>('executive')
-  const [screenersPeriod, setScreenersPeriod] = useState<'Fall' | 'Winter' | 'Spring'>('Fall')
-  const [programPlansAudience, setProgramPlansAudience] = useState<ProgramPlansAudience>('executive')
-  const [programPlanStatusFilter, setProgramPlanStatusFilter] = useState<ProgramPlanStatus>('All statuses')
-  const [programPlanSchoolYear, setProgramPlanSchoolYear] = useState('2026 / 2027')
   const [analyticsSchoolYear, setAnalyticsSchoolYear] = useState('2026 / 2027')
   const [analyticsPeriod, setAnalyticsPeriod] = useState('All periods')
   const [analyticsSchool, setAnalyticsSchool] = useState('All permitted schools')
@@ -811,6 +880,11 @@ function HighDensityShellWorkspace({
     breadcrumb: [],
     filterCount: 0,
   })
+  const [liveScreenersContext, setLiveScreenersContext] = useState<{ breadcrumb: string[]; filterCount: number }>({
+    breadcrumb: [],
+    filterCount: 0,
+  })
+  const [liveProgramPlansContext, setLiveProgramPlansContext] = useState<{ breadcrumb: string[]; filterCount: number }>({ breadcrumb: [], filterCount: 0 })
   const mobileTriggerRef = useRef<HTMLButtonElement>(null)
   const filterTriggerRef = useRef<HTMLButtonElement>(null)
   const navigationGroups = getNavigationGroups(effectiveRole)
@@ -844,33 +918,35 @@ function HighDensityShellWorkspace({
     || sectionGroupFilter === 'Numeracy'
     || sectionGroupFilter === 'Foundations'
   const hasCurrentProgramPlan = selectedStudent?.asn === '999999'
-  const screenersBreadcrumb = [schoolFilter, sectionGroupFilter, courseFilter, teacherFilter, assessmentTypeFilter].filter(Boolean)
-  const programPlansBreadcrumb = [schoolFilter, sectionGroupFilter, teacherFilter, programPlanStatusFilter === 'All statuses' ? '' : programPlanStatusFilter].filter(Boolean)
   const analyticsBreadcrumb = [analyticsFocus, analyticsAssessment, analyticsSchool === 'All permitted schools' ? '' : analyticsSchool, analyticsPeriod === 'All periods' ? '' : analyticsPeriod].filter(Boolean)
-  const workspaceBreadcrumb = programPlanOpen && selectedStudent
+  const workspaceBreadcrumb = liveIppPreviewContext
+    ? [liveIppPreviewContext.studentName, 'Student Program Plan']
+    : programPlanOpen && selectedStudent
     ? [selectedStudent.name, 'Student Program Plan']
     : isSecuritySettings
       ? []
       : isScreenersDashboard
-      ? screenersBreadcrumb
+      ? liveScreenersContext.breadcrumb
       : isProgramPlansDashboard
-        ? programPlansBreadcrumb
+        ? liveProgramPlansContext.breadcrumb
         : isAnalyticsOverview
           ? analyticsBreadcrumb
           : activeItem === 'class-assignments'
             ? liveClassAssignmentContext.breadcrumb
             : filterBreadcrumb
   const activeFilterCount = isScreenersDashboard
-    ? screenersBreadcrumb.length + (screenersAudience !== 'executive' ? 1 : 0) + (screenersPeriod !== 'Fall' ? 1 : 0)
+    ? liveScreenersContext.filterCount
     : isProgramPlansDashboard
-      ? programPlansBreadcrumb.length + (programPlansAudience !== 'executive' ? 1 : 0) + (programPlanSchoolYear !== '2026 / 2027' ? 1 : 0)
+      ? liveProgramPlansContext.filterCount
       : isAnalyticsOverview
         ? analyticsBreadcrumb.length + (analyticsGrade !== 'All grades' ? 1 : 0) + (analyticsSchoolYear !== '2026 / 2027' ? 1 : 0)
         : activeItem === 'class-assignments'
           ? liveClassAssignmentContext.filterCount
           : selectedFilterCount
   const workspaceArea = isAnalyticsOverview ? 'Analytics' : isSecuritySettings ? 'Security' : 'Administration'
-  const workspaceTitle = isScreenersDashboard
+  const workspaceTitle = liveIppPreviewContext
+    ? 'Student Program Plan'
+    : isScreenersDashboard
     ? 'Student Screeners'
     : isProgramPlansDashboard
       ? 'Student Program Plans'
@@ -888,117 +964,6 @@ function HighDensityShellWorkspace({
       setActiveItem(navigationGroups[0]?.items[0]?.id ?? 'settings')
     }
   }, [activeItem, effectiveRole])
-  const screenersView = screenersAudience === 'executive'
-    ? {
-        title: 'Division completion and recommended actions',
-        description: 'Monitor current-period completion across schools and act on the exceptions that need division follow-up.',
-        scope: 'Division view', eligible: 151, complete: 83, missing: 2, rate: 98,
-        accountabilityTitle: 'Completion by school',
-        accountability: [
-          ['Florence MacDougall Community School', '98%', 98],
-          ['Blue Hills Community School', '94%', 94],
-          ['Sand Hills Elementary School', '89%', 89],
-        ] as const,
-        actions: [
-          ['2 Fall TOSREC results remain outstanding', 'High priority', 'Contact the responsible school teams before the assessment window closes.'],
-          ['3 schools are below the division completion target', 'Review', 'Confirm local completion plans and any required exemptions.'],
-          ['Winter roster readiness check is due', 'Upcoming', 'Validate eligible students before the next assessment window opens.'],
-        ] as const,
-      }
-    : screenersAudience === 'school-admin'
-      ? {
-          title: 'School completion and teacher follow-up',
-          description: 'Identify the teachers and students who need a prompt before the current assessment window closes.',
-          scope: 'School administrator view', eligible: 85, complete: 83, missing: 2, rate: 98,
-          accountabilityTitle: 'Teacher follow-up',
-          accountability: [
-            ['Anujan Kirubaharan', '100%', 100],
-            ['Deanna Kearney', '94%', 94],
-            ['Courtney Petkus', '88%', 88],
-          ] as const,
-          actions: [
-            ['2 teachers need a completion prompt', 'High priority', 'Send a focused reminder with the outstanding student count.'],
-            ['2 students remain outstanding for Fall', 'Review', 'Confirm attendance, exemption, or completion status.'],
-            ['Review open exemption decisions', 'Governance', 'Resolve incomplete exemption records before period close.'],
-          ] as const,
-        }
-      : {
-          title: 'My students and next actions',
-          description: 'Complete the outstanding screeners for your assigned students and prepare for the next assessment window.',
-          scope: 'Teacher and support staff view', eligible: 17, complete: 15, missing: 2, rate: 88,
-          accountabilityTitle: 'Students requiring action',
-          accountability: [
-            ['Manalili, Arlie Prime David', 'Outstanding', 35],
-            ['Moberly, Talia', 'Outstanding', 35],
-            ['Current roster verified', 'Complete', 100],
-          ] as const,
-          actions: [
-            ['Complete 2 outstanding Fall screeners', 'High priority', 'Open each student record and enter or exempt the required result.'],
-            ['Review one pending exemption', 'Review', 'Confirm the exemption reason is complete and current.'],
-            ['Prepare the Winter TOSREC roster', 'Upcoming', 'Review current membership before the next window opens.'],
-          ] as const,
-        }
-
-  const programPlansView = programPlansAudience === 'executive'
-    ? {
-        title: 'Division plan progress and governed actions',
-        description: 'Monitor Student Program Plans across schools and act on plans waiting for review, signatures, or completion.',
-        scope: 'Division view', active: 85, attention: 14, signed: 56, rate: 66,
-        accountabilityTitle: 'Plan progress by school',
-        accountability: [
-          ['Florence MacDougall Community School', '72% signed', 72],
-          ['Blue Hills Community School', '66% signed', 66],
-          ['Sand Hills Elementary School', '59% signed', 59],
-        ] as const,
-        actions: [
-          ['7 plans are waiting for principal review', 'Review', 'Confirm school-level review coverage and plans approaching the due date.'],
-          ['4 signature packages have not been returned', 'Follow up', 'Review outstanding DocuSign recipients and resend where appropriate.'],
-          ['18 draft plans need progression', 'Monitor', 'Identify drafts with no recent activity or incomplete required modules.'],
-        ] as const,
-      }
-    : programPlansAudience === 'school-admin'
-      ? {
-          title: 'School plan review and signature readiness',
-          description: 'Focus principal review on complete plans, resolve signature delays, and prompt teachers with outstanding drafts.',
-          scope: 'School administrator view', active: 31, attention: 8, signed: 19, rate: 61,
-          accountabilityTitle: 'Plan progress by teacher',
-          accountability: [
-            ['Natalie Morris', '78% signed', 78],
-            ['Courtney Petkus', '67% signed', 67],
-            ['Anujan Kirubaharan', '54% signed', 54],
-          ] as const,
-          actions: [
-            ['3 plans are ready for principal review', 'High priority', 'Review the exported plan and return or advance it for signatures.'],
-            ['2 teachers have drafts with no recent activity', 'Prompt', 'Send a targeted reminder with the affected student plans.'],
-            ['3 signature packages require follow-up', 'Follow up', 'Review recipient status before resending or cancelling a request.'],
-          ] as const,
-        }
-      : {
-          title: 'My Student Program Plans and next actions',
-          description: 'Complete assigned plans, respond to principal feedback, and monitor signature progress for your students.',
-          scope: 'Teacher and support staff view', active: 13, attention: 4, signed: 7, rate: 54,
-          accountabilityTitle: 'My plan workload',
-          accountability: [
-            ['Required modules complete', '9 of 13', 69],
-            ['Exports generated', '8 of 13', 62],
-            ['Plans signed', '7 of 13', 54],
-          ] as const,
-          actions: [
-            ['Complete 2 draft Student Program Plans', 'High priority', 'Finish the required modules and review export inclusion settings.'],
-            ['1 plan was returned from principal review', 'Revise', 'Open the plan and address the requested changes before exporting again.'],
-            ['Monitor 1 outstanding signature package', 'Follow up', 'Check recipient status and confirm the expected completion date.'],
-          ] as const,
-        }
-  const programPlanQueue: Array<{ student: string; grade: string; school: string; teacher: string; updated: string; status: Exclude<ProgramPlanStatus, 'All statuses'> }> = [
-    { student: 'Student, Demo', grade: 'Grade 5', school: 'Florence MacDougall Community School', teacher: 'Natalie Morris', updated: 'Nov 13, 2026', status: 'Principal Review' },
-    { student: 'Alook, Josiah King-Lee', grade: 'Grade 3', school: 'Florence MacDougall Community School', teacher: 'Courtney Petkus', updated: 'Nov 12, 2026', status: 'Draft' },
-    { student: 'Gerbrandt, Tristan Blake', grade: 'Grade 4', school: 'Blue Hills Community School', teacher: 'Rachel Dika', updated: 'Nov 10, 2026', status: 'Awaiting Signatures' },
-    { student: 'Moberly, Talia', grade: 'Grade 3', school: 'Sand Hills Elementary School', teacher: 'Anujan Kirubaharan', updated: 'Nov 08, 2026', status: 'Signed' },
-    { student: 'Manalili, Arlie Prime David', grade: 'Grade 3', school: 'Blue Hills Community School', teacher: 'Deanna Kearney', updated: 'Jun 27, 2026', status: 'Archived' },
-  ]
-  const visibleProgramPlanQueue = programPlanStatusFilter === 'All statuses'
-    ? programPlanQueue
-    : programPlanQueue.filter((plan) => plan.status === programPlanStatusFilter)
   const analyticsComparisonRows = [
     { school: 'Blue Hills Community School', grade: 'Grade 2', fallFoundation: 70, fallCurriculum: 92, winterFoundation: 76, winterCurriculum: 96, springFoundation: 81, springCurriculum: 99 },
     { school: 'Blue Hills Community School', grade: 'Grade 3', fallFoundation: 83, fallCurriculum: 100, winterFoundation: 86, winterCurriculum: 101, springFoundation: 89, springCurriculum: 103 },
@@ -1237,7 +1202,7 @@ function HighDensityShellWorkspace({
             </ol>
           </div>
           <div className="hd-workspace__header-actions">
-            {!programPlanOpen && !isSecuritySettings ? (
+              {!programPlanOpen && !liveIppPreviewContext && !isSecuritySettings ? (
               <button
                 ref={filterTriggerRef}
                 type="button"
@@ -1340,7 +1305,7 @@ function HighDensityShellWorkspace({
         ) : null}
 
         {isSecuritySettings ? (
-          <SecurityAccessView user={user} accessContext={accessContext} fabricConnection={fabricConnection} effectiveRole={effectiveRole} studentDisplayMode={studentDisplayMode} />
+          <SecurityAccessView user={user} accessContext={accessContext} fabricConnection={fabricConnection} copilotAccess={copilotAccess} effectiveRole={effectiveRole} studentDisplayMode={studentDisplayMode} />
         ) : programPlanOpen && selectedStudent ? (
           <section className="hd-program-plan-workspace" data-rail={planRail ?? 'closed'} aria-label="Student Program Plan workspace">
             <div className="hd-program-plan-workspace__main">
@@ -1556,315 +1521,27 @@ function HighDensityShellWorkspace({
             ) : null}
           </section>
         ) : isScreenersDashboard ? (
-          <div className="hd-class-assignment hd-screeners-layout" data-filters={filtersOpen ? 'open' : 'closed'}>
-            <aside className="hd-filter-rail" id="student-screeners-filter-rail" aria-label="Student Screeners filters">
-              <header className="hd-filter-rail__header">
-                <div><span>Student Screeners</span><h2>Filters</h2></div>
-                <button type="button" aria-label="Close filters" title="Close filters" onClick={() => setFiltersOpen(false)}><X aria-hidden="true" /></button>
-              </header>
-              <form className="hd-filter-rail__body">
-                <label>
-                  <span>Dashboard View</span>
-                  <select value={screenersAudience} onChange={(event) => setScreenersAudience(event.target.value as ScreenersAudience)}>
-                    <option value="executive">Executive / Data Administrator</option>
-                    <option value="school-admin">School Administrator</option>
-                    <option value="teacher">Teacher / Support Staff</option>
-                  </select>
-                </label>
-                <label>
-                  <span>School</span>
-                  <select value={schoolFilter} onChange={(event) => setSchoolFilter(event.target.value)}>
-                    <option value="">All schools</option>
-                    <option>Florence MacDougall Community School</option>
-                    <option>Blue Hills Community School</option>
-                    <option>Sand Hills Elementary School</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Section Group</span>
-                  <select value={sectionGroupFilter} onChange={(event) => { setSectionGroupFilter(event.target.value); setCourseFilter(''); setTeacherFilter('') }}>
-                    <option value="">All section groups</option>
-                    <option>Literacy</option><option>Numeracy</option><option>Foundations</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Course Name</span>
-                  <select value={courseFilter} onChange={(event) => setCourseFilter(event.target.value)}>
-                    <option value="">All course names</option>
-                    {availableSections.map((course) => <option key={course.code}>{course.name}</option>)}
-                  </select>
-                </label>
-                <label>
-                  <span>Teacher</span>
-                  <select value={teacherFilter} onChange={(event) => setTeacherFilter(event.target.value)}>
-                    <option value="">All teachers</option>
-                    {availableSections.flatMap((course) => course.teachers).map((teacher) => <option key={teacher.name}>{teacher.name}</option>)}
-                  </select>
-                </label>
-                <div className="hd-filter-rail__history">
-                  <span className="hd-filter-rail__history-title">Completion filters</span>
-                  <label>
-                    <span>Assessment Type</span>
-                    <select value={assessmentTypeFilter} onChange={(event) => setAssessmentTypeFilter(event.target.value)}>
-                      <option value="">All assessment types</option>
-                      <option>TOSREC</option><option>TOWRE</option><option>WRAT-5</option><option>CTOPP</option><option>PNSA</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Assessment Period</span>
-                    <select value={screenersPeriod} onChange={(event) => setScreenersPeriod(event.target.value as 'Fall' | 'Winter' | 'Spring')}>
-                      <option>Fall</option><option>Winter</option><option>Spring</option>
-                    </select>
-                  </label>
-                </div>
-              </form>
-              <footer className="hd-filter-rail__footer">
-                <button type="button" onClick={() => {
-                  setSchoolFilter('')
-                  setSectionGroupFilter('')
-                  setCourseFilter('')
-                  setTeacherFilter('')
-                  setAssessmentTypeFilter('TOSREC')
-                  setScreenersPeriod('Fall')
-                }}>
-                  <RotateCcw aria-hidden="true" /><span>Reset filters</span>
-                </button>
-              </footer>
-            </aside>
-
-            <section className="hd-screeners-dashboard" aria-labelledby="student-screeners-dashboard-heading">
-              <header className="hd-screeners-dashboard__heading">
-                <div>
-                  <span>Actions dashboard</span>
-                  <h1 id="student-screeners-dashboard-heading">{screenersView.title}</h1>
-                  <p>{screenersView.description}</p>
-                </div>
-                <div className="hd-screeners-dashboard__heading-actions">
-                  <span>{screenersView.scope}</span>
-                  <button type="button"><RefreshCw aria-hidden="true" /> Refresh</button>
-                </div>
-              </header>
-
-              <div className="hd-screeners-dashboard__body">
-                <section className="hd-screeners-summary" aria-label="Completion summary">
-                  <article><span>Eligible students</span><strong>{screenersView.eligible}</strong><small>Current filtered roster</small><UsersRound aria-hidden="true" /></article>
-                  <article className="is-complete"><span>Completed</span><strong>{screenersView.complete}</strong><small>{screenersPeriod} · {assessmentTypeFilter || 'All screeners'}</small><CheckCircle2 aria-hidden="true" /></article>
-                  <article className="is-missing"><span>Missing</span><strong>{screenersView.missing}</strong><small>Require follow-up</small><AlertTriangle aria-hidden="true" /></article>
-                  <article><span>Completion rate</span><strong>{screenersView.rate}%</strong><small>Target 95%</small><BarChart3 aria-hidden="true" /></article>
-                </section>
-
-                <section className="hd-screeners-periods" aria-labelledby="screeners-periods-heading">
-                  <header><div><span>Assessment windows</span><h2 id="screeners-periods-heading">Completion by period</h2></div><small>2026 / 2027</small></header>
-                  <div>
-                    {([
-                      ['Fall', screenersView.complete, screenersView.eligible, screenersView.rate, screenersView.missing],
-                      ['Winter', 0, screenersView.eligible, 0, screenersView.eligible],
-                      ['Spring', 0, screenersView.eligible, 0, screenersView.eligible],
-                    ] as const).map(([period, complete, eligible, rate, missing]) => (
-                      <button type="button" key={period} className={screenersPeriod === period ? 'is-active' : undefined} onClick={() => setScreenersPeriod(period)}>
-                        <span><strong>{period}</strong><small>{period === 'Fall' ? 'Current window' : 'Upcoming window'}</small></span>
-                        <span><strong>{complete}</strong> of {eligible} complete</span>
-                        <span className="hd-screeners-periods__track"><i style={{ inlineSize: `${rate}%` }} /></span>
-                        <span>{missing} missing · {rate}% complete</span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <div className="hd-screeners-dashboard__columns">
-                  <section className="hd-screeners-actions" aria-labelledby="recommended-actions-heading">
-                    <header><div><span>Recommended actions</span><h2 id="recommended-actions-heading">What needs attention</h2></div><strong>{screenersView.actions.length} actions</strong></header>
-                    <div>
-                      {screenersView.actions.map(([title, priority, detail], index) => (
-                        <article key={title}>
-                          <span className={index === 0 ? 'is-high' : undefined}>{index === 0 ? <AlertTriangle aria-hidden="true" /> : <Clock3 aria-hidden="true" />}</span>
-                          <div><strong>{title}</strong><small>{detail}</small></div>
-                          <span>{priority}</span>
-                          <button type="button" aria-label={`Review ${title}`}><ChevronRight aria-hidden="true" /></button>
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-
-                  <section className="hd-screeners-accountability" aria-labelledby="screeners-accountability-heading">
-                    <header><div><span>Accountability</span><h2 id="screeners-accountability-heading">{screenersView.accountabilityTitle}</h2></div><small>{screenersPeriod}</small></header>
-                    <div>
-                      {screenersView.accountability.map(([label, value, rate]) => (
-                        <article key={label}>
-                          <div><strong>{label}</strong><span>{value}</span></div>
-                          <span><i style={{ inlineSize: `${rate}%` }} /></span>
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-                </div>
-
-                <section className="hd-screeners-missing" aria-labelledby="missing-students-heading">
-                  <header><div><span>Student follow-up</span><h2 id="missing-students-heading">{screenersPeriod} · Missing students ({screenersView.missing})</h2></div><button type="button">View all missing <ChevronRight aria-hidden="true" /></button></header>
-                  <div>
-                    <article><div><strong>Manalili, Arlie Prime David</strong><span>Grade 3 · ASN 314595398</span></div><span>Result missing</span><button type="button">Review <ChevronRight aria-hidden="true" /></button></article>
-                    <article><div><strong>Moberly, Talia</strong><span>Grade 3 · ASN 313779225</span></div><span>Result missing</span><button type="button">Review <ChevronRight aria-hidden="true" /></button></article>
-                  </div>
-                </section>
-              </div>
-            </section>
-          </div>
+          <StudentScreenersDashboard
+            filtersOpen={filtersOpen}
+            setFiltersOpen={setFiltersOpen}
+            effectiveRole={effectiveRole}
+            studentDisplayMode={studentDisplayMode}
+            onContextChange={setLiveScreenersContext}
+          />
+        ) : isProgramPlansDashboard && liveIppPreviewContext ? (
+          <IppPreview context={liveIppPreviewContext} onBackToClassAssignment={() => setLiveIppPreviewContext(null)} />
         ) : isProgramPlansDashboard ? (
-          <div className="hd-class-assignment hd-program-plans-layout" data-filters={filtersOpen ? 'open' : 'closed'}>
-            <aside className="hd-filter-rail" id="student-program-plans-filter-rail" aria-label="Student Program Plans filters">
-              <header className="hd-filter-rail__header">
-                <div><span>Student Program Plans</span><h2>Filters</h2></div>
-                <button type="button" aria-label="Close filters" title="Close filters" onClick={() => setFiltersOpen(false)}><X aria-hidden="true" /></button>
-              </header>
-              <form className="hd-filter-rail__body">
-                <label>
-                  <span>Dashboard View</span>
-                  <select value={programPlansAudience} onChange={(event) => setProgramPlansAudience(event.target.value as ProgramPlansAudience)}>
-                    <option value="executive">Executive / Data Administrator</option>
-                    <option value="school-admin">School Administrator</option>
-                    <option value="teacher">Teacher / Support Staff</option>
-                  </select>
-                </label>
-                <label>
-                  <span>School</span>
-                  <select value={schoolFilter} onChange={(event) => setSchoolFilter(event.target.value)}>
-                    <option value="">All schools</option>
-                    <option>Florence MacDougall Community School</option>
-                    <option>Blue Hills Community School</option>
-                    <option>Sand Hills Elementary School</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Section Group</span>
-                  <select value={sectionGroupFilter} onChange={(event) => { setSectionGroupFilter(event.target.value); setTeacherFilter('') }}>
-                    <option value="">All section groups</option>
-                    <option>Foundations</option><option>Homeroom</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Teacher</span>
-                  <select value={teacherFilter} onChange={(event) => setTeacherFilter(event.target.value)}>
-                    <option value="">All teachers</option>
-                    <option>Natalie Morris</option><option>Courtney Petkus</option><option>Anujan Kirubaharan</option><option>Deanna Kearney</option>
-                  </select>
-                </label>
-                <div className="hd-filter-rail__history">
-                  <span className="hd-filter-rail__history-title">Plan filters</span>
-                  <label>
-                    <span>School Year</span>
-                    <select value={programPlanSchoolYear} onChange={(event) => setProgramPlanSchoolYear(event.target.value)}>
-                      <option>2026 / 2027</option><option>2025 / 2026</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Plan Status</span>
-                    <select value={programPlanStatusFilter} onChange={(event) => setProgramPlanStatusFilter(event.target.value as ProgramPlanStatus)}>
-                      <option>All statuses</option><option>Draft</option><option>Principal Review</option><option>Awaiting Signatures</option><option>Signed</option><option>Archived</option>
-                    </select>
-                  </label>
-                </div>
-              </form>
-              <footer className="hd-filter-rail__footer">
-                <button type="button" onClick={() => {
-                  setSchoolFilter('')
-                  setSectionGroupFilter('')
-                  setTeacherFilter('')
-                  setProgramPlanSchoolYear('2026 / 2027')
-                  setProgramPlanStatusFilter('All statuses')
-                }}>
-                  <RotateCcw aria-hidden="true" /><span>Reset filters</span>
-                </button>
-              </footer>
-            </aside>
-
-            <section className="hd-screeners-dashboard hd-program-plans-dashboard" aria-labelledby="student-program-plans-dashboard-heading">
-              <header className="hd-screeners-dashboard__heading">
-                <div>
-                  <span>Actions dashboard</span>
-                  <h1 id="student-program-plans-dashboard-heading">{programPlansView.title}</h1>
-                  <p>{programPlansView.description}</p>
-                </div>
-                <div className="hd-screeners-dashboard__heading-actions">
-                  <span>{programPlansView.scope}</span>
-                  <button type="button"><RefreshCw aria-hidden="true" /> Refresh</button>
-                </div>
-              </header>
-
-              <div className="hd-screeners-dashboard__body">
-                <section className="hd-screeners-summary" aria-label="Student Program Plan summary">
-                  <article><span>Active plans</span><strong>{programPlansView.active}</strong><small>{programPlanSchoolYear}</small><Files aria-hidden="true" /></article>
-                  <article className="is-missing"><span>Need attention</span><strong>{programPlansView.attention}</strong><small>Review or follow-up required</small><AlertTriangle aria-hidden="true" /></article>
-                  <article className="is-complete"><span>Signed</span><strong>{programPlansView.signed}</strong><small>Returned from DocuSign</small><CheckCircle2 aria-hidden="true" /></article>
-                  <article><span>Signed rate</span><strong>{programPlansView.rate}%</strong><small>Current active plans</small><BarChart3 aria-hidden="true" /></article>
-                </section>
-
-                <section className="hd-program-plan-statuses" aria-labelledby="program-plan-status-heading">
-                  <header><div><span>Plan lifecycle</span><h2 id="program-plan-status-heading">Status pipeline</h2></div><small>{programPlanSchoolYear}</small></header>
-                  <div>
-                    {([
-                      ['Draft', 18, Pencil],
-                      ['Principal Review', 7, Eye],
-                      ['Awaiting Signatures', 4, Signature],
-                      ['Signed', 56, CheckCircle2],
-                      ['Archived', 12, Archive],
-                    ] as const).map(([status, count, StatusIcon]) => (
-                      <button type="button" key={status} className={`is-${status.toLowerCase().replaceAll(' ', '-')}${programPlanStatusFilter === status ? ' is-active' : ''}`} onClick={() => setProgramPlanStatusFilter(status)}>
-                        <span><StatusIcon aria-hidden="true" /></span>
-                        <strong>{count}</strong>
-                        <small>{status}</small>
-                        <ChevronRight aria-hidden="true" />
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <div className="hd-screeners-dashboard__columns">
-                  <section className="hd-screeners-actions" aria-labelledby="program-plan-actions-heading">
-                    <header><div><span>Recommended actions</span><h2 id="program-plan-actions-heading">What needs attention</h2></div><strong>{programPlansView.actions.length} actions</strong></header>
-                    <div>
-                      {programPlansView.actions.map(([title, priority, detail], index) => (
-                        <article key={title}>
-                          <span className={index === 0 ? 'is-high' : undefined}>{index === 0 ? <AlertTriangle aria-hidden="true" /> : <Clock3 aria-hidden="true" />}</span>
-                          <div><strong>{title}</strong><small>{detail}</small></div>
-                          <span>{priority}</span>
-                          <button type="button" aria-label={`Review ${title}`}><ChevronRight aria-hidden="true" /></button>
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-
-                  <section className="hd-screeners-accountability" aria-labelledby="program-plan-accountability-heading">
-                    <header><div><span>Accountability</span><h2 id="program-plan-accountability-heading">{programPlansView.accountabilityTitle}</h2></div><small>Signed</small></header>
-                    <div>
-                      {programPlansView.accountability.map(([label, value, rate]) => (
-                        <article key={label}><div><strong>{label}</strong><span>{value}</span></div><span><i style={{ inlineSize: `${rate}%` }} /></span></article>
-                      ))}
-                    </div>
-                  </section>
-                </div>
-
-                <section className="hd-program-plan-queue" aria-labelledby="program-plan-queue-heading">
-                  <header>
-                    <div><span>Plan work queue</span><h2 id="program-plan-queue-heading">Plans requiring visibility</h2></div>
-                    <strong>{visibleProgramPlanQueue.length} {visibleProgramPlanQueue.length === 1 ? 'plan' : 'plans'}</strong>
-                  </header>
-                  <div>
-                    {visibleProgramPlanQueue.length ? visibleProgramPlanQueue.map((plan) => (
-                      <article key={`${plan.student}-${plan.status}`}>
-                        <div><strong>{plan.student}</strong><small>{plan.grade} · {plan.school}</small></div>
-                        <span><small>Teacher</small><strong>{plan.teacher}</strong></span>
-                        <span><small>Last updated</small><strong>{plan.updated}</strong></span>
-                        <em className={`is-${plan.status.toLowerCase().replaceAll(' ', '-')}`}>{plan.status}</em>
-                        <button type="button"><Eye aria-hidden="true" /> Open</button>
-                      </article>
-                    )) : (
-                      <div className="hd-program-plan-queue__empty"><FileText aria-hidden="true" /><span><strong>No matching plans</strong><small>Change the Plan Status filter to review another lifecycle stage.</small></span></div>
-                    )}
-                  </div>
-                </section>
-              </div>
-            </section>
-          </div>
+          <StudentProgramPlansDashboard
+            key={`${effectiveRole}:${user.activeDevelopmentUserEmail ?? user.email ?? ''}`}
+            filtersOpen={filtersOpen}
+            setFiltersOpen={setFiltersOpen}
+            effectiveRole={effectiveRole}
+            scopeKey={user.activeDevelopmentUserEmail ?? user.email ?? ''}
+            currentSchoolYear={user.currentSchoolYear}
+            studentDisplayMode={studentDisplayMode}
+            onContextChange={setLiveProgramPlansContext}
+            onOpenIpp={setLiveIppPreviewContext}
+          />
         ) : isAnalyticsOverview ? (
           <div className="hd-class-assignment hd-analytics-layout" data-filters={filtersOpen ? 'open' : 'closed'}>
             <aside className="hd-filter-rail" id="analytics-overview-filter-rail" aria-label="Analytics Overview filters">
@@ -2037,13 +1714,22 @@ function HighDensityShellWorkspace({
               </div>
             </section>
           </div>
-        ) : activeItem === 'class-assignments' ? (
-          <ClassAssignmentWorkspaceV2
-            filtersOpen={filtersOpen}
-            setFiltersOpen={setFiltersOpen}
-            onContextChange={setLiveClassAssignmentContext}
-            studentDisplayMode={studentDisplayMode}
-          />
+            ) : activeItem === 'class-assignments' ? (
+              liveIppPreviewContext ? (
+                <IppPreview
+                  context={liveIppPreviewContext}
+                  onBackToClassAssignment={() => setLiveIppPreviewContext(null)}
+                />
+              ) : (
+                <ClassAssignmentWorkspaceV2
+                  filtersOpen={filtersOpen}
+                  setFiltersOpen={setFiltersOpen}
+                  onContextChange={setLiveClassAssignmentContext}
+                  studentDisplayMode={studentDisplayMode}
+                  currentSchoolYear={user.currentSchoolYear}
+                  onOpenIpp={setLiveIppPreviewContext}
+                />
+              )
         ) : (
         <div className="hd-class-assignment" data-filters={filtersOpen ? 'open' : 'closed'}>
           <aside className="hd-filter-rail" id="class-assignment-filter-rail" aria-label="Class Assignment filters">
@@ -2496,24 +2182,42 @@ function HighDensityShellWorkspace({
   )
 }
 
-function SecurityAccessView({ user, accessContext, fabricConnection, effectiveRole, studentDisplayMode }: {
+function SecurityAccessView({ user, accessContext, fabricConnection, copilotAccess, effectiveRole, studentDisplayMode }: {
   user: ShellUser
   accessContext: ShellAccessContext
   fabricConnection: ShellConnectionStatus
+  copilotAccess: CopilotAccessStatus | null
   effectiveRole: string
   studentDisplayMode: StudentDisplayMode
 }) {
+  const [activeView, setActiveView] = useState<'access' | 'copilot'>('access')
   const schools = [accessContext.primarySchool?.name, accessContext.alternativeSchool?.name].filter((value): value is string => Boolean(value))
   const normalizedAssignedRole = formatRoleLabel(accessContext.storedRole || accessContext.effectiveRole)
   const effectiveScope = roleScopeDefinitions.find((definition) => definition.role === formatRoleLabel(effectiveRole))
   return (
     <section className="hd-security-workspace" aria-labelledby="security-access-heading">
       <header className="hd-security-workspace__intro">
-        <div><span>Identity and authorization</span><h1 id="security-access-heading">Roles &amp; Security</h1><p>Review the identity, role, school assignments, and data-security boundaries active for this Nexus session.</p></div>
-        <span className="hd-security-workspace__status"><ShieldCheck aria-hidden="true" /> Governed access verified</span>
+        <div>
+          <span>{activeView === 'access' ? 'Identity and authorization' : 'Copilot governance'}</span>
+          <h1 id="security-access-heading">{activeView === 'access' ? 'Roles & Security' : 'Copilot & cost-based billing'}</h1>
+          <p>{activeView === 'access'
+            ? 'Review the identity, role, school assignments, and data-security boundaries active for this Nexus session.'
+            : 'Review the Copilot experience available to this user and the connection readiness for Work IQ, spending policy, and cost-based billing.'}</p>
+        </div>
+        <span className="hd-security-workspace__status"><ShieldCheck aria-hidden="true" /> {activeView === 'access' ? 'Governed access verified' : 'Entitlement evaluated'}</span>
       </header>
 
-      <div className="hd-security-grid">
+      <nav className="hd-security-tabs" aria-label="Security and access views">
+        <button className={activeView === 'access' ? 'is-active' : undefined} type="button" onClick={() => setActiveView('access')}>
+          <ShieldCheck aria-hidden="true" /> Access overview
+        </button>
+        <button className={activeView === 'copilot' ? 'is-active' : undefined} type="button" onClick={() => setActiveView('copilot')}>
+          <Sparkles aria-hidden="true" /> Copilot &amp; cost-based billing
+        </button>
+      </nav>
+
+      {activeView === 'access' ? <>
+        <div className="hd-security-grid">
         <article className="hd-security-card">
           <header><ShieldCheck aria-hidden="true" /><div><span>Microsoft Entra ID</span><h2>Signed-in identity</h2></div></header>
           <dl>
@@ -2554,9 +2258,9 @@ function SecurityAccessView({ user, accessContext, fabricConnection, effectiveRo
             <div><dt>Security effect</dt><dd>{user.isDeveloper ? 'UI role simulation only; Fabric continues to evaluate the signed-in identity.' : 'Governed role and identity are applied.'}</dd></div>
           </dl>
         </article>
-      </div>
+        </div>
 
-      <section className="hd-security-scopes" aria-labelledby="security-scope-heading">
+        <section className="hd-security-scopes" aria-labelledby="security-scope-heading">
         <header>
           <div><span>Authorization model</span><h2 id="security-scope-heading">Governed role scopes</h2><p>Record visibility is resolved from the signed-in identity and the assignment source shown below.</p></div>
           <strong>{roleScopeDefinitions.length} roles</strong>
@@ -2571,9 +2275,84 @@ function SecurityAccessView({ user, accessContext, fabricConnection, effectiveRo
             </article>
           ))}
         </div>
-      </section>
+        </section>
 
-      <aside className="hd-security-notice"><LockKeyhole aria-hidden="true" /><div><strong>Security boundaries remain server-enforced</strong><p>Navigation adapts to the active role, while API authorization, Dataverse assignments, and Fabric RLS remain authoritative for every governed request. Data catalog and governance experiences will align to Microsoft Fabric and OneLake Catalog as Microsoft’s governance platform evolves.</p></div></aside>
+        <aside className="hd-security-notice"><LockKeyhole aria-hidden="true" /><div><strong>Security boundaries remain server-enforced</strong><p>Navigation adapts to the active role, while API authorization, Dataverse assignments, and Fabric RLS remain authoritative for every governed request. Data catalog and governance experiences will align to Microsoft Fabric and OneLake Catalog as Microsoft’s governance platform evolves.</p></div></aside>
+      </> : <CopilotCostGovernanceView copilotAccess={copilotAccess} />}
     </section>
+  )
+}
+
+function CopilotCostGovernanceView({ copilotAccess }: { copilotAccess: CopilotAccessStatus | null }) {
+  const hasMicrosoft365Copilot = Boolean(copilotAccess?.hasMicrosoft365Copilot)
+  const entitlementConnected = copilotAccess?.licenseCheckStatus === 'Connected'
+  const experienceLabel = hasMicrosoft365Copilot ? 'Microsoft 365 Copilot' : 'Copilot Chat'
+  const workIqLabel = hasMicrosoft365Copilot ? 'Available, subject to spending policy' : 'Requires Microsoft 365 Copilot'
+  const checkedAt = copilotAccess?.checkedAtUtc
+    ? new Intl.DateTimeFormat('en-CA', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(copilotAccess.checkedAtUtc))
+    : 'Not yet checked'
+
+  return (
+    <div className="hd-copilot-governance">
+      <div className="hd-security-grid">
+        <article className="hd-security-card">
+          <header><Sparkles aria-hidden="true" /><div><span>User capability</span><h2>Copilot experience</h2></div></header>
+          <dl>
+            <div><dt>Available experience</dt><dd>{experienceLabel}</dd></div>
+            <div><dt>Microsoft 365 Copilot</dt><dd>{hasMicrosoft365Copilot ? 'Assigned' : entitlementConnected ? 'Not assigned' : 'Not confirmed'}</dd></div>
+            <div><dt>Work IQ</dt><dd>{workIqLabel}</dd></div>
+            <div><dt>Licence check</dt><dd>{entitlementConnected ? 'Connected to Microsoft Graph' : 'Fallback applied'}</dd></div>
+            <div><dt>Last checked</dt><dd>{checkedAt}</dd></div>
+          </dl>
+        </article>
+
+        <article className="hd-security-card">
+          <header><ShieldCheck aria-hidden="true" /><div><span>Usage governance</span><h2>Spending policy</h2></div></header>
+          <dl>
+            <div><dt>Integration</dt><dd>Not connected</dd></div>
+            <div><dt>User policy</dt><dd>Pending admin data source</dd></div>
+            <div><dt>Copilot Credits</dt><dd>No live consumption data loaded</dd></div>
+            <div><dt>Enforcement</dt><dd>Microsoft 365 policy remains authoritative</dd></div>
+          </dl>
+        </article>
+
+        <article className="hd-security-card">
+          <header><BarChart3 aria-hidden="true" /><div><span>Cost management</span><h2>Cost-based billing</h2></div></header>
+          <dl>
+            <div><dt>Connection</dt><dd>Planned</dd></div>
+            <div><dt>Prepaid capacity</dt><dd>Not loaded</dd></div>
+            <div><dt>Pay-as-you-go</dt><dd>Not loaded</dd></div>
+            <div><dt>Reporting scope</dt><dd>Future admin-only governance view</dd></div>
+          </dl>
+        </article>
+
+        <article className="hd-security-card">
+          <header><Database aria-hidden="true" /><div><span>Nexus integration</span><h2>Connection readiness</h2></div></header>
+          <dl>
+            <div><dt>Licence entitlement</dt><dd className={entitlementConnected ? 'is-ready' : 'is-planned'}>{entitlementConnected ? 'Connected' : 'Optional check not connected'}</dd></div>
+            <div><dt>Work IQ context</dt><dd className={hasMicrosoft365Copilot ? 'is-ready' : 'is-planned'}>{hasMicrosoft365Copilot ? 'Eligible' : 'Chat-only fallback'}</dd></div>
+            <div><dt>Spending policy</dt><dd className="is-planned">Integration planned</dd></div>
+            <div><dt>Consumption and cost</dt><dd className="is-planned">Integration planned</dd></div>
+          </dl>
+        </article>
+      </div>
+
+      <aside className="hd-security-notice">
+        <Sparkles aria-hidden="true" />
+        <div>
+          <strong>Copilot does not block Nexus access</strong>
+          <p>{copilotAccess?.message ?? 'Nexus will provide Copilot Chat when Microsoft 365 Copilot entitlement cannot be confirmed. Work IQ and cost-bearing tools will only be enabled when licensing and the applicable spending policy permit them.'}</p>
+        </div>
+      </aside>
+
+      <section className="hd-copilot-governance__roadmap" aria-labelledby="copilot-integration-heading">
+        <header><div><span>Integration roadmap</span><h2 id="copilot-integration-heading">Administrative data connections</h2><p>This screen is ready for the later Microsoft 365 admin and cost-governance integrations without presenting placeholder values as live tenant data.</p></div></header>
+        <div>
+          <article><CheckCircle2 aria-hidden="true" /><div><strong>Entitlement check</strong><span>Assigned Microsoft 365 Copilot SKU or Copilot Chat fallback.</span></div></article>
+          <article><Clock3 aria-hidden="true" /><div><strong>Spending policy</strong><span>Connect user and group policy assignment when the supported admin data source is approved.</span></div></article>
+          <article><Clock3 aria-hidden="true" /><div><strong>Cost-based billing</strong><span>Connect Copilot Credit consumption, prepaid capacity, and pay-as-you-go reporting later.</span></div></article>
+        </div>
+      </section>
+    </div>
   )
 }

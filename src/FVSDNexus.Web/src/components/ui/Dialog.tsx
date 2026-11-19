@@ -11,6 +11,7 @@ export type DialogProps = {
   description?: ReactNode
   children: ReactNode
   footer?: ReactNode
+  headerActions?: ReactNode
   onClose: () => void
   closeLabel?: string
   initialFocusRef?: RefObject<HTMLElement | null>
@@ -32,6 +33,7 @@ export function Dialog({
   description,
   children,
   footer,
+  headerActions,
   onClose,
   closeLabel = 'Close dialog',
   initialFocusRef,
@@ -97,7 +99,10 @@ export function Dialog({
             <h2 id={titleId}>{title}</h2>
             {description ? <p id={descriptionId}>{description}</p> : null}
           </div>
-          <Button variant="ghost" size="small" aria-label={closeLabel} icon={<X size={18} />} onClick={onClose} />
+          {headerActions ? <div className="ui-dialog__header-actions">
+            {headerActions}
+            <Button variant="ghost" size="small" aria-label={closeLabel} icon={<X size={18} />} onClick={onClose} />
+          </div> : <Button variant="ghost" size="small" aria-label={closeLabel} icon={<X size={18} />} onClick={onClose} />}
         </header>
         <div className="ui-dialog__body">{children}</div>
         {footer ? <footer className="ui-dialog__footer">{footer}</footer> : null}

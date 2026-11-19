@@ -2,6 +2,15 @@ namespace FVSDNexus.Api.Dataverse;
 
 public interface IDataverseAssessmentWorkspaceClient
 {
+    Task<EmpowerClassOverview> GetEmpowerClassOverviewAsync(
+        DataverseAccessContext accessContext, string? developmentRole, bool isDeveloper,
+        Guid? schoolId, Guid teacherId, string? sectionGroup, string schoolYear,
+        CancellationToken cancellationToken = default, string ippSection = "Empower Reading", string? currentSchoolYear = null);
+
+    Task<StudentProgramPlansDashboard> GetStudentProgramPlansDashboardAsync(
+        DataverseAccessContext accessContext, string? developmentRole, bool isDeveloper,
+        Guid? schoolId, string schoolYear, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<StudentAssessmentStatus>> GetStudentAssessmentStatusesAsync(
         DataverseAccessContext accessContext, string? developmentRole, bool isDeveloper,
         Guid teacherSectionId, string schoolYear, CancellationToken cancellationToken = default);
@@ -10,6 +19,11 @@ public interface IDataverseAssessmentWorkspaceClient
         DataverseAccessContext accessContext, string? developmentRole, bool isDeveloper,
         Guid schoolId, string sectionGroup, string? courseNumber, Guid? teacherId,
         string schoolYear, CancellationToken cancellationToken = default);
+
+    Task<StudentScreenersDashboard> GetStudentScreenersDashboardAsync(
+        DataverseAccessContext accessContext, string? developmentRole, bool isDeveloper,
+        Guid? schoolId, string? sectionGroup, string? courseNumber, Guid? teacherId,
+        int period, string schoolYear, CancellationToken cancellationToken = default);
 
     Task<AssessmentWorkspaceContext> GetWorkspaceContextAsync(
         DataverseAccessContext accessContext,
